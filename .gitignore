@@ -36,5 +36,11 @@ out/
 ### VS Code ###
 .vscode/
 
-### DotEnv ###
+### Local secrets ###
 .env
+.env.*
+!.env.example
+!.env.*.example
+
+### Isolated account module cache ###
+.gradle-account-module/
