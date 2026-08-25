@@ -1,0 +1,12 @@
+# PostgreSQL(Supabase) 데이터베이스 연결 및 JPA 설정
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
