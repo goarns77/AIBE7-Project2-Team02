@@ -1,0 +1,106 @@
+package org.example.matcheat.orderrequest.entity;
+
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.example.matcheat.orderrequest.enums.BudgetType;
+import org.example.matcheat.orderrequest.enums.RequestStatus;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "order_requests")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class OrderRequest {
+
+    // Id
+    @Id // PK 지정
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // DB에서 자동 증가
+    private Long id;
+
+    // 행사/배송 예정 일시
+    @Column(nullable = false) // DB 필수값으로 지정
+    private LocalDateTime eventDateTime;
+
+    // 필요한 주문 수량 또는 인원 수
+    @Column(nullable = false)
+    private Integer quantity;
+
+    // 예산이 1인당 기준인지, 총액 기준인지 구분
+    @Enumerated(EnumType.STRING) // enum을 문자열로 저장
+    @Column(nullable = false)
+    private BudgetType budgetType;
+
+    // 실제 예산 금액
+    @Column(nullable = false)
+    private BigDecimal budget;
+
+    // 원하는 음식 카테고리
+    @Column(nullable = false)
+    private String category;
+
+    // 배송지 주소
+    @Column(nullable = false)
+    private String deliveryAddress;
+
+    // 배송지 위도
+    @Column(nullable = false)
+    private Double latitude;
+
+    // 배송지 경도
+    @Column(nullable = false)
+    private Double longitude;
+
+    // 주문 요청의 현재 진행 상태
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RequestStatus status;
+
+    /// Setter를 쓰지 않는 이유는 Setter는 객체 상태를 아무 곳에서나 변경 가능하기 때문
+    /// 생성자는 생성 규칙을 강제하고 상태를 보호하기 쉬움
+    private OrderRequest(
+            LocalDateTime eventDateTime,
+            Integer quantity,
+            BudgetType budgetType,
+            BigDecimal budget,
+            String category,
+            String deliveryAddress,
+            Double latitude,
+            Double longitude
+    ) {
+        this.eventDateTime = eventDateTime;
+        this.quantity = quantity;
+        this.budgetType = budgetType;
+        this.budget = budget;
+        this.category = category;
+        this.deliveryAddress = deliveryAddress;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.status = RequestStatus.MATCHING;
+    }
+
+    public static OrderRequest create(
+            LocalDateTime eventDateTime,
+            Integer quantity,
+            BudgetType budgetType,
+            BigDecimal budget,
+            String category,
+            String deliveryAddress,
+            Double latitude,
+            Double longitude
+    ) {
+        return new OrderRequest(
+                eventDateTime,
+                quantity,
+                budgetType,
+                budget,
+                category,
+                deliveryAddress,
+                latitude,
+                longitude
+        );
+    }
+}
