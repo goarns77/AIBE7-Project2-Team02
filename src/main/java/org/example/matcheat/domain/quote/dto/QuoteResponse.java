@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import org.example.matcheat.domain.quote.entity.Quote;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Builder
 public class QuoteResponse {
@@ -16,6 +18,7 @@ public class QuoteResponse {
 	private Long deliveryFee;
 	private Long totalAmount;
 	private String status;
+	private LocalDateTime createdAt;
 
 	public static QuoteResponse from(Quote quote) {
 		return QuoteResponse.builder()
@@ -27,7 +30,8 @@ public class QuoteResponse {
 				.unitPrice(quote.getUnitPrice())
 				.deliveryFee(quote.getDeliveryFee())
 				.totalAmount(quote.getTotalAmount())
-				.status(quote.getStatus().name())
+				.status(quote.getStatus() != null ? quote.getStatus().name() : null)
+				.createdAt(quote.getCreatedAt())
 				.build();
 	}
 }

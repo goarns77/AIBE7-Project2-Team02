@@ -6,8 +6,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class QuoteCreateRequest {
-	private Long chatRoomId;
-	private Integer quantity;
-	private Long unitPrice;
-	private Long deliveryFee;
+	private Integer quantity;   // 수량
+	private Long unitPrice;     // 단가
+	private Long deliveryFee;   // 배송비
 }

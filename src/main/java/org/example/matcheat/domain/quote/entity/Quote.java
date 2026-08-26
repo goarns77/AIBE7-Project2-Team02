@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Table(name = "quotes")
@@ -16,8 +18,7 @@ public class Quote {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false)
-	private Long chatRoomId;
+	private Long chatRoomId; // nullable (채팅 없이 견적만 발행 가능)
 
 	@Column(nullable = false)
 	private Long buyerId;
@@ -25,21 +26,16 @@ public class Quote {
 	@Column(nullable = false)
 	private Long sellerId;
 
-	@Column(nullable = false)
 	private Integer quantity;
-
-	@Column(nullable = false)
 	private Long unitPrice;
-
-	@Column(nullable = false)
 	private Long deliveryFee;
-
-	@Column(nullable = false)
 	private Long totalAmount;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private QuoteStatus status;
+
+	private LocalDateTime createdAt;
 
 	public enum QuoteStatus {
 		SENT, ACCEPTED, REJECTED
@@ -55,9 +51,21 @@ public class Quote {
 		this.deliveryFee = deliveryFee;
 		this.totalAmount = totalAmount;
 		this.status = status != null ? status : QuoteStatus.SENT;
+		this.createdAt = LocalDateTime.now();
+	}
+
+	public void updateChatRoomId(Long chatRoomId) {
+		this.chatRoomId = chatRoomId;
 	}
 
 	public void updateStatus(QuoteStatus status) {
 		this.status = status;
+	}
+
+	public void updateQuoteDetails(Integer quantity, Long unitPrice, Long deliveryFee, Long totalAmount) {
+		this.quantity = quantity;
+		this.unitPrice = unitPrice;
+		this.deliveryFee = deliveryFee;
+		this.totalAmount = totalAmount;
 	}
 }
