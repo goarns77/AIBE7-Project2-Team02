@@ -1,0 +1,12 @@
+spring:
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:empty}
+        embedding:
+          api-key: ${GEMINI_API_KEY:empty}
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
