@@ -87,14 +87,14 @@ public class OrderRequestController {
     }
 
     /**
-     * 음식 카테고리 키워드로 주문 요청을 검색
+     * 제목 또는 음식 카테고리 키워드로 주문 요청을 검색
      */
     @GetMapping("/search")
-    public ResponseEntity<List<OrderRequestResponseDTO>> searchByCategory(
+    public ResponseEntity<List<OrderRequestResponseDTO>> searchByKeyword(
             @RequestParam String keyword
     ) {
         List<OrderRequestResponseDTO> response =
-                orderRequestService.searchByCategory(keyword);
+                orderRequestService.searchByKeyword(keyword);
 
         return ResponseEntity.ok(response);
     }

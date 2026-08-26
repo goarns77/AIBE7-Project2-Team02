@@ -116,11 +116,11 @@ public class OrderRequestService {
     }
 
     /**
-     * 음식 카테고리 키워드로 주문 요청을 검색
+     * 제목 또는 음식 카테고리 키워드로 주문 요청을 검색
      */
     @Transactional(readOnly = true)
-    public List<OrderRequestResponseDTO> searchByCategory(String keyword) {
-        return orderRequestRepository.findByCategoryContainingIgnoreCase(keyword)
+    public List<OrderRequestResponseDTO> searchByKeyword(String keyword) {
+        return orderRequestRepository.searchByKeyword(keyword)
                 .stream()
                 .map(OrderRequestResponseDTO::from)
                 .toList();

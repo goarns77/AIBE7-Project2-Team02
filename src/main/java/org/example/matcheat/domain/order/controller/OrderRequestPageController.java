@@ -8,10 +8,7 @@ import org.example.matcheat.domain.order.service.OrderRequestService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 주문 요청 관련 Thymeleaf 화면 이동을 담당하는 Controller
@@ -25,11 +22,26 @@ public class OrderRequestPageController {
     }
 
     /**
-     * 전체 주문 요청 목록 페이지를 반환
+     * 전체 주문 목록을 조회하고, 검색어가 있으면 제목 또는 음식 카테고리로 검색
      */
     @GetMapping("/requests")
-    public String listPage(Model model) {
-        model.addAttribute("orderRequests", orderRequestService.findAll());
+    public String listPage(
+            @RequestParam(required = false) String keyword,
+            Model model
+    ) {
+        if (keyword == null || keyword.isBlank()) {
+            model.addAttribute(
+                    "orderRequests",
+                    orderRequestService.findAll()
+            );
+        } else {
+            model.addAttribute(
+                    "orderRequests",
+                    orderRequestService.searchByKeyword(keyword)
+            );
+        }
+
+        model.addAttribute("keyword", keyword);
 
         return "orderrequest/list";
     }
