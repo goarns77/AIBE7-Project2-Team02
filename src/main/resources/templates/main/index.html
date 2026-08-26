@@ -12,18 +12,10 @@
 <body>
 
 <!-- MatchEAT의 주요 기능과 진입 경로를 제공하는 메인 Thymeleaf 페이지 -->
+<header th:replace="~{fragments/header::header}"></header>
 
-<header>
-    <h1>MatchEAT</h1>
-
-    <nav>
-        <a th:href="@{/}">홈</a>
-        <a th:href="@{/requests/new}">주문 요청</a>
-    </nav>
-</header>
 
 <main>
-
     <!-- 메인 소개 영역 -->
     <section>
         <h2>조건에 맞는 주문을 찾아보세요</h2>

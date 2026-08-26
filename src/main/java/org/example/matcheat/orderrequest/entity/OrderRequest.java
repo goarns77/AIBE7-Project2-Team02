@@ -21,6 +21,18 @@ public class OrderRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // DB에서 자동 증가
     private Long id;
 
+    /**
+     * 판매자가 주문 요청을 빠르게 구분할 수 있는 제목
+     */
+    @Column(length = 100)
+    private String title;
+
+    /**
+     * 주문 목적이나 추가 요청사항을 설명하는 상세 내용
+     */
+    @Column(length = 1000)
+    private String description;
+
     // 행사/배송 예정 일시
     @Column(nullable = false) // DB 필수값으로 지정
     private LocalDateTime eventDateTime;
@@ -62,6 +74,8 @@ public class OrderRequest {
     /// Setter를 쓰지 않는 이유는 Setter는 객체 상태를 아무 곳에서나 변경 가능하기 때문
     /// 생성자는 생성 규칙을 강제하고 상태를 보호하기 쉬움
     private OrderRequest(
+            String title,
+            String description,
             LocalDateTime eventDateTime,
             Integer quantity,
             BudgetType budgetType,
@@ -71,6 +85,8 @@ public class OrderRequest {
             Double latitude,
             Double longitude
     ) {
+        this.title = title;
+        this.description = description;
         this.eventDateTime = eventDateTime;
         this.quantity = quantity;
         this.budgetType = budgetType;
@@ -86,6 +102,8 @@ public class OrderRequest {
      * 새로운 주문 요청 Entity를 생성
      */
     public static OrderRequest create(
+            String title,
+            String description,
             LocalDateTime eventDateTime,
             Integer quantity,
             BudgetType budgetType,
@@ -96,6 +114,8 @@ public class OrderRequest {
             Double longitude
     ) {
         return new OrderRequest(
+                title,
+                description,
                 eventDateTime,
                 quantity,
                 budgetType,
@@ -111,6 +131,8 @@ public class OrderRequest {
      * 전달된 값이 있는 항목만 주문 요청 정보를 수정
      */
     public void update(
+            String title,
+            String description,
             LocalDateTime eventDateTime,
             Integer quantity,
             BudgetType budgetType,
@@ -120,6 +142,14 @@ public class OrderRequest {
             Double latitude,
             Double longitude
     ) {
+        if (title != null && !title.isBlank()) {
+            this.title = title;
+        }
+
+        if (description != null) {
+            this.description = description;
+        }
+        
         if (eventDateTime != null) {
             this.eventDateTime = eventDateTime;
         }

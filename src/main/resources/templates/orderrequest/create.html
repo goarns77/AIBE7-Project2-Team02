@@ -4,20 +4,36 @@
 <head>
     <meta charset="UTF-8">
     <title>주문 요청 등록 | MatchEAT</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 <body>
 <!-- 주문 요청 정보를 입력받는 Thymeleaf 등록 페이지 -->
-
+<header th:replace="~{fragments/header :: header}"></header>
 <h1>주문 요청 등록</h1>
-<p th:if="${param.success}">
-    주문 요청이 정상적으로 등록되었습니다.
-</p>
+
 <form
         th:action="@{/requests}"
         th:object="${orderRequest}"
         method="post"
 >
 
+    <div>
+        <label for="title">주문 요청 제목</label>
+        <input type="text"
+               id="title"
+               th:field="*{title}"
+               maxlength="100"
+               required>
+    </div>
+
+    <div>
+        <label for="description">상세 내용</label>
+        <textarea id="description"
+                  th:field="*{description}"
+                  maxlength="1000"
+                  rows="5"></textarea>
+    </div>
+    
     <div>
         <label for="eventDateTime">행사/배송 일시</label>
         <input

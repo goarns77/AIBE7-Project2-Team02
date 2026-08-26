@@ -27,6 +27,8 @@ public class OrderRequestService {
     @Transactional
     public OrderRequestResponseDTO create(OrderRequestCreateDTO dto) {
         OrderRequest orderRequest = OrderRequest.create(
+                dto.getTitle(),
+                dto.getDescription(),
                 dto.getEventDateTime(),
                 dto.getQuantity(),
                 dto.getBudgetType(),
@@ -83,6 +85,8 @@ public class OrderRequestService {
         }
 
         orderRequest.update(
+                dto.getTitle(),
+                dto.getDescription(),
                 dto.getEventDateTime(),
                 dto.getQuantity(),
                 dto.getBudgetType(),

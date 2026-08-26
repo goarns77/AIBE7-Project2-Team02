@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>주문 요청 상세 | MatchEAT</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<!-- 선택한 주문 요청의 상세 정보를 보여주는 Thymeleaf 페이지 -->
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <h1>주문 요청 상세</h1>
+
+    <div>
+        <strong>제목</strong>
+        <span th:text="${orderRequest.title}"></span>
+    </div>
+
+    <div>
+        <strong>상세 내용</strong>
+        <p th:text="${orderRequest.description}"></p>
+    </div>
+    
+    <div>
+        <strong>ID</strong>
+        <span th:text="${orderRequest.id}"></span>
+    </div>
+
+    <div>
+        <strong>행사/배송 일시</strong>
+        <span th:text="${orderRequest.eventDateTime}"></span>
+    </div>
+
+    <div>
+        <strong>수량</strong>
+        <span th:text="${orderRequest.quantity}"></span>
+    </div>
+
+    <div>
+        <strong>예산 기준</strong>
+        <span th:text="${orderRequest.budgetType}"></span>
+    </div>
+
+    <div>
+        <strong>예산</strong>
+        <span th:text="${orderRequest.budget}"></span>
+    </div>
+
+    <div>
+        <strong>음식 카테고리</strong>
+        <span th:text="${orderRequest.category}"></span>
+    </div>
+
+    <div>
+        <strong>배송지</strong>
+        <span th:text="${orderRequest.deliveryAddress}"></span>
+    </div>
+
+    <div>
+        <strong>상태</strong>
+        <span th:text="${orderRequest.status}"></span>
+    </div>
+
+    <a th:if="${orderRequest.status.name() == 'MATCHING'}"
+       th:href="@{/requests/{id}/edit(id=${orderRequest.id})}">
+        주문 요청 수정
+    </a>
+
+    <form th:if="${orderRequest.status.name() == 'MATCHING'}"
+          th:action="@{/requests/{id}/cancel(id=${orderRequest.id})}"
+          method="post">
+
+        <button type="submit">
+            주문 요청 취소
+        </button>
+    </form>
+
+    <a th:href="@{/requests}">목록으로 돌아가기</a>
+</main>
+
+</body>
+</html>

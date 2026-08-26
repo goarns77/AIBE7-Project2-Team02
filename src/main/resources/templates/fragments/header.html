@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+<!-- MatchEAT 각 페이지에서 공통으로 사용하는 상단 헤더 Fragment -->
+<header th:fragment="header">
+
+    <h1>
+        <a th:href="@{/}">MatchEAT</a>
+    </h1>
+
+    <nav>
+        <a th:href="@{/}">홈</a>
+        <a th:href="@{/requests}">주문 요청</a>
+
+        <!-- 인증 기능 통합 후 로그인 상태에 따라 변경 예정 -->
+        <a href="#">로그인</a>
+        <a href="#">회원가입</a>
+    </nav>
+
+</header>
+
+</body>
+</html>

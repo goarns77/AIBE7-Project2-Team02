@@ -5,8 +5,10 @@ spring:
     url: jdbc:postgresql://${DB_HOST}:5432/${DB_NAME}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-  hikari:
-    maximum-pool-size: 10
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
+
   jpa:
     show-sql: true
     hibernate:

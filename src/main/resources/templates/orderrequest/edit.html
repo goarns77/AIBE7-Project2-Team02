@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>주문 요청 수정 | MatchEAT</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<!-- 기존 주문 요청 정보를 수정하기 위한 Thymeleaf 페이지 -->
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <h1>주문 요청 수정</h1>
+
+    <form
+            th:action="@{/requests/{id}/edit(id=${requestId})}"
+            th:object="${orderRequest}"
+            method="post"
+    >
+        <div>
+            <label for="title">주문 요청 제목</label>
+            <input type="text"
+                   id="title"
+                   th:field="*{title}"
+                   maxlength="100"
+                   required>
+        </div>
+
+        <div>
+            <label for="description">상세 내용</label>
+            <textarea id="description"
+                      th:field="*{description}"
+                      maxlength="1000"
+                      rows="5"></textarea>
+        </div>
+
+        <div>
+            <label for="eventDateTime">행사/배송 일시</label>
+            <input type="datetime-local"
+                   id="eventDateTime"
+                   th:field="*{eventDateTime}">
+        </div>
+
+        <div>
+            <label for="quantity">수량</label>
+            <input type="number"
+                   id="quantity"
+                   th:field="*{quantity}"
+                   min="1">
+        </div>
+
+        <div>
+            <label for="budgetType">예산 기준</label>
+            <select id="budgetType"
+                    th:field="*{budgetType}">
+                <option value="PER_PERSON">1인당 예산</option>
+                <option value="TOTAL">총 예산</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="budget">예산</label>
+            <input type="number"
+                   id="budget"
+                   th:field="*{budget}"
+                   min="1">
+        </div>
+
+        <div>
+            <label for="category">음식 카테고리</label>
+            <input type="text"
+                   id="category"
+                   th:field="*{category}">
+        </div>
+
+        <div>
+            <label for="deliveryAddress">배송지</label>
+            <input type="text"
+                   id="deliveryAddress"
+                   th:field="*{deliveryAddress}">
+        </div>
+
+        <!-- 주소 검색 API 연동 전 기존 좌표값 유지 -->
+        <input type="hidden"
+               th:field="*{latitude}">
+
+        <input type="hidden"
+               th:field="*{longitude}">
+
+        <button type="submit">수정 저장</button>
+    </form>
+
+    <a th:href="@{/requests/{id}(id=${requestId})}">
+        상세로 돌아가기
+    </a>
+</main>
+
+</body>
+</html>
