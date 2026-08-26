@@ -3,13 +3,17 @@ package org.example.matcheat.orderrequest.service;
 import lombok.RequiredArgsConstructor;
 import org.example.matcheat.orderrequest.dto.OrderRequestCreateDTO;
 import org.example.matcheat.orderrequest.dto.OrderRequestResponseDTO;
+import org.example.matcheat.orderrequest.dto.OrderRequestUpdateDTO;
 import org.example.matcheat.orderrequest.entity.OrderRequest;
+import org.example.matcheat.orderrequest.enums.RequestStatus;
 import org.example.matcheat.orderrequest.repository.OrderRequestRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
- * 주문 요청 등록과 상세 조회의 비즈니스 로직을 담당하는 Service
+ * 주문 요청의 등록, 조회, 수정, 취소, 검색 관련 비즈니스 로직을 담당하는 Service
  */
 @Service // 비즈니스 로직 담당 부여
 @RequiredArgsConstructor // final 필드인 Repository를 생성자로 주입
@@ -49,5 +53,72 @@ public class OrderRequestService {
                         "존재하지 않는 주문 요청입니다. id=%s".formatted(id)
                 ));
         return OrderRequestResponseDTO.from(orderRequest);
+    }
+
+    /**
+     * 전체 주문 요청 목록을 조회
+     */
+    @Transactional(readOnly = true)
+    public List<OrderRequestResponseDTO> findAll() {
+        return orderRequestRepository.findAll()
+                .stream()
+                .map(OrderRequestResponseDTO::from)
+                .toList();
+    }
+
+    /**
+     * MATCHING 상태의 주문 요청 정보를 수정
+     */
+    @Transactional
+    public OrderRequestResponseDTO update(Long id, OrderRequestUpdateDTO dto) {
+        OrderRequest orderRequest = orderRequestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "존재하지 않는 주문 요청입니다. id=%s".formatted(id)
+                ));
+
+        if (orderRequest.getStatus() != RequestStatus.MATCHING) {
+            throw new IllegalStateException(
+                    "MATCHING 상태의 주문 요청만 수정할 수 있습니다."
+            );
+        }
+
+        orderRequest.update(
+                dto.getEventDateTime(),
+                dto.getQuantity(),
+                dto.getBudgetType(),
+                dto.getBudget(),
+                dto.getCategory(),
+                dto.getDeliveryAddress(),
+                dto.getLatitude(),
+                dto.getLongitude()
+        );
+
+        return OrderRequestResponseDTO.from(orderRequest);
+    }
+
+    /**
+     * MATCHING 상태의 주문 요청을 취소
+     */
+    @Transactional
+    public OrderRequestResponseDTO cancel(Long id) {
+        OrderRequest orderRequest = orderRequestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "존재하지 않는 주문 요청입니다. id=%s".formatted(id)
+                ));
+
+        orderRequest.cancel();
+
+        return OrderRequestResponseDTO.from(orderRequest);
+    }
+
+    /**
+     * 음식 카테고리 키워드로 주문 요청을 검색
+     */
+    @Transactional(readOnly = true)
+    public List<OrderRequestResponseDTO> searchByCategory(String keyword) {
+        return orderRequestRepository.findByCategoryContainingIgnoreCase(keyword)
+                .stream()
+                .map(OrderRequestResponseDTO::from)
+                .toList();
     }
 }

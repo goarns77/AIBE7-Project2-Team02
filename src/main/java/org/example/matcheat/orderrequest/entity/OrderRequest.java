@@ -82,6 +82,9 @@ public class OrderRequest {
         this.status = RequestStatus.MATCHING;
     }
 
+    /**
+     * 새로운 주문 요청 Entity를 생성
+     */
     public static OrderRequest create(
             LocalDateTime eventDateTime,
             Integer quantity,
@@ -102,5 +105,63 @@ public class OrderRequest {
                 latitude,
                 longitude
         );
+    }
+
+    /**
+     * 전달된 값이 있는 항목만 주문 요청 정보를 수정
+     */
+    public void update(
+            LocalDateTime eventDateTime,
+            Integer quantity,
+            BudgetType budgetType,
+            BigDecimal budget,
+            String category,
+            String deliveryAddress,
+            Double latitude,
+            Double longitude
+    ) {
+        if (eventDateTime != null) {
+            this.eventDateTime = eventDateTime;
+        }
+
+        if (quantity != null) {
+            this.quantity = quantity;
+        }
+
+        if (budgetType != null) {
+            this.budgetType = budgetType;
+        }
+
+        if (budget != null) {
+            this.budget = budget;
+        }
+
+        if (category != null && !category.isBlank()) {
+            this.category = category;
+        }
+
+        if (deliveryAddress != null && !deliveryAddress.isBlank()) {
+            this.deliveryAddress = deliveryAddress;
+        }
+
+        if (latitude != null) {
+            this.latitude = latitude;
+        }
+
+        if (longitude != null) {
+            this.longitude = longitude;
+        }
+    }
+
+    /**
+     * MATCHING 상태의 주문 요청을 취소 상태로 변경
+     */
+    public void cancel() {
+        if (this.status != RequestStatus.MATCHING) {
+            throw new IllegalStateException(
+                    "MATCHING 상태의 주문 요청만 취소할 수 있습니다."
+            );
+        }
+        this.status = RequestStatus.CANCELLED;
     }
 }
