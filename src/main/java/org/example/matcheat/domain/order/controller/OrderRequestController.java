@@ -1,11 +1,11 @@
-package org.example.matcheat.orderrequest.controller;
+package org.example.matcheat.domain.order.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.matcheat.orderrequest.dto.OrderRequestCreateDTO;
-import org.example.matcheat.orderrequest.dto.OrderRequestResponseDTO;
-import org.example.matcheat.orderrequest.dto.OrderRequestUpdateDTO;
-import org.example.matcheat.orderrequest.service.OrderRequestService;
+import org.example.matcheat.domain.order.dto.OrderRequestCreateDTO;
+import org.example.matcheat.domain.order.dto.OrderRequestResponseDTO;
+import org.example.matcheat.domain.order.dto.OrderRequestUpdateDTO;
+import org.example.matcheat.domain.order.service.OrderRequestService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

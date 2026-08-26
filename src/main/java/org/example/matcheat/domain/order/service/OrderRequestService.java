@@ -1,12 +1,12 @@
-package org.example.matcheat.orderrequest.service;
+package org.example.matcheat.domain.order.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.matcheat.orderrequest.dto.OrderRequestCreateDTO;
-import org.example.matcheat.orderrequest.dto.OrderRequestResponseDTO;
-import org.example.matcheat.orderrequest.dto.OrderRequestUpdateDTO;
-import org.example.matcheat.orderrequest.entity.OrderRequest;
-import org.example.matcheat.orderrequest.enums.RequestStatus;
-import org.example.matcheat.orderrequest.repository.OrderRequestRepository;
+import org.example.matcheat.domain.order.dto.OrderRequestCreateDTO;
+import org.example.matcheat.domain.order.dto.OrderRequestResponseDTO;
+import org.example.matcheat.domain.order.dto.OrderRequestUpdateDTO;
+import org.example.matcheat.domain.order.entity.OrderRequest;
+import org.example.matcheat.domain.order.enums.RequestStatus;
+import org.example.matcheat.domain.order.repository.OrderRequestRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +27,8 @@ public class OrderRequestService {
     @Transactional
     public OrderRequestResponseDTO create(OrderRequestCreateDTO dto) {
         OrderRequest orderRequest = OrderRequest.create(
+                dto.getTitle(),
+                dto.getDescription(),
                 dto.getEventDateTime(),
                 dto.getQuantity(),
                 dto.getBudgetType(),
@@ -83,6 +85,8 @@ public class OrderRequestService {
         }
 
         orderRequest.update(
+                dto.getTitle(),
+                dto.getDescription(),
                 dto.getEventDateTime(),
                 dto.getQuantity(),
                 dto.getBudgetType(),

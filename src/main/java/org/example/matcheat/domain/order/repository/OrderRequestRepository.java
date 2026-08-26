@@ -1,6 +1,6 @@
-package org.example.matcheat.orderrequest.repository;
+package org.example.matcheat.domain.order.repository;
 
-import org.example.matcheat.orderrequest.entity.OrderRequest;
+import org.example.matcheat.domain.order.entity.OrderRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

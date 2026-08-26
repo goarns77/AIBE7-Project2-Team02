@@ -7,7 +7,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * 개발 중 API 테스트를 위해 인증은 유지하고 CSRF 검사를 비활성화하는 Security 설정
+ * 개발 중 API 테스트를 위해 모든 요청을 허용하고 CSRF 검사를 비활성화하는 Security 설정
  */
 @Configuration
 public class SecurityConfig {

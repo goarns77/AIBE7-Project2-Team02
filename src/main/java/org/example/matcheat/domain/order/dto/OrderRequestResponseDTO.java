@@ -1,9 +1,9 @@
-package org.example.matcheat.orderrequest.dto;
+package org.example.matcheat.domain.order.dto;
 
 import lombok.Getter;
-import org.example.matcheat.orderrequest.entity.OrderRequest;
-import org.example.matcheat.orderrequest.enums.BudgetType;
-import org.example.matcheat.orderrequest.enums.RequestStatus;
+import org.example.matcheat.domain.order.entity.OrderRequest;
+import org.example.matcheat.domain.order.enums.BudgetType;
+import org.example.matcheat.domain.order.enums.RequestStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
  */
 @Getter
 public class OrderRequestResponseDTO {
+    private final String title;
+    private final String description;
     private final Long id;
     private final LocalDateTime eventDateTime;
     private final Integer quantity;
@@ -26,6 +28,8 @@ public class OrderRequestResponseDTO {
 
     private OrderRequestResponseDTO(OrderRequest orderRequest) {
         this.id = orderRequest.getId();
+        this.title = orderRequest.getTitle();
+        this.description = orderRequest.getDescription();
         this.eventDateTime = orderRequest.getEventDateTime();
         this.quantity = orderRequest.getQuantity();
         this.budgetType = orderRequest.getBudgetType();

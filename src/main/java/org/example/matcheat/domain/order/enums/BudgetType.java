@@ -1,4 +1,4 @@
-package org.example.matcheat.orderrequest.enums;
+package org.example.matcheat.domain.order.enums;
 
 /**
  * 주문 요청 예산 타입

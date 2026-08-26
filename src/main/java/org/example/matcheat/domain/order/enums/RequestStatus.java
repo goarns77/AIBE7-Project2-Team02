@@ -1,4 +1,4 @@
-package org.example.matcheat.orderrequest.enums;
+package org.example.matcheat.domain.order.enums;
 
 /**
  * 주문 요청서의 현재 상태를 제한된 값으로 관리
