@@ -1,6 +1,9 @@
 package org.example.matcheat.domain.quote.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.domain.chat.entity.ChatRoom;
+import org.example.matcheat.domain.chat.repository.ChatRoomRepository;
+import org.example.matcheat.domain.quote.dto.QuoteCreateRequest;
 import org.example.matcheat.domain.quote.dto.QuoteResponse;
 import org.example.matcheat.domain.quote.dto.QuoteUpdateRequest;
 import org.example.matcheat.domain.quote.entity.Quote;
@@ -8,87 +11,25 @@ import org.example.matcheat.domain.quote.repository.QuoteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 public class QuoteService {
 
 	private final QuoteRepository quoteRepository;
+	private final ChatRoomRepository chatRoomRepository;
 
 	/**
-	 * ChatService에서 호출하는 1차 견적서 자동 생성 메서드
+	 * 액션 1: "견적서 보내기"
+	 * 견적서를 우선 생성하고, 이에 연결되는 1:1 채팅방(OriginType.PROPOSAL)을 자동 생성하여 상호 연결합니다.
 	 */
 	@Transactional
-	public QuoteResponse createPrimaryQuoteFromProposal(Long chatRoomId, Long proposalId, Long buyerId) {
+	public QuoteResponse createQuoteWithNewChatRoom(Long currentUserId, Long sellerId, QuoteCreateRequest request) {
+		// 1. 견적 금액 계산
+		long totalAmount = calculateTotalAmount(request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee());
 
-		// TODO: [팀원 Proposal 작업 완료 후 수정]
-		// 현재 Proposal 도메인 개발 중이므로 임시 하드코딩 데이터 사용.
-		// 추후 ProposalRepository.findById(proposalId)로 실제 수량, 단가, 판매자 ID를 조회하도록 변경해야 함.
-		Long sellerId = 2L;          // 임시 판매자 ID
-		int requestedQuantity = 10;  // 임시 요청 수량
-		long unitPrice = 5000L;      // 임시 제안 단가
-		long deliveryFee = 3000L;    // 임시 배송비
-		long totalAmount = (requestedQuantity * unitPrice) + deliveryFee;
-
-		Quote primaryQuote = Quote.builder()
-				.chatRoomId(chatRoomId)
-				.buyerId(buyerId)
-				.sellerId(sellerId)
-				.quantity(requestedQuantity)
-				.unitPrice(unitPrice)
-				.deliveryFee(deliveryFee)
-				.totalAmount(totalAmount)
-				.status(Quote.QuoteStatus.SENT)
-				.build();
-
-		Quote savedQuote = quoteRepository.save(primaryQuote);
-		return QuoteResponse.from(savedQuote);
-	}
-
-	@Transactional
-	public QuoteResponse acceptQuote(Long quoteId) {
-		Quote quote = quoteRepository.findById(quoteId)
-				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 견적서입니다. ID: " + quoteId));
-
-		quote.updateStatus(Quote.QuoteStatus.ACCEPTED);
-		return QuoteResponse.from(quote);
-	}
-
-	@Transactional
-	public QuoteResponse rejectQuote(Long quoteId) {
-		Quote quote = quoteRepository.findById(quoteId)
-				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 견적서입니다. ID: " + quoteId));
-
-		quote.updateStatus(Quote.QuoteStatus.REJECTED);
-		return QuoteResponse.from(quote);
-	}
-
-	@Transactional(readOnly = true)
-	public List<QuoteResponse> getQuotesByChatRoom(Long chatRoomId) {
-		return quoteRepository.findByChatRoomIdOrderByIdDesc(chatRoomId)
-				.stream()
-				.map(QuoteResponse::from)
-				.collect(Collectors.toList());
-	}
-
-	/**
-	 * 견적서 수정 (재제안)
-	 * 기존 견적 이력을 보존하기 위해 새로운 Quote 엔티티를 생성합니다.
-	 */
-	@Transactional
-	public QuoteResponse updateQuote(Long chatRoomId, Long currentUserId, QuoteUpdateRequest request) {
-		// 총액 재계산
-		long totalAmount = (request.getQuantity() * request.getUnitPrice()) + request.getDeliveryFee();
-
-		// TODO: currentUserId 기반으로 구매자/판매자 ID 세팅 및 권한 검증 로직 추가 필요
-		Long buyerId = 1L;  // 임시 구매자 ID
-		Long sellerId = 2L; // 임시 판매자 ID
-
-		Quote newQuote = Quote.builder()
-				.chatRoomId(chatRoomId)
-				.buyerId(buyerId)
+		// 2. 견적서(Quote) 생성 (chatRoomId는 일단 null)
+		Quote quote = Quote.builder()
+				.buyerId(currentUserId)
 				.sellerId(sellerId)
 				.quantity(request.getQuantity())
 				.unitPrice(request.getUnitPrice())
@@ -97,7 +38,102 @@ public class QuoteService {
 				.status(Quote.QuoteStatus.SENT)
 				.build();
 
-		Quote savedQuote = quoteRepository.save(newQuote);
+		Quote savedQuote = quoteRepository.save(quote);
+
+		// 3. 연결할 채팅방(ChatRoom) 자동 생성 (OriginType.PROPOSAL)
+		ChatRoom chatRoom = ChatRoom.builder()
+				.originType(ChatRoom.OriginType.PROPOSAL)
+				.quoteId(savedQuote.getId()) // 생성된 quote_id 세팅
+				.buyerId(currentUserId)
+				.sellerId(sellerId)
+				.build();
+
+		ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+
+		// 4. 견적서에 생성된 chatRoomId 역방향 연결
+		savedQuote.updateChatRoomId(savedChatRoom.getId());
+
 		return QuoteResponse.from(savedQuote);
 	}
+
+	/**
+	 * 액션 2: "대화 중 견적서 생성"
+	 * 기존 채팅방 내에서 견적서를 작성하여 발행하고, 해당 채팅방의 최신 quote_id를 업데이트합니다.
+	 */
+	@Transactional
+	public QuoteResponse createQuoteInChatRoom(Long chatRoomId, Long currentUserId, QuoteCreateRequest request) {
+		// 1. 채팅방 존재 여부 확인
+		ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+				.orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + chatRoomId));
+
+		// 2. 견적 금액 계산
+		long totalAmount = calculateTotalAmount(request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee());
+
+		// 3. 견적서(Quote) 생성 (chatRoomId 세팅)
+		Quote quote = Quote.builder()
+				.chatRoomId(chatRoom.getId())
+				.buyerId(chatRoom.getBuyerId())
+				.sellerId(chatRoom.getSellerId())
+				.quantity(request.getQuantity())
+				.unitPrice(request.getUnitPrice())
+				.deliveryFee(request.getDeliveryFee())
+				.totalAmount(totalAmount)
+				.status(Quote.QuoteStatus.SENT)
+				.build();
+
+		Quote savedQuote = quoteRepository.save(quote);
+
+		// 4. 채팅방의 최신 quote_id 업데이트
+		chatRoom.updateQuoteId(savedQuote.getId());
+
+		return QuoteResponse.from(savedQuote);
+	}
+
+	/**
+	 * 견적서 단건 조회
+	 */
+	@Transactional(readOnly = true)
+	public QuoteResponse getQuote(Long quoteId) {
+		Quote quote = quoteRepository.findById(quoteId)
+				.orElseThrow(() -> new IllegalArgumentException("견적서를 찾을 수 없습니다. ID: " + quoteId));
+
+		return QuoteResponse.from(quote);
+	}
+
+	/**
+	 * 견적 수락/거절 등 상태 변경
+	 */
+	@Transactional
+	public QuoteResponse updateQuoteStatus(Long quoteId, Quote.QuoteStatus status) {
+		Quote quote = quoteRepository.findById(quoteId)
+				.orElseThrow(() -> new IllegalArgumentException("견적서를 찾을 수 없습니다. ID: " + quoteId));
+
+		quote.updateStatus(status);
+		return QuoteResponse.from(quote);
+	}
+
+	// 총 금액 계산 도우미 메서드
+	private long calculateTotalAmount(Integer quantity, Long unitPrice, Long deliveryFee) {
+		long qty = (quantity != null) ? quantity : 0;
+		long price = (unitPrice != null) ? unitPrice : 0L;
+		long fee = (deliveryFee != null) ? deliveryFee : 0L;
+		return (qty * price) + fee;
+	}
+
+	/**
+	 * 견적서 금액 및 수량 수정
+	 */
+	@Transactional
+	public QuoteResponse updateQuote(Long quoteId, QuoteUpdateRequest request) {
+		Quote quote = quoteRepository.findById(quoteId)
+				.orElseThrow(() -> new IllegalArgumentException("견적서를 찾을 수 없습니다. ID: " + quoteId));
+
+		long totalAmount = calculateTotalAmount(request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee());
+
+		// Quote 엔티티 내부 update 메서드 활용
+		quote.updateQuoteDetails(request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee(), totalAmount);
+
+		return QuoteResponse.from(quote);
+	}
+
 }
