@@ -4,10 +4,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.matcheat.orderrequest.dto.OrderRequestCreateDTO;
 import org.example.matcheat.orderrequest.dto.OrderRequestResponseDTO;
+import org.example.matcheat.orderrequest.dto.OrderRequestUpdateDTO;
 import org.example.matcheat.orderrequest.service.OrderRequestService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 주문 요청 관련 HTTP 요청을 받아 Service와 연결하는 Controller
@@ -44,6 +47,54 @@ public class OrderRequestController {
             @PathVariable Long id
     ) {
         OrderRequestResponseDTO response = orderRequestService.findById(id);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 전체 주문 요청 목록을 조회
+     */
+    @GetMapping
+    public ResponseEntity<List<OrderRequestResponseDTO>> findAll() {
+        List<OrderRequestResponseDTO> response = orderRequestService.findAll();
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 주문 요청 ID로 기존 주문 요청 정보를 수정
+     */
+    @PatchMapping("/{id}")
+    public ResponseEntity<OrderRequestResponseDTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody OrderRequestUpdateDTO dto
+    ) {
+        OrderRequestResponseDTO response = orderRequestService.update(id, dto);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * MATCHING 상태의 주문 요청을 취소
+     */
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<OrderRequestResponseDTO> cancel(
+            @PathVariable Long id
+    ) {
+        OrderRequestResponseDTO response = orderRequestService.cancel(id);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 음식 카테고리 키워드로 주문 요청을 검색
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<OrderRequestResponseDTO>> searchByCategory(
+            @RequestParam String keyword
+    ) {
+        List<OrderRequestResponseDTO> response =
+                orderRequestService.searchByCategory(keyword);
 
         return ResponseEntity.ok(response);
     }
