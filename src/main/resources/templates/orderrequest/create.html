@@ -3,13 +3,13 @@
       xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>주문 요청 등록 | MatchEAT</title>
+    <title>주문 등록 | MatchEAT</title>
     <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 <body>
 <!-- 주문 요청 정보를 입력받는 Thymeleaf 등록 페이지 -->
 <header th:replace="~{fragments/header :: header}"></header>
-<h1>주문 요청 등록</h1>
+<h1>주문 등록</h1>
 
 <form
         th:action="@{/requests}"
@@ -18,7 +18,7 @@
 >
 
     <div>
-        <label for="title">주문 요청 제목</label>
+        <label for="title">주문 제목</label>
         <input type="text"
                id="title"
                th:field="*{title}"
@@ -33,7 +33,7 @@
                   maxlength="1000"
                   rows="5"></textarea>
     </div>
-    
+
     <div>
         <label for="eventDateTime">행사/배송 일시</label>
         <input
@@ -103,7 +103,7 @@
     <input type="hidden" name="latitude" value="37.5665">
     <input type="hidden" name="longitude" value="126.9780">
 
-    <button type="submit">주문 요청 등록</button>
+    <button type="submit">주문 등록</button>
 
 </form>
 </body>

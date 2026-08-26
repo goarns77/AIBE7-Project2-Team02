@@ -3,7 +3,7 @@
       xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>주문 요청 상세 | MatchEAT</title>
+    <title>주문 상세 | MatchEAT</title>
     <link rel="stylesheet" th:href="@{/css/common.css}">
 </head>
 <body>
@@ -13,7 +13,7 @@
 <header th:replace="~{fragments/header :: header}"></header>
 
 <main>
-    <h1>주문 요청 상세</h1>
+    <h1>주문 상세</h1>
 
     <div>
         <strong>제목</strong>
@@ -24,7 +24,7 @@
         <strong>상세 내용</strong>
         <p th:text="${orderRequest.description}"></p>
     </div>
-    
+
     <div>
         <strong>ID</strong>
         <span th:text="${orderRequest.id}"></span>
@@ -67,7 +67,7 @@
 
     <a th:if="${orderRequest.status.name() == 'MATCHING'}"
        th:href="@{/requests/{id}/edit(id=${orderRequest.id})}">
-        주문 요청 수정
+        주문 수정
     </a>
 
     <form th:if="${orderRequest.status.name() == 'MATCHING'}"
@@ -75,7 +75,7 @@
           method="post">
 
         <button type="submit">
-            주문 요청 취소
+            주문 취소
         </button>
     </form>
 

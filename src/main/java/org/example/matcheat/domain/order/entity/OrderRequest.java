@@ -1,11 +1,11 @@
-package org.example.matcheat.orderrequest.entity;
+package org.example.matcheat.domain.order.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.example.matcheat.orderrequest.enums.BudgetType;
-import org.example.matcheat.orderrequest.enums.RequestStatus;
+import org.example.matcheat.domain.order.enums.BudgetType;
+import org.example.matcheat.domain.order.enums.RequestStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -149,7 +149,7 @@ public class OrderRequest {
         if (description != null) {
             this.description = description;
         }
-        
+
         if (eventDateTime != null) {
             this.eventDateTime = eventDateTime;
         }

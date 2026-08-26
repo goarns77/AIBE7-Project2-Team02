@@ -1,4 +1,4 @@
-package org.example.matcheat.orderrequest.dto;
+package org.example.matcheat.domain.order.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.example.matcheat.orderrequest.enums.BudgetType;
+import org.example.matcheat.domain.order.enums.BudgetType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

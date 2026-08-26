@@ -1,9 +1,9 @@
-package org.example.matcheat.orderrequest.dto;
+package org.example.matcheat.domain.order.dto;
 
 import lombok.Getter;
-import org.example.matcheat.orderrequest.entity.OrderRequest;
-import org.example.matcheat.orderrequest.enums.BudgetType;
-import org.example.matcheat.orderrequest.enums.RequestStatus;
+import org.example.matcheat.domain.order.entity.OrderRequest;
+import org.example.matcheat.domain.order.enums.BudgetType;
+import org.example.matcheat.domain.order.enums.RequestStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
