@@ -1,4 +1,4 @@
-package org.example.matcheat.products.entity;
+package org.example.matcheat.domain.product.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -50,6 +50,9 @@ public class ProductEntity {
     @ColumnDefault("0.0")
     private Double ratingAvg;
 
+    @Column(name = "seller_unavailable_dates", nullable = true, columnDefinition = "TEXT")
+    private String sellerUnavailableDates;
+
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
@@ -62,7 +65,8 @@ public class ProductEntity {
             Integer minOrderAmount,
             Double deliveryRadiusKm,
             String storeAddress,
-            String category
+            String category,
+            String sellerUnavailableDates
     ) {
         this.minHeadcount = minHeadcount;
         this.maxHeadcount = maxHeadcount;
@@ -70,6 +74,7 @@ public class ProductEntity {
         this.deliveryRadiusKm = deliveryRadiusKm;
         this.storeAddress = storeAddress;
         this.category = category;
+        this.sellerUnavailableDates = sellerUnavailableDates;
     }
 
     /**
@@ -81,7 +86,8 @@ public class ProductEntity {
             Integer minOrderAmount,
             Double deliveryRadiusKm,
             String storeAddress,
-            String category
+            String category,
+            String sellerUnavailableDates
     ) {
         return new ProductEntity(
                 minHeadcount,
@@ -89,20 +95,22 @@ public class ProductEntity {
                 minOrderAmount,
                 deliveryRadiusKm,
                 storeAddress,
-                category
+                category,
+                sellerUnavailableDates
         );
     }
 
     /**
      * null 이 아닌 값만 반영해 판매 조건을 부분 수정한다.
      */
-    public void update (
+    public void update(
             Integer minHeadcount,
             Integer maxHeadcount,
             Integer minOrderAmount,
             Double deliveryRadiusKm,
             String storeAddress,
-            String category
+            String category,
+            String sellerUnavailableDates
     ) {
         if(minHeadcount != null) {
             this.minHeadcount = minHeadcount;
@@ -127,13 +135,23 @@ public class ProductEntity {
         if(category != null) {
             this.category = category;
         }
+
+        if(sellerUnavailableDates != null) {
+            this.sellerUnavailableDates = sellerUnavailableDates;
+        }
     }
 
+    /**
+     * 엔티티가 처음 저장될 때 수정 시각을 현재 시각으로 초기화한다.
+     */
     @PrePersist
     protected void onCreate() {
         this.updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * 엔티티가 수정될 때 수정 시각을 현재 시각으로 갱신한다.
+     */
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();

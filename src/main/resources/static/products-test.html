@@ -47,6 +47,10 @@
         <input type="text" id="category" required>
     </div>
 
+    <div>
+        <label for="sellerUnavailableDates">휴무일</label>
+        <textarea id="sellerUnavailableDates" rows="5" required placeholder="예: 2026-08-29&#10;2026-09-02"></textarea>
+    </div>
 
     <button type="submit">판매 조건 등록</button>
 
@@ -68,7 +72,8 @@
             minOrderAmount: Number(document.getElementById("minOrderAmount").value),
             deliveryRadiusKm: Number(document.getElementById("deliveryRadiusKm").value),
             storeAddress: document.getElementById("storeAddress").value,
-            category: document.getElementById("category").value
+            category: document.getElementById("category").value,
+            sellerUnavailableDates: document.getElementById("sellerUnavailableDates").value.trim()
         };
 
         const response = await fetch("/api/v1/products", {

@@ -19,6 +19,10 @@
             padding: 10px;
             text-align: left;
         }
+        td.wrap {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
         th {
             background-color: #f4f4f4;
         }
@@ -68,6 +72,7 @@
         <th>배송 반경 (km)</th>
         <th>가게 주소</th>
         <th>음식 카테고리</th>
+        <th>휴무일</th>
         <th>평점</th>
         <th>최종 수정일</th>
         <th>관리</th>
@@ -75,7 +80,7 @@
     </thead>
     <tbody id="productList">
     <tr>
-        <td colspan="10" style="text-align: center;">데이터를 불러오는 중입니다...</td>
+        <td colspan="11" style="text-align: center;">데이터를 불러오는 중입니다...</td>
     </tr>
     </tbody>
 </table>
@@ -86,7 +91,7 @@
 
     async function fetchProducts() {
         try {
-            productList.innerHTML = '<tr><td colspan="10" style="text-align: center;">데이터를 불러오는 중입니다...</td></tr>';
+            productList.innerHTML = '<tr><td colspan="11" style="text-align: center;">데이터를 불러오는 중입니다...</td></tr>';
             const response = await fetch("/api/v1/products");
             if (!response.ok) {
                 throw new Error("데이터를 불러오는 데 실패했습니다.");
@@ -94,7 +99,7 @@
             const data = await response.json();
             
             if (data.length === 0) {
-                productList.innerHTML = '<tr><td colspan="10" style="text-align: center;">등록된 판매 조건이 없습니다.</td></tr>';
+                productList.innerHTML = '<tr><td colspan="11" style="text-align: center;">등록된 판매 조건이 없습니다.</td></tr>';
                 return;
             }
 
@@ -109,6 +114,7 @@
                     <td>${product.deliveryRadiusKm}km</td>
                     <td>${product.storeAddress}</td>
                     <td>${product.category}</td>
+                    <td class="wrap">${product.sellerUnavailableDates || '-'}</td>
                     <td>${product.ratingAvg !== null ? product.ratingAvg.toFixed(1) : '-'}</td>
                     <td>${new Date(product.updatedAt).toLocaleString()}</td>
                     <td>
@@ -118,7 +124,7 @@
                 productList.appendChild(tr);
             });
         } catch (error) {
-            productList.innerHTML = `<tr><td colspan="10" style="text-align: center; color: red;">오류 발생: ${error.message}</td></tr>`;
+            productList.innerHTML = `<tr><td colspan="11" style="text-align: center; color: red;">오류 발생: ${error.message}</td></tr>`;
         }
     }
 

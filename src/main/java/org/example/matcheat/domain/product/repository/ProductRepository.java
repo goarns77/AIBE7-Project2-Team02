@@ -1,6 +1,6 @@
-package org.example.matcheat.products.repository;
+package org.example.matcheat.domain.product.repository;
 
-import org.example.matcheat.products.entity.ProductEntity;
+import org.example.matcheat.domain.product.entity.ProductEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**

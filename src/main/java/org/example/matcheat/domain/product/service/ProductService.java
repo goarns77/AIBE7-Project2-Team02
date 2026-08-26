@@ -1,12 +1,12 @@
-package org.example.matcheat.products.service;
+package org.example.matcheat.domain.product.service;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.matcheat.products.dto.ProductCreateDTO;
-import org.example.matcheat.products.dto.ProductResponseDTO;
-import org.example.matcheat.products.dto.ProductUpdateDTO;
-import org.example.matcheat.products.entity.ProductEntity;
-import org.example.matcheat.products.repository.ProductRepository;
+import org.example.matcheat.domain.product.dto.ProductCreateDTO;
+import org.example.matcheat.domain.product.dto.ProductResponseDTO;
+import org.example.matcheat.domain.product.dto.ProductUpdateDTO;
+import org.example.matcheat.domain.product.entity.ProductEntity;
+import org.example.matcheat.domain.product.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +31,8 @@ public class ProductService {
                 dto.getMinOrderAmount(),
                 dto.getDeliveryRadiusKm(),
                 dto.getStoreAddress(),
-                dto.getCategory()
+                dto.getCategory(),
+                dto.getSellerUnavailableDates()
         );
 
         ProductEntity savedProduct = productRepository.save(product);
@@ -78,7 +79,8 @@ public class ProductService {
                 dto.getMinOrderAmount(),
                 dto.getDeliveryRadiusKm(),
                 dto.getStoreAddress(),
-                dto.getCategory()
+                dto.getCategory(),
+                dto.getSellerUnavailableDates()
         );
 
         return ProductResponseDTO.from(product);

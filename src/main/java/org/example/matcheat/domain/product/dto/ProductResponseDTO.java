@@ -1,7 +1,7 @@
-package org.example.matcheat.products.dto;
+package org.example.matcheat.domain.product.dto;
 
 import lombok.Getter;
-import org.example.matcheat.products.entity.ProductEntity;
+import org.example.matcheat.domain.product.entity.ProductEntity;
 
 import java.time.LocalDateTime;
 
@@ -18,6 +18,7 @@ public class ProductResponseDTO {
     private final String storeAddress;
     private final String category;
     private final Double ratingAvg;
+    private final String sellerUnavailableDates;
     private final LocalDateTime updatedAt;
 
     /**
@@ -32,6 +33,7 @@ public class ProductResponseDTO {
         this.storeAddress = product.getStoreAddress();
         this.category = product.getCategory();
         this.ratingAvg = product.getRatingAvg();
+        this.sellerUnavailableDates = product.getSellerUnavailableDates();
         this.updatedAt = product.getUpdatedAt();
     }
 

@@ -1,4 +1,4 @@
-package org.example.matcheat.products.dto;
+package org.example.matcheat.domain.product.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -36,4 +36,7 @@ public class ProductCreateDTO {
 
     @NotBlank
     private String category;
+
+    @NotBlank
+    private String sellerUnavailableDates;
 }

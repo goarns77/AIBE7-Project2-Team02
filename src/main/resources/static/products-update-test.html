@@ -21,6 +21,12 @@
             padding: 5px;
             width: 250px;
         }
+        textarea {
+            padding: 5px;
+            width: 250px;
+            height: 110px;
+            resize: vertical;
+        }
         button {
             padding: 8px 15px;
             font-size: 14px;
@@ -130,6 +136,12 @@
         <input type="text" id="category" required disabled>
     </div>
 
+    <div class="form-group">
+        <label for="sellerUnavailableDates">휴무일</label>
+        <textarea id="sellerUnavailableDates" placeholder="비우면 변경하지 않음" disabled></textarea>
+        <small style="display: block; margin-left: 150px; color: #6c757d;">예: 2026-08-29, 2026-09-02 또는 줄바꿈 구분</small>
+    </div>
+
     <button type="submit" id="submitBtn" class="btn-submit" disabled>✏️ 수정 내용 저장</button>
 </form>
 
@@ -150,6 +162,7 @@
     const deliveryRadiusKmInput = document.getElementById("deliveryRadiusKm");
     const storeAddressInput = document.getElementById("storeAddress");
     const categoryInput = document.getElementById("category");
+    const sellerUnavailableDatesInput = document.getElementById("sellerUnavailableDates");
     const submitBtn = document.getElementById("submitBtn");
 
     const messageBox = document.getElementById("messageBox");
@@ -195,6 +208,7 @@
             deliveryRadiusKmInput.value = product.deliveryRadiusKm;
             storeAddressInput.value = product.storeAddress;
             categoryInput.value = product.category;
+            sellerUnavailableDatesInput.value = product.sellerUnavailableDates ?? "";
 
             // 입력 필드 및 전송 버튼 활성화
             minHeadcountInput.disabled = false;
@@ -203,6 +217,7 @@
             deliveryRadiusKmInput.disabled = false;
             storeAddressInput.disabled = false;
             categoryInput.disabled = false;
+            sellerUnavailableDatesInput.disabled = false;
             submitBtn.disabled = false;
 
             resultElement.textContent = JSON.stringify(product, null, 2);
@@ -223,6 +238,7 @@
             deliveryRadiusKmInput.disabled = true;
             storeAddressInput.disabled = true;
             categoryInput.disabled = true;
+            sellerUnavailableDatesInput.disabled = true;
             submitBtn.disabled = true;
         }
     }
@@ -258,7 +274,8 @@
             minOrderAmount: Number(minOrderAmountInput.value),
             deliveryRadiusKm: Number(deliveryRadiusKmInput.value),
             storeAddress: storeAddressInput.value,
-            category: categoryInput.value
+            category: categoryInput.value,
+            sellerUnavailableDates: sellerUnavailableDatesInput.value.trim() || null
         };
 
         try {

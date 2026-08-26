@@ -1,4 +1,4 @@
-package org.example.matcheat.products.dto;
+package org.example.matcheat.domain.product.dto;
 
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
@@ -28,4 +28,6 @@ public class ProductUpdateDTO {
     private String storeAddress;
 
     private String category;
+
+    private String sellerUnavailableDates;
 }
