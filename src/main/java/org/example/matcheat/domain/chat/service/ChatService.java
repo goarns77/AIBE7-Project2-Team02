@@ -1,8 +1,9 @@
 package org.example.matcheat.domain.chat.service;
 
+import lombok.RequiredArgsConstructor;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.repository.ChatRoomRepository;
-import lombok.RequiredArgsConstructor;
+import org.example.matcheat.domain.quote.service.QuoteService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,9 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatService {
 
 	private final ChatRoomRepository chatRoomRepository;
-	// External Services or Repositories (Proposal, Request 상태 변경용)
-	// private final ProposalRepository proposalRepository;
-	// private final RequestRepository requestRepository;
+	private final QuoteService quoteService;
+
+	// TODO: Proposal, Request Repository 추후 연동 예정
 
 	@Transactional
 	public Long createChatRoom(Long proposalId, Long currentUserId) {
@@ -22,15 +23,17 @@ public class ChatService {
 				.map(ChatRoom::getId)
 				.orElseGet(() -> {
 					// TODO: Proposal 조회 및 권한 검증 (구매자 또는 판매자인지)
-					// Proposal proposal = proposalRepository.findById(proposalId)...
 
-					// 2. Proposal 및 Request 상태를 IN_TALK로 업데이트
-					// proposal.updateStatus(ProposalStatus.IN_TALK);
-					// request.updateStatus(RequestStatus.IN_TALK);
+					// 2. Proposal 및 Request 상태 변경 (추후 구현)
 
 					// 3. 채팅방 생성 및 저장
 					ChatRoom chatRoom = ChatRoom.create(proposalId, 1L, currentUserId, 2L);
-					return chatRoomRepository.save(chatRoom).getId();
+					ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+
+					// 4. 1차 견적서(Quote) 자동 생성 (Proposal 데이터는 임시 하드코딩 상태)
+					quoteService.createPrimaryQuoteFromProposal(savedChatRoom.getId(), proposalId, currentUserId);
+
+					return savedChatRoom.getId();
 				});
 	}
 }
