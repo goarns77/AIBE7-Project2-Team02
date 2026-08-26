@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>STOMP WebSocket Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h2>WebSocket STOMP 테스트</h2>
+<div>
+    <button onclick="connect()">1. 서버 연결 (Connect)</button>
+    <button onclick="subscribe()">2. 1번 방 구독 (Subscribe)</button>
+</div>
+<br>
+<div>
+    <input type="text" id="message" placeholder="메시지 입력">
+    <button onclick="sendMessage()">3. 메시지 전송 (Send)</button>
+</div>
+
+<h3>수신된 메시지:</h3>
+<ul id="responses"></ul>
+
+<script>
+    let stompClient = null;
+
+    function connect() {
+        // WebSocketConfig에서 설정한 엔드포인트 경로
+        const socket = new WebSocket('ws://localhost:8080/ws-stomp');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            alert('연결 성공: ' + frame);
+        });
+    }
+
+    function subscribe() {
+        // 1번 채팅방 구독 (/sub/chat/room/1)
+        stompClient.subscribe('/sub/chat/room/1', function (response) {
+            const message = JSON.parse(response.body);
+            const li = document.createElement('li');
+            li.appendChild(document.createTextNode(`[작성자 ${message.senderId}]: ${message.message}`));
+            document.getElementById('responses').appendChild(li);
+        });
+        alert('1번 채팅방 구독 완료!');
+    }
+
+    function sendMessage() {
+        const msg = document.getElementById('message').value;
+        // 메시지 발행 (/pub/chat/message)
+        stompClient.send("/pub/chat/message", {}, JSON.stringify({
+            'chatRoomId': 1,
+            'senderId': 100,
+            'message': msg
+        }));
+    }
+</script>
+</body>
+</html>
