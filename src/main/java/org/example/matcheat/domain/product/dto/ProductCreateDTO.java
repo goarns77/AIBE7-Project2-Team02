@@ -7,6 +7,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -37,6 +41,9 @@ public class ProductCreateDTO {
     @NotBlank
     private String category;
 
-    @NotBlank
-    private String sellerUnavailableDates;
+    private String description;
+
+    private DayOfWeek dayOfWeek;
+
+    private List<LocalDate> unavailableDates;
 }

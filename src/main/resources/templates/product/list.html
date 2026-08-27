@@ -1,0 +1,313 @@
+<!-- Created by DINKIssTyle on 2026. Copyright (C) 2026 DINKI'ssTyle. All rights reserved. -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>판매 조건 전체 목록 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            margin-bottom: 12px;
+        }
+
+        .nav {
+            margin-bottom: 20px;
+        }
+
+        .nav a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .search-panel {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            align-items: end;
+            padding: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+            margin-bottom: 16px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .field input {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 14px;
+            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        td.wrap {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .empty-state {
+            text-align: center;
+        }
+
+        .hint {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        @media (max-width: 960px) {
+            .search-panel {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .search-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>판매 조건 전체 목록 테스트</h1>
+
+<div class="nav">
+    <a href="/product/new">➕ 새 판매 조건 등록 테스트 페이지로 이동</a>
+    <a href="/product/update">✏️ 판매 조건 수정 테스트 페이지로 이동</a>
+</div>
+
+<form id="searchForm" class="search-panel">
+    <div class="field">
+        <label for="quantity">수량</label>
+        <input type="number" id="quantity" min="1" placeholder="예: 12">
+        <div class="hint">최소 수주 수량과 최대 수주 수량 사이에 들어가는 값만 조회됩니다.</div>
+    </div>
+
+    <div class="field">
+        <label for="category">카테고리</label>
+        <input type="text" id="category" placeholder="예: 한식">
+        <div class="hint">입력한 문자열이 포함된 카테고리를 조회합니다.</div>
+    </div>
+
+    <div class="field">
+        <label for="minOrderAmount">최소 주문 금액</label>
+        <input type="number" id="minOrderAmount" min="1" placeholder="예: 25000">
+        <div class="hint">입력한 금액 이하의 최소 주문 금액을 가진 데이터만 조회됩니다.</div>
+    </div>
+
+    <div class="actions">
+        <button type="submit" class="btn btn-primary">조회</button>
+        <button type="button" id="resetBtn" class="btn btn-secondary">초기화</button>
+    </div>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>최소 수주 수량</th>
+        <th>최대 수주 수량</th>
+        <th>최소 주문 금액</th>
+        <th>배송 반경 (km)</th>
+        <th>가게 주소</th>
+        <th>음식 카테고리</th>
+        <th>설명</th>
+        <th>정기 휴무 요일</th>
+        <th>특정 불가 날짜</th>
+        <th>이미지</th>
+        <th>평점</th>
+        <th>최종 수정일</th>
+        <th>관리</th>
+    </tr>
+    </thead>
+    <tbody id="productList">
+    <tr>
+        <td colspan="14" class="empty-state">데이터를 불러오는 중입니다...</td>
+    </tr>
+    </tbody>
+</table>
+
+<script>
+    const productList = document.getElementById("productList");
+    const searchForm = document.getElementById("searchForm");
+    const resetBtn = document.getElementById("resetBtn");
+    const quantityInput = document.getElementById("quantity");
+    const categoryInput = document.getElementById("category");
+    const minOrderAmountInput = document.getElementById("minOrderAmount");
+
+    function buildSearchParams() {
+        const params = new URLSearchParams();
+        const quantity = quantityInput.value.trim();
+        const category = categoryInput.value.trim();
+        const minOrderAmount = minOrderAmountInput.value.trim();
+
+        if (quantity) {
+            params.set("quantity", quantity);
+        }
+
+        if (category) {
+            params.set("category", category);
+        }
+
+        if (minOrderAmount) {
+            params.set("minOrderAmount", minOrderAmount);
+        }
+
+        return params;
+    }
+
+    function formatUnavailableDates(unavailableDates) {
+        if (!Array.isArray(unavailableDates) || unavailableDates.length === 0) {
+            return "-";
+        }
+
+        return unavailableDates.join(", ");
+    }
+
+    const dayOfWeekMap = {
+        MONDAY: '월요일',
+        TUESDAY: '화요일',
+        WEDNESDAY: '수요일',
+        THURSDAY: '목요일',
+        FRIDAY: '금요일',
+        SATURDAY: '토요일',
+        SUNDAY: '일요일'
+    };
+
+    function renderRows(data) {
+        if (!data.length) {
+            productList.innerHTML = '<tr><td colspan="14" class="empty-state">조건에 맞는 판매 조건이 없습니다.</td></tr>';
+            return;
+        }
+
+        productList.innerHTML = "";
+        data.forEach(product => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${product.id}</td>
+                <td>${product.minHeadcount}</td>
+                <td>${product.maxHeadcount}</td>
+                <td>${product.minOrderAmount.toLocaleString()}원</td>
+                <td>${product.deliveryRadiusKm}km</td>
+                <td>${product.storeAddress}</td>
+                <td>${product.category}</td>
+                <td class="wrap">${product.description ?? '-'}</td>
+                <td>${dayOfWeekMap[product.dayOfWeek] ?? '-'}</td>
+                <td class="wrap">${formatUnavailableDates(product.unavailableDates)}</td>
+                <td>
+                    ${product.imageUrl ? `<img src="${encodeURI(product.imageUrl)}" alt="상품 이미지" style="width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">` : '-'}
+                </td>
+                <td>${product.ratingAvg !== null ? product.ratingAvg.toFixed(1) : '-'}</td>
+                <td>${new Date(product.updatedAt).toLocaleString()}</td>
+                <td>
+                    <a href="/product/update?id=${product.id}" class="btn btn-primary">수정</a>
+                </td>
+            `;
+            productList.appendChild(tr);
+        });
+    }
+
+    async function fetchProducts() {
+        try {
+            productList.innerHTML = '<tr><td colspan="14" class="empty-state">데이터를 불러오는 중입니다...</td></tr>';
+
+            const params = buildSearchParams();
+            const query = params.toString();
+            const response = await fetch(`/api/v1/products/search${query ? `?${query}` : ""}`);
+
+            if (!response.ok) {
+                throw new Error("판매 조건 목록을 불러오지 못했습니다.");
+            }
+
+            const data = await response.json();
+            renderRows(data);
+        } catch (error) {
+            productList.innerHTML = `<tr><td colspan="14" class="empty-state">${error.message}</td></tr>`;
+        }
+    }
+
+    searchForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        fetchProducts();
+    });
+
+    resetBtn.addEventListener("click", () => {
+        searchForm.reset();
+        fetchProducts();
+    });
+
+    fetchProducts();
+</script>
+</body>
+</html>

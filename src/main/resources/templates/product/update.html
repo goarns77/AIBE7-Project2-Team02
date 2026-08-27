@@ -89,8 +89,8 @@
 <h1>판매 조건 수정 테스트</h1>
 
 <div class="nav">
-    <a href="/products-test.html">➕ 새 판매 조건 등록 테스트 페이지로 이동</a>
-    <a href="/products-list-test.html">📋 판매 조건 전체 목록 테스트 페이지로 이동</a>
+    <a href="/product/new">➕ 새 판매 조건 등록 테스트 페이지로 이동</a>
+    <a href="/product/list">📋 판매 조건 전체 목록 테스트 페이지로 이동</a>
 </div>
 
 <div class="form-group" style="background-color: #f8f9fa; padding: 15px; border: 1px solid #e9ecef; border-radius: 5px; margin-bottom: 25px;">
@@ -137,9 +137,37 @@
     </div>
 
     <div class="form-group">
-        <label for="sellerUnavailableDates">휴무일</label>
-        <textarea id="sellerUnavailableDates" placeholder="비우면 변경하지 않음" disabled></textarea>
+        <label for="description">설명</label>
+        <textarea id="description" rows="4" disabled placeholder="상품 설명을 입력하세요."></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="dayOfWeek">정기 휴무 요일</label>
+        <select id="dayOfWeek" disabled>
+            <option value="">없음</option>
+            <option value="MONDAY">월요일</option>
+            <option value="TUESDAY">화요일</option>
+            <option value="WEDNESDAY">수요일</option>
+            <option value="THURSDAY">목요일</option>
+            <option value="FRIDAY">금요일</option>
+            <option value="SATURDAY">토요일</option>
+            <option value="SUNDAY">일요일</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="unavailableDates">특정 불가 날짜</label>
+        <textarea id="unavailableDates" placeholder="비우면 값이 삭제됩니다." disabled></textarea>
         <small style="display: block; margin-left: 150px; color: #6c757d;">예: 2026-08-29, 2026-09-02 또는 줄바꿈 구분</small>
+    </div>
+
+    <div class="form-group">
+        <label for="imageFile">상품 이미지</label>
+        <input type="file" id="imageFile" accept="image/*" disabled>
+        <div style="margin-top: 10px;">
+            <img id="imagePreview" alt="이미지 미리보기" style="display:none; width:160px; height:160px; object-fit:cover; border:1px solid #ddd; border-radius:8px;">
+        </div>
+        <small style="display: block; margin-left: 150px; color: #6c757d;">새 이미지를 올리면 기존 이미지가 교체됩니다.</small>
     </div>
 
     <button type="submit" id="submitBtn" class="btn-submit" disabled>✏️ 수정 내용 저장</button>
@@ -162,7 +190,11 @@
     const deliveryRadiusKmInput = document.getElementById("deliveryRadiusKm");
     const storeAddressInput = document.getElementById("storeAddress");
     const categoryInput = document.getElementById("category");
-    const sellerUnavailableDatesInput = document.getElementById("sellerUnavailableDates");
+    const descriptionInput = document.getElementById("description");
+    const dayOfWeekInput = document.getElementById("dayOfWeek");
+    const unavailableDatesInput = document.getElementById("unavailableDates");
+    const imageFileInput = document.getElementById("imageFile");
+    const imagePreview = document.getElementById("imagePreview");
     const submitBtn = document.getElementById("submitBtn");
 
     const messageBox = document.getElementById("messageBox");
@@ -178,6 +210,33 @@
     function hideMessage() {
         messageBox.style.display = "none";
     }
+
+    function parseUnavailableDates(value) {
+        return value
+            .split(/[\n,]/)
+            .map(date => date.trim())
+            .filter(Boolean);
+    }
+
+    function updatePreview(url) {
+        if (!url) {
+            imagePreview.src = "";
+            imagePreview.style.display = "none";
+            return;
+        }
+
+        imagePreview.src = url;
+        imagePreview.style.display = "block";
+    }
+
+    imageFileInput.addEventListener("change", () => {
+        const file = imageFileInput.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        updatePreview(URL.createObjectURL(file));
+    });
 
     // 데이터 조회 함수
     async function loadProductData(id) {
@@ -208,7 +267,13 @@
             deliveryRadiusKmInput.value = product.deliveryRadiusKm;
             storeAddressInput.value = product.storeAddress;
             categoryInput.value = product.category;
-            sellerUnavailableDatesInput.value = product.sellerUnavailableDates ?? "";
+            descriptionInput.value = product.description ?? "";
+            dayOfWeekInput.value = product.dayOfWeek ?? "";
+            unavailableDatesInput.value = Array.isArray(product.unavailableDates)
+                ? product.unavailableDates.join("\n")
+                : "";
+            imageFileInput.value = "";
+            updatePreview(product.imageUrl ? encodeURI(product.imageUrl) : null);
 
             // 입력 필드 및 전송 버튼 활성화
             minHeadcountInput.disabled = false;
@@ -217,7 +282,10 @@
             deliveryRadiusKmInput.disabled = false;
             storeAddressInput.disabled = false;
             categoryInput.disabled = false;
-            sellerUnavailableDatesInput.disabled = false;
+            descriptionInput.disabled = false;
+            dayOfWeekInput.disabled = false;
+            unavailableDatesInput.disabled = false;
+            imageFileInput.disabled = false;
             submitBtn.disabled = false;
 
             resultElement.textContent = JSON.stringify(product, null, 2);
@@ -238,7 +306,12 @@
             deliveryRadiusKmInput.disabled = true;
             storeAddressInput.disabled = true;
             categoryInput.disabled = true;
-            sellerUnavailableDatesInput.disabled = true;
+            descriptionInput.disabled = true;
+            dayOfWeekInput.disabled = true;
+            unavailableDatesInput.disabled = true;
+            imageFileInput.disabled = true;
+            imageFileInput.value = "";
+            updatePreview(null);
             submitBtn.disabled = true;
         }
     }
@@ -275,17 +348,24 @@
             deliveryRadiusKm: Number(deliveryRadiusKmInput.value),
             storeAddress: storeAddressInput.value,
             category: categoryInput.value,
-            sellerUnavailableDates: sellerUnavailableDatesInput.value.trim() || null
+            description: descriptionInput.value,
+            dayOfWeek: dayOfWeekInput.value || null,
+            unavailableDates: parseUnavailableDates(unavailableDatesInput.value)
         };
 
         try {
             resultElement.textContent = "수정 요청 전송 중...";
+            const formData = new FormData();
+            formData.append("product", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
+
+            const imageFile = imageFileInput.files?.[0];
+            if (imageFile) {
+                formData.append("imageFile", imageFile);
+            }
+
             const response = await fetch(`/api/v1/products/${id}`, {
                 method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(requestData)
+                body: formData
             });
 
             if (!response.ok) {

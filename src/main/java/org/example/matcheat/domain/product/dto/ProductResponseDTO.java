@@ -3,7 +3,10 @@ package org.example.matcheat.domain.product.dto;
 import lombok.Getter;
 import org.example.matcheat.domain.product.entity.ProductEntity;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 /**
@@ -17,8 +20,11 @@ public class ProductResponseDTO {
     private final Double deliveryRadiusKm;
     private final String storeAddress;
     private final String category;
+    private final String description;
+    private final DayOfWeek dayOfWeek;
     private final Double ratingAvg;
-    private final String sellerUnavailableDates;
+    private final List<LocalDate> unavailableDates;
+    private final String imageUrl;
     private final LocalDateTime updatedAt;
 
     /**
@@ -32,8 +38,13 @@ public class ProductResponseDTO {
         this.deliveryRadiusKm = product.getDeliveryRadiusKm();
         this.storeAddress = product.getStoreAddress();
         this.category = product.getCategory();
+        this.description = product.getDescription();
+        this.dayOfWeek = product.getDayOfWeek();
         this.ratingAvg = product.getRatingAvg();
-        this.sellerUnavailableDates = product.getSellerUnavailableDates();
+        this.unavailableDates = List.copyOf(
+                product.getUnavailableDates() == null ? List.of() : product.getUnavailableDates()
+        );
+        this.imageUrl = product.getImageUrl();
         this.updatedAt = product.getUpdatedAt();
     }
 
