@@ -2,9 +2,14 @@ package org.example.matcheat.domain.chat.repository;
 
 import org.example.matcheat.domain.chat.entity.ChatMessage;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
-	// 채팅방 이전 메시지 내역 조회용
-	List<ChatMessage> findByChatRoomIdOrderByCreatedAtAsc(Long chatRoomId);
+
+	// m.chatFile을 FETCH JOIN하여 단 1번의 쿼리로 파일 정보까지 일괄 조회
+	@Query("SELECT m FROM ChatMessage m LEFT JOIN FETCH m.chatFile WHERE m.chatRoomId = :chatRoomId ORDER BY m.createdAt ASC")
+	List<ChatMessage> findHistoryWithFilesByChatRoomId(@Param("chatRoomId") Long chatRoomId);
 }

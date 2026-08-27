@@ -29,7 +29,7 @@ public class ChatFileService {
 	private final String uploadDir = System.getProperty("user.dir") + "/uploads/chat-files/";
 
 	@Transactional
-	public ChatFileResponse uploadFile(Long chatRoomId, Long uploaderId, MultipartFile file) throws IOException {
+	public ChatFileResponse uploadFile(Long chatRoomId, Long senderId, MultipartFile file) throws IOException { // 👈 [수정 1] uploaderId -> senderId
 		if (file.isEmpty()) {
 			throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
 		}
@@ -47,10 +47,10 @@ public class ChatFileService {
 			throw new IllegalArgumentException("이미지(JPG, PNG 등) 및 PDF 파일만 업로드할 수 있습니다.");
 		}
 
-		// 저장 디렉토리 생성
+		// 저장 디렉토리 생성 및 검증
 		File dir = new File(uploadDir);
-		if (!dir.exists()) {
-			dir.mkdirs();
+		if (!dir.exists() && !dir.mkdirs()) {
+			throw new IOException("업로드 디렉토리를 생성할 수 없습니다: " + uploadDir);
 		}
 
 		// 고유 파일명 생성 (중복 방지)
@@ -63,7 +63,7 @@ public class ChatFileService {
 		// DB 메타데이터 저장
 		ChatFile chatFile = ChatFile.builder()
 				.chatRoomId(chatRoomId)
-				.uploaderId(uploaderId)
+				.senderId(senderId) // 👈 이제 senderId 변수를 정상 인식합니다.
 				.originalFileName(originalFilename)
 				.storedFileName(storedFileName)
 				.filePath(filePath)
@@ -72,7 +72,7 @@ public class ChatFileService {
 				.build();
 
 		ChatFile savedFile = chatFileRepository.save(chatFile);
-		return ChatFileResponse.from(savedFile);
+		return ChatFileResponse.from(savedFile); // 👈 [수정 2] 불필요한 두 번째 인자(uploaderId) 제거
 	}
 
 	@Transactional(readOnly = true)

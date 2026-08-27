@@ -1,17 +1,16 @@
 package org.example.matcheat.domain.chat.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
 @Table(name = "chat_files")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class ChatFile {
 
 	@Id
@@ -21,35 +20,28 @@ public class ChatFile {
 	@Column(nullable = false)
 	private Long chatRoomId;
 
-	@Column(nullable = false)
-	private Long uploaderId;
+	@Column(name = "sender_id", nullable = false) // 👈 sender_id로 매핑 변경
+	private Long senderId;
 
 	@Column(nullable = false)
-	private String originalFileName; // 원본 파일명 (다운로드 시 사용)
+	private String originalFileName;
 
 	@Column(nullable = false)
-	private String storedFileName;   // 서버 저장용 고유 파일명 (UUID 적용)
+	private String storedFileName;
 
 	@Column(nullable = false)
-	private String filePath;         // 저장 경로
+	private String filePath;
 
 	@Column(nullable = false)
-	private String fileType;         // IMAGE 또는 PDF
+	private Long fileSize;
 
 	@Column(nullable = false)
-	private Long fileSize;           // 파일 크기 (Byte)
+	private String fileType; // IMAGE, PDF 등
 
 	private LocalDateTime createdAt;
 
-	@Builder
-	public ChatFile(Long chatRoomId, Long uploaderId, String originalFileName, String storedFileName, String filePath, String fileType, Long fileSize) {
-		this.chatRoomId = chatRoomId;
-		this.uploaderId = uploaderId;
-		this.originalFileName = originalFileName;
-		this.storedFileName = storedFileName;
-		this.filePath = filePath;
-		this.fileType = fileType;
-		this.fileSize = fileSize;
+	@PrePersist
+	public void prePersist() {
 		this.createdAt = LocalDateTime.now();
 	}
 }

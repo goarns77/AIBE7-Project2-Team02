@@ -1,17 +1,16 @@
 package org.example.matcheat.domain.chat.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
 @Table(name = "chat_messages")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class ChatMessage {
 
 	@Id
@@ -24,32 +23,26 @@ public class ChatMessage {
 	@Column(nullable = false)
 	private Long senderId;
 
+	@Column(columnDefinition = "TEXT")
+	private String content;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private MessageType messageType; // TEXT, IMAGE, PDF
+	private MessageType messageType; // TEXT, IMAGE, PDF 등
 
-	@Column(columnDefinition = "TEXT")
-	private String content; // TEXT는 일반 메시지, IMAGE/PDF는 파일 접근 URL
-
-	private String originalFileName; // 파일 원본 이름 (PDF/이미지 다운로드 및 표시용)
-
-	private Long fileSize; // 파일 용량 (bytes)
+	// chat_messages 테이블의 chat_file_id 컬럼을 FK로 연결
+	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+	@JoinColumn(name = "chat_file_id", nullable = true)
+	private ChatFile chatFile;
 
 	private LocalDateTime createdAt;
 
-	public enum MessageType {
-		TEXT, IMAGE, PDF
+	@PrePersist
+	public void prePersist() {
+		this.createdAt = LocalDateTime.now();
 	}
 
-	@Builder
-	public ChatMessage(Long chatRoomId, Long senderId, MessageType messageType,
-	                   String content, String originalFileName, Long fileSize) {
-		this.chatRoomId = chatRoomId;
-		this.senderId = senderId;
-		this.messageType = messageType != null ? messageType : MessageType.TEXT;
-		this.content = content;
-		this.originalFileName = originalFileName;
-		this.fileSize = fileSize;
-		this.createdAt = LocalDateTime.now();
+	public enum MessageType {
+		TEXT, IMAGE, PDF
 	}
 }
