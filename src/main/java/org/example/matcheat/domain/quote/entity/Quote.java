@@ -37,8 +37,9 @@ public class Quote {
 
 	private LocalDateTime createdAt;
 
+	// 💡 WITHDRAWN 추가
 	public enum QuoteStatus {
-		SENT, ACCEPTED, REJECTED
+		SENT, ACCEPTED, REJECTED, WITHDRAWN
 	}
 
 	@Builder

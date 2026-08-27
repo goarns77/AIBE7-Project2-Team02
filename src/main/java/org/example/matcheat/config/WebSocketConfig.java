@@ -12,14 +12,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
-		// ws://localhost:8080/ws-stomp 연결 엔드포인트 설정
+		// 순수 WebSocket 연결 엔드포인트
 		registry.addEndpoint("/ws-stomp")
-				.setAllowedOriginPatterns("*"); // CORS 허용
+				.setAllowedOriginPatterns("*");
+
+		// SockJS 지원 연결 엔드포인트 (프론트엔드 fallback 대응용)
+		registry.addEndpoint("/ws-stomp")
+				.setAllowedOriginPatterns("*")
+				.withSockJS();
 	}
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry registry) {
-		// 메시지 구독 요청 prefix : /sub (메시지를 받을 때)
+		// 메시지 구독 요청 prefix : /sub (메시지를 수신할 때)
 		registry.enableSimpleBroker("/sub");
 
 		// 메시지 발행 요청 prefix : /pub (메시지를 보낼 때)

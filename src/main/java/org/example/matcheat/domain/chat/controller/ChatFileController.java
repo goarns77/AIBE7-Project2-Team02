@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Tag(name = "Chat File API", description = "채팅방 파일(이미지, PDF) 업로드, 조회, 다운로드 API")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor

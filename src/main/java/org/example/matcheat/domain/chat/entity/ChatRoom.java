@@ -23,6 +23,11 @@ public class ChatRoom {
 	@Column(nullable = false)
 	private OriginType originType; // PROPOSAL | INQUIRY
 
+	// 1. 상태(Status) 필드 추가 (기본값 ACTIVE)
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private ChatRoomStatus status;
+
 	@Column(nullable = false)
 	private Long buyerId;
 
@@ -35,11 +40,18 @@ public class ChatRoom {
 		PROPOSAL, INQUIRY
 	}
 
+	// 2. 채팅방 상태 Enum 추가
+	public enum ChatRoomStatus {
+		ACTIVE, CLOSED
+	}
+
 	@Builder
-	public ChatRoom(Long proposalId, Long quoteId, OriginType originType, Long buyerId, Long sellerId) {
+	public ChatRoom(Long proposalId, Long quoteId, OriginType originType, ChatRoomStatus status, Long buyerId, Long sellerId) {
 		this.proposalId = proposalId;
 		this.quoteId = quoteId;
 		this.originType = originType;
+		// 3. 빌더에서 status가 지정되지 않으면 기본값 ACTIVE로 설정
+		this.status = (status != null) ? status : ChatRoomStatus.ACTIVE;
 		this.buyerId = buyerId;
 		this.sellerId = sellerId;
 		this.createdAt = LocalDateTime.now();
@@ -48,5 +60,10 @@ public class ChatRoom {
 	// 견적서 연동 메서드
 	public void updateQuoteId(Long quoteId) {
 		this.quoteId = quoteId;
+	}
+
+	// 4. 채팅방 종료 처리 메서드 추가
+	public void close() {
+		this.status = ChatRoomStatus.CLOSED;
 	}
 }

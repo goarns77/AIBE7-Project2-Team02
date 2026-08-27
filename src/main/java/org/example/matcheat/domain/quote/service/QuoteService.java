@@ -109,7 +109,20 @@ public class QuoteService {
 		Quote quote = quoteRepository.findById(quoteId)
 				.orElseThrow(() -> new IllegalArgumentException("견적서를 찾을 수 없습니다. ID: " + quoteId));
 
+		// 1. 견적서 상태 업데이트
 		quote.updateStatus(status);
+
+		// 2. 견적 상태가 REJECTED(거절) 또는 WITHDRAWN(철회)인 경우 채팅방을 CLOSED 상태로 변경
+		if (status == Quote.QuoteStatus.REJECTED || status == Quote.QuoteStatus.WITHDRAWN) {
+			if (quote.getChatRoomId() != null) {
+				ChatRoom chatRoom = chatRoomRepository.findById(quote.getChatRoomId())
+						.orElseThrow(() -> new IllegalArgumentException("연결된 채팅방을 찾을 수 없습니다. ID: " + quote.getChatRoomId()));
+
+				// 채팅방 상태를 CLOSED로 변경 (Dirty Checking으로 자동 DB 반영)
+				chatRoom.close();
+			}
+		}
+
 		return QuoteResponse.from(quote);
 	}
 
