@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>주문 목록 | MatchEAT</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+</head>
+<body>
+
+<!-- 전체 주문 요청 정보를 조회해서 보여주는 Thymeleaf 목록 페이지 -->
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <h1>주문 목록</h1>
+    <form th:action="@{/requests}" method="get">
+        <input
+                type="text"
+                name="keyword"
+                th:value="${keyword}"
+                placeholder="제목 또는 음식 카테고리 검색"
+        >
+
+        <button type="submit">검색</button>
+    </form>
+    <a th:href="@{/requests/new}" class="button">
+        신규 주문 등록
+    </a>
+
+    <p th:if="${#lists.isEmpty(orderRequests) and (keyword == null or keyword.isBlank())}">
+        등록된 주문이 없습니다.
+    </p>
+
+    <p th:if="${#lists.isEmpty(orderRequests) and keyword != null and !keyword.isBlank()}">
+        검색 결과가 없습니다.
+    </p>
+    <table th:unless="${#lists.isEmpty(orderRequests)}">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>제목</th>
+            <th>행사/배송 일시</th>
+            <th>수량</th>
+            <th>예산 기준</th>
+            <th>예산</th>
+            <th>음식 카테고리</th>
+            <th>배송지</th>
+            <th>상태</th>
+            <th>상세</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="request : ${orderRequests}">
+            <td th:text="${request.id}"></td>
+            <td th:text="${request.title}"></td>
+            <td th:text="${request.eventDateTime}"></td>
+            <td th:text="${request.quantity}"></td>
+            <td th:text="${request.budgetType}"></td>
+            <td th:text="${request.budget}"></td>
+            <td th:text="${request.category}"></td>
+            <td th:text="${request.deliveryAddress}"></td>
+            <td th:text="${request.status}"></td>
+            <td>
+                <a th:href="@{/requests/{id}(id=${request.id})}">
+                    상세 보기
+                </a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+</body>
+</html>

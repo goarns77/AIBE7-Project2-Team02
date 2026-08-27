@@ -1,0 +1,94 @@
+<!-- Created by DINKIssTyle on 2026. Copyright (C) 2026 DINKI'ssTyle. All rights reserved. -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>판매 조건 등록 테스트</title>
+</head>
+
+<body>
+
+<h1>판매 조건 등록 테스트</h1>
+
+<div class="nav" style="margin-bottom: 20px;">
+    <a href="/products-list-test.html" style="margin-right: 15px; text-decoration: none; color: #28a745; font-weight: bold;">📋 판매 조건 전체 목록 테스트 페이지로 이동</a>
+    <a href="/products-update-test.html" style="margin-right: 15px; text-decoration: none; color: #28a745; font-weight: bold;">✏️ 판매 조건 수정 테스트 페이지로 이동</a>
+</div>
+
+<form id="productForm">
+
+    <div>
+        <label for="minHeadcount">최소 수주 수량</label>
+        <input type="number" id="minHeadcount" min="1" required>
+    </div>
+
+    <div>
+        <label for="maxHeadcount">최대 수주 수량</label>
+        <input type="number" id="maxHeadcount" min="1" required>
+    </div>
+
+    <div>
+        <label for="minOrderAmount">최소 주문 금액</label>
+        <input type="number" id="minOrderAmount" min="1" required>
+    </div>
+
+    <div>
+        <label for="deliveryRadiusKm">배송 가능 반경(km)</label>
+        <input type="number" step="any" id="deliveryRadiusKm" min="0" required>
+    </div>
+
+    <div>
+        <label for="storeAddress">가게 주소</label>
+        <input type="text" id="storeAddress" required>
+    </div>
+
+    <div>
+        <label for="category">음식 카테고리</label>
+        <input type="text" id="category" required>
+    </div>
+
+    <div>
+        <label for="sellerUnavailableDates">휴무일</label>
+        <textarea id="sellerUnavailableDates" rows="5" required placeholder="예: 2026-08-29&#10;2026-09-02"></textarea>
+    </div>
+
+    <button type="submit">판매 조건 등록</button>
+
+</form>
+
+<h2>응답 결과</h2>
+<pre id="result"></pre>
+
+<script>
+    const form = document.getElementById("productForm");
+    const result = document.getElementById("result");
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const requestData = {
+            minHeadcount: Number(document.getElementById("minHeadcount").value),
+            maxHeadcount: Number(document.getElementById("maxHeadcount").value),
+            minOrderAmount: Number(document.getElementById("minOrderAmount").value),
+            deliveryRadiusKm: Number(document.getElementById("deliveryRadiusKm").value),
+            storeAddress: document.getElementById("storeAddress").value,
+            category: document.getElementById("category").value,
+            sellerUnavailableDates: document.getElementById("sellerUnavailableDates").value.trim()
+        };
+
+        const response = await fetch("/api/v1/products", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        const data = await response.json();
+
+        result.textContent = JSON.stringify(data, null, 2);
+    });
+</script>
+
+</body>
+</html>
