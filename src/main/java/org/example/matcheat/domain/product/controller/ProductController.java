@@ -7,8 +7,10 @@ import org.example.matcheat.domain.product.dto.ProductResponseDTO;
 import org.example.matcheat.domain.product.dto.ProductUpdateDTO;
 import org.example.matcheat.domain.product.service.ProductService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -29,6 +31,21 @@ public class ProductController {
             @Valid @RequestBody ProductCreateDTO dto
     ) {
         ProductResponseDTO response = productService.create(dto);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    /**
+     * 새로운 판매 조건을 등록한다. (multipart)
+     */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductResponseDTO> createMultipart(
+            @Valid @RequestPart("product") ProductCreateDTO dto,
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile
+    ) {
+        ProductResponseDTO response = productService.create(dto, imageFile);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -58,6 +75,20 @@ public class ProductController {
     }
 
     /**
+     * 수량, 카테고리, 최소 주문 금액 조건으로 판매 조건을 조회한다.
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductResponseDTO>> search(
+            @RequestParam(required = false) String quantity,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String minOrderAmount
+    ) {
+        List<ProductResponseDTO> response = productService.search(quantity, category, minOrderAmount);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 판매 조건 ID에 해당하는 항목을 부분 수정한다.
      */
     @PatchMapping("/{id}")
@@ -70,4 +101,17 @@ public class ProductController {
        return ResponseEntity.ok(response);
     }
 
+    /**
+     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. (multipart)
+     */
+    @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductResponseDTO> updateMultipart(
+            @PathVariable Long id,
+            @Valid @RequestPart("product") ProductUpdateDTO dto,
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile
+    ) {
+        ProductResponseDTO response = productService.update(id, dto, imageFile);
+
+        return ResponseEntity.ok(response);
+    }
 }
