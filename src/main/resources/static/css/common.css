@@ -36,6 +36,10 @@ nav {
     gap: 20px;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 main {
     width: min(1100px, calc(100% - 40px));
     margin: 0 auto;

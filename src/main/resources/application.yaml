@@ -2,7 +2,7 @@ spring:
   application:
     name: MatchEAT
   profiles:
-    include: db, ai
+    include: db, ai, account
 ---
 spring:
   config:

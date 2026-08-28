@@ -24,9 +24,11 @@
       <form id="account-login-form" class="account-form" novalidate>
         <label for="email">이메일</label>
         <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>
+        <p class="account-field-message" data-field-error="email" aria-live="polite"></p>
 
         <label for="password">비밀번호</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="64" required>
+        <p class="account-field-message" data-field-error="password" aria-live="polite"></p>
 
         <p id="account-form-message" class="account-message" role="alert" aria-live="polite"></p>
         <button class="account-submit" type="submit">로그인</button>

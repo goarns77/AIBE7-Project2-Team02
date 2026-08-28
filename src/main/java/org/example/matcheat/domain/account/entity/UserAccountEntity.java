@@ -87,8 +87,39 @@ public class UserAccountEntity {
         tokenVersion++;
     }
 
-    UserRole role() {
+    public void changeStatus(UserStatus targetStatus) {
+        if (targetStatus == UserStatus.SUSPENDED && status != UserStatus.SUSPENDED) {
+            tokenVersion++;
+        }
+        status = targetStatus;
+    }
+
+    public Long id() {
+        return id;
+    }
+
+    public String email() {
+        return email;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public UserRole role() {
         return role;
+    }
+
+    public UserStatus status() {
+        return status;
+    }
+
+    public int tokenVersion() {
+        return tokenVersion;
+    }
+
+    public Instant createdAt() {
+        return createdAt;
     }
 
     @PrePersist

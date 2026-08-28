@@ -102,6 +102,50 @@ public class SellerProfileEntity {
         return verificationStatus;
     }
 
+    public Long userId() {
+        return user.id();
+    }
+
+    public String userEmail() {
+        return user.email();
+    }
+
+    public String userName() {
+        return user.name();
+    }
+
+    public String businessName() {
+        return businessName;
+    }
+
+    public String businessNumber() {
+        return businessNumber;
+    }
+
+    public BigDecimal latitude() {
+        return latitude;
+    }
+
+    public BigDecimal longitude() {
+        return longitude;
+    }
+
+    public BigDecimal deliveryRadiusKm() {
+        return deliveryRadiusKm;
+    }
+
+    public String rejectionReason() {
+        return rejectionReason;
+    }
+
+    public Instant appliedAt() {
+        return appliedAt;
+    }
+
+    public Instant reviewedAt() {
+        return reviewedAt;
+    }
+
     public void approve(UserAccountEntity reviewer, Instant reviewedAt) {
         verificationStatus = SellerVerificationStatus.APPROVED;
         rejectionReason = null;

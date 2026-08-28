@@ -1,4 +1,8 @@
-import { readApiBody } from './auth-client.js';
+import {
+  readApiBody,
+  showFieldErrors,
+  validateRequiredFields,
+} from './auth-client.js';
 
 const form = document.querySelector('#account-signup-form');
 const emailInput = document.querySelector('#email');
@@ -16,8 +20,9 @@ emailInput.addEventListener('input', () => {
 
 emailCheck.addEventListener('click', async () => {
   const email = emailInput.value.trim();
-  if (!email) {
-    emailMessage.textContent = '이메일을 먼저 입력해 주세요.';
+  if (!emailInput.checkValidity()) {
+    showFieldErrors(form, { email: emailInput.validationMessage || '올바른 이메일을 입력해 주세요.' });
+    emailInput.reportValidity();
     return;
   }
 
@@ -48,11 +53,16 @@ emailCheck.addEventListener('click', async () => {
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (!validateRequiredFields(form)) return;
   formMessage.textContent = '';
   const formData = Object.fromEntries(new FormData(form));
 
+  if (!/(?=.*[A-Za-z])(?=.*\d)/.test(formData.password)) {
+    showFieldErrors(form, { password: '8~64자이며 영문과 숫자를 각각 포함해 주세요.' });
+    return;
+  }
   if (formData.password !== formData.passwordConfirm) {
-    formMessage.textContent = '비밀번호 확인이 일치하지 않습니다.';
+    showFieldErrors(form, { passwordConfirm: '비밀번호 확인이 일치하지 않습니다.' });
     return;
   }
   if (checkedEmail !== formData.email.trim().toLowerCase()) {
@@ -69,11 +79,14 @@ form.addEventListener('submit', async (event) => {
       body: JSON.stringify(formData),
     });
     const body = await readApiBody(response);
-    if (!response.ok) throw new Error(body?.message || '회원가입에 실패했습니다.');
+    if (!response.ok) {
+      showFieldErrors(form, body?.fieldErrors);
+      throw new Error(body?.message || '회원가입에 실패했습니다.');
+    }
 
     formMessage.classList.add('is-success');
     formMessage.textContent = '회원가입되었습니다. 로그인 화면으로 이동합니다.';
-    window.setTimeout(() => window.location.assign('/login'), 600);
+    window.setTimeout(() => window.location.assign('/login?signup=success'), 600);
   } catch (error) {
     formMessage.classList.remove('is-success');
     formMessage.textContent = error.message || '네트워크 연결을 확인해 주세요.';
