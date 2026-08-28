@@ -14,7 +14,7 @@ public class ChatRoomResponse {
 	private Long proposalId;
 	private Long quoteId;
 	private ChatRoom.OriginType originType;
-	private ChatRoom.ChatRoomStatus status; // 👈 1. status 필드 추가
+	private ChatRoom.Status status; // 👈 1. status 필드 추가
 	private Long buyerId;
 	private Long sellerId;
 	private LocalDateTime createdAt;

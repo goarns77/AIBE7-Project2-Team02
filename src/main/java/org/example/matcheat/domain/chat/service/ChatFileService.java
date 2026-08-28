@@ -3,6 +3,7 @@ package org.example.matcheat.domain.chat.service;
 import lombok.RequiredArgsConstructor;
 import org.example.matcheat.domain.chat.dto.ChatFileResponse;
 import org.example.matcheat.domain.chat.entity.ChatFile;
+import org.example.matcheat.domain.chat.entity.ChatMessage;
 import org.example.matcheat.domain.chat.repository.ChatFileRepository;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -29,7 +30,7 @@ public class ChatFileService {
 	private final String uploadDir = System.getProperty("user.dir") + "/uploads/chat-files/";
 
 	@Transactional
-	public ChatFileResponse uploadFile(Long chatRoomId, Long senderId, MultipartFile file) throws IOException { // 👈 [수정 1] uploaderId -> senderId
+	public ChatFileResponse uploadFile(Long chatRoomId, Long senderId, MultipartFile file) throws IOException {
 		if (file.isEmpty()) {
 			throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
 		}
@@ -37,12 +38,12 @@ public class ChatFileService {
 		String originalFilename = file.getOriginalFilename();
 		String contentType = file.getContentType();
 
-		// 이미지 및 PDF 검증
-		String fileType;
+		// [P1-5 수정] 이미지 및 PDF 검증 -> ChatMessage.MessageType Enum 매핑
+		ChatMessage.MessageType fileType;
 		if (contentType != null && contentType.startsWith("image/")) {
-			fileType = "IMAGE";
-		} else if (contentType != null && contentType.equals("application/pdf")) {
-			fileType = "PDF";
+			fileType = ChatMessage.MessageType.IMAGE;
+		} else if (contentType != null && (contentType.equals("application/pdf") || (originalFilename != null && originalFilename.toLowerCase().endsWith(".pdf")))) {
+			fileType = ChatMessage.MessageType.PDF;
 		} else {
 			throw new IllegalArgumentException("이미지(JPG, PNG 등) 및 PDF 파일만 업로드할 수 있습니다.");
 		}
@@ -60,19 +61,19 @@ public class ChatFileService {
 		// 로컬 파일 저장
 		file.transferTo(new File(filePath));
 
-		// DB 메타데이터 저장
+		// DB 메타데이터 저장 (Enum 타입 전달)
 		ChatFile chatFile = ChatFile.builder()
 				.chatRoomId(chatRoomId)
-				.senderId(senderId) // 👈 이제 senderId 변수를 정상 인식합니다.
+				.senderId(senderId)
 				.originalFileName(originalFilename)
 				.storedFileName(storedFileName)
 				.filePath(filePath)
-				.fileType(fileType)
+				.fileType(fileType) // 👈 ChatMessage.MessageType 전달
 				.fileSize(file.getSize())
 				.build();
 
 		ChatFile savedFile = chatFileRepository.save(chatFile);
-		return ChatFileResponse.from(savedFile); // 👈 [수정 2] 불필요한 두 번째 인자(uploaderId) 제거
+		return ChatFileResponse.from(savedFile);
 	}
 
 	@Transactional(readOnly = true)
@@ -85,6 +86,7 @@ public class ChatFileService {
 
 	@Transactional(readOnly = true)
 	public ChatFile getChatFileEntity(Long fileId) {
+		// TODO: [P2-8] Security Principal 연동 시 요청자가 해당 chatRoomId의 참여자(buyer/seller)인지 확인하는 권한 검증 로직 추가 필요
 		return chatFileRepository.findById(fileId)
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 파일입니다. ID: " + fileId));
 	}

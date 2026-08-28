@@ -20,7 +20,7 @@ public class ChatFile {
 	@Column(nullable = false)
 	private Long chatRoomId;
 
-	@Column(name = "sender_id", nullable = false) // 👈 sender_id로 매핑 변경
+	@Column(name = "sender_id", nullable = false)
 	private Long senderId;
 
 	@Column(nullable = false)
@@ -35,8 +35,10 @@ public class ChatFile {
 	@Column(nullable = false)
 	private Long fileSize;
 
+	// [P1-5 수정] String -> ChatMessage.MessageType Enum 통합
+	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private String fileType; // IMAGE, PDF 등
+	private ChatMessage.MessageType fileType;
 
 	private LocalDateTime createdAt;
 

@@ -28,9 +28,8 @@ public class ChatMessage {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private MessageType messageType; // TEXT, IMAGE, PDF 등
+	private MessageType messageType;
 
-	// chat_messages 테이블의 chat_file_id 컬럼을 FK로 연결
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 	@JoinColumn(name = "chat_file_id", nullable = true)
 	private ChatFile chatFile;
