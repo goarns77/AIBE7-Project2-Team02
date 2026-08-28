@@ -19,6 +19,9 @@ import java.util.List;
  */
 public class ProductCreateDTO {
 
+    @NotBlank
+    private String productName;
+
     @NotNull
     @Positive
     private Integer minHeadcount;
@@ -29,7 +32,7 @@ public class ProductCreateDTO {
 
     @NotNull
     @Positive
-    private Integer minOrderAmount;
+    private Integer servingPrice;
 
     @NotNull
     @Positive
@@ -37,6 +40,10 @@ public class ProductCreateDTO {
 
     @NotBlank
     private String storeAddress;
+
+    private Double latitude;
+
+    private Double longitude;
 
     @NotBlank
     private String category;

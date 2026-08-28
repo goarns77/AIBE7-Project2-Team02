@@ -89,6 +89,15 @@
             background-color: #545b62;
         }
 
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #b02a37;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -145,6 +154,7 @@
 <div class="nav">
     <a href="/product/new">➕ 새 판매 조건 등록 테스트 페이지로 이동</a>
     <a href="/product/update">✏️ 판매 조건 수정 테스트 페이지로 이동</a>
+    <a href="/product/recommendations">📊 추천 응답 JSON 샘플 페이지로 이동</a>
 </div>
 
 <form id="searchForm" class="search-panel">
@@ -161,8 +171,8 @@
     </div>
 
     <div class="field">
-        <label for="minOrderAmount">1인분 가격</label>
-        <input type="number" id="minOrderAmount" min="1" placeholder="예: 10000">
+        <label for="servingPrice">1인분 가격</label>
+        <input type="number" id="servingPrice" min="1" placeholder="예: 10000">
         <div class="hint">입력한 금액 이하의 1인분 가격 데이터만 조회됩니다.</div>
     </div>
 
@@ -176,6 +186,7 @@
     <thead>
     <tr>
         <th>ID</th>
+        <th>상품/메뉴명</th>
         <th>최소 수주 수량</th>
         <th>최대 수주 수량</th>
         <th>1인분 가격</th>
@@ -193,7 +204,7 @@
     </thead>
     <tbody id="productList">
     <tr>
-        <td colspan="14" class="empty-state">데이터를 불러오는 중입니다...</td>
+        <td colspan="15" class="empty-state">데이터를 불러오는 중입니다...</td>
     </tr>
     </tbody>
 </table>
@@ -204,13 +215,13 @@
     const resetBtn = document.getElementById("resetBtn");
     const quantityInput = document.getElementById("quantity");
     const categoryInput = document.getElementById("category");
-    const minOrderAmountInput = document.getElementById("minOrderAmount");
+    const servingPriceInput = document.getElementById("servingPrice");
 
     function buildSearchParams() {
         const params = new URLSearchParams();
         const quantity = quantityInput.value.trim();
         const category = categoryInput.value.trim();
-        const minOrderAmount = minOrderAmountInput.value.trim();
+        const servingPrice = servingPriceInput.value.trim();
 
         if (quantity) {
             params.set("quantity", quantity);
@@ -220,8 +231,8 @@
             params.set("category", category);
         }
 
-        if (minOrderAmount) {
-            params.set("minOrderAmount", minOrderAmount);
+        if (servingPrice) {
+            params.set("servingPrice", servingPrice);
         }
 
         return params;
@@ -247,7 +258,7 @@
 
     function renderRows(data) {
         if (!data.length) {
-            productList.innerHTML = '<tr><td colspan="14" class="empty-state">조건에 맞는 판매 조건이 없습니다.</td></tr>';
+            productList.innerHTML = '<tr><td colspan="15" class="empty-state">조건에 맞는 판매 조건이 없습니다.</td></tr>';
             return;
         }
 
@@ -256,9 +267,10 @@
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${product.id}</td>
+                <td>${product.productName ?? '-'}</td>
                 <td>${product.minHeadcount}</td>
                 <td>${product.maxHeadcount}</td>
-                <td>${product.minOrderAmount.toLocaleString()}원</td>
+                <td>${product.servingPrice != null ? product.servingPrice.toLocaleString() + '원' : '-'}</td>
                 <td>${product.deliveryRadiusKm}km</td>
                 <td>${product.storeAddress}</td>
                 <td>${product.category}</td>
@@ -272,6 +284,7 @@
                 <td>${new Date(product.updatedAt).toLocaleString()}</td>
                 <td>
                     <a href="/product/update?id=${product.id}" class="btn btn-primary">수정</a>
+                    <button type="button" class="btn btn-danger" data-product-id="${product.id}">삭제</button>
                 </td>
             `;
             productList.appendChild(tr);
@@ -280,7 +293,7 @@
 
     async function fetchProducts() {
         try {
-            productList.innerHTML = '<tr><td colspan="14" class="empty-state">데이터를 불러오는 중입니다...</td></tr>';
+            productList.innerHTML = '<tr><td colspan="15" class="empty-state">데이터를 불러오는 중입니다...</td></tr>';
 
             const params = buildSearchParams();
             const query = params.toString();
@@ -300,6 +313,38 @@
     searchForm.addEventListener("submit", (event) => {
         event.preventDefault();
         fetchProducts();
+    });
+
+    productList.addEventListener("click", async (event) => {
+        const deleteButton = event.target.closest("[data-product-id]");
+        if (!deleteButton) {
+            return;
+        }
+
+        const productId = deleteButton.dataset.productId;
+        const confirmed = window.confirm(`상품 ID ${productId}를 숨김 처리하시겠습니까?`);
+        if (!confirmed) {
+            return;
+        }
+
+        deleteButton.disabled = true;
+
+        try {
+            const response = await fetch(`/api/v1/products/${productId}`, {
+                method: "DELETE"
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || "판매 조건을 숨김 처리하지 못했습니다.");
+            }
+
+            await fetchProducts();
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            deleteButton.disabled = false;
+        }
     });
 
     resetBtn.addEventListener("click", () => {

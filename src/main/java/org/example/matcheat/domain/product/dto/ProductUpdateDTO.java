@@ -17,6 +17,8 @@ import java.util.List;
  */
 public class ProductUpdateDTO {
 
+    private String productName;
+
     @Positive
     private Integer minHeadcount;
 
@@ -24,12 +26,16 @@ public class ProductUpdateDTO {
     private Integer maxHeadcount;
 
     @Positive
-    private Integer minOrderAmount;
+    private Integer servingPrice;
 
     @Positive
     private Double deliveryRadiusKm;
 
     private String storeAddress;
+
+    private Double latitude;
+
+    private Double longitude;
 
     private String category;
 
