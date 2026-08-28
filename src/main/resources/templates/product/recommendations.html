@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>추천 응답 JSON 샘플</title>
+    <style>
+        :root {
+            --bg: #f7f4ef;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #0f766e;
+            --accent-dark: #134e4a;
+            --border: #e5e7eb;
+            --code-bg: #0b1020;
+            --code-text: #dbeafe;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(15, 118, 110, 0.12), transparent 30%),
+                radial-gradient(circle at top right, rgba(180, 83, 9, 0.10), transparent 24%),
+                var(--bg);
+        }
+
+        .wrap {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }
+
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .nav a,
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 14px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .nav a {
+            background: #fff;
+            color: var(--accent-dark);
+            border-color: var(--border);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .hero,
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .hero {
+            grid-template-columns: 1.2fr 0.8fr;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+            padding: 22px;
+        }
+
+        h1, h2 {
+            margin: 0 0 12px;
+            letter-spacing: -0.02em;
+        }
+
+        h1 {
+            font-size: 32px;
+        }
+
+        h2 {
+            font-size: 18px;
+        }
+
+        p {
+            margin: 0;
+            line-height: 1.7;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .chip {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #ecfeff;
+            color: var(--accent-dark);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .field-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .field-row input {
+            flex: 1;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        pre {
+            margin: 0;
+            padding: 18px;
+            border-radius: 16px;
+            background: var(--code-bg);
+            color: var(--code-text);
+            overflow: auto;
+            font-size: 13px;
+            line-height: 1.65;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        code {
+            font-family: Consolas, Monaco, monospace;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        .table th,
+        .table td {
+            border-bottom: 1px solid var(--border);
+            padding: 12px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .table th {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .table td {
+            font-size: 14px;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .error {
+            margin-top: 12px;
+            color: #b91c1c;
+            font-weight: 700;
+        }
+
+        @media (max-width: 900px) {
+            .hero,
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="nav">
+        <a href="/product/list">📋 판매 조건 목록</a>
+        <a href="/product/new">➕ 판매 조건 등록</a>
+        <a href="/product/update">✏️ 판매 조건 수정</a>
+    </div>
+
+    <div class="hero">
+        <section class="panel">
+            <h1>추천 응답 JSON 샘플</h1>
+            <p class="muted">
+                `GET /api/products/{productId}/order-requests/recommendations` 의 응답 구조를 확인하는 테스트 페이지입니다.
+                총점과 항목별 점수, 근거 태그를 한 번에 확인할 수 있습니다.
+            </p>
+            <div class="meta">
+                <span class="chip">totalScore</span>
+                <span class="chip">scoreItems</span>
+                <span class="chip">reasonTag</span>
+                <span class="chip">recommendations</span>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>실제 API 호출</h2>
+            <div class="field-row">
+                <input type="number" id="productId" min="1" placeholder="productId 입력, 예: 1">
+                <button id="fetchBtn" class="btn" type="button">불러오기</button>
+            </div>
+            <p class="muted" style="font-size: 14px;">
+                상품 ID를 넣으면 추천 결과를 그대로 JSON으로 보여줍니다.
+            </p>
+            <div id="errorBox" class="error" style="display:none;"></div>
+        </section>
+    </div>
+
+    <div class="grid">
+        <section class="panel">
+            <h2>예시 응답</h2>
+            <pre><code>{
+  "orderRequest": {
+    "id": 101,
+    "title": "회식용 도시락 30인분",
+    "description": "금요일 저녁 배달 요청",
+    "eventDateTime": "2026-08-30T18:30:00",
+    "quantity": 30,
+    "budgetType": "TOTAL",
+    "budget": 250000,
+    "category": "도시락",
+    "deliveryAddress": "서울시 강남구 ...",
+    "latitude": null,
+    "longitude": null,
+    "status": "MATCHING"
+  },
+  "totalScore": 87.4,
+  "scoreItems": [
+    {
+      "reasonTag": "DISTANCE",
+      "label": "거리 인접도",
+      "score": 0.0,
+      "weight": 0.0,
+      "contribution": 0.0,
+      "reason": "위경도 정보가 없어 이번 계산에서 제외"
+    },
+    {
+      "reasonTag": "BUDGET",
+      "label": "예산 적합도",
+      "score": 92.0,
+      "weight": 41.7,
+      "contribution": 38.4,
+      "reason": "예산 적합도 92%"
+    },
+    {
+      "reasonTag": "CATEGORY",
+      "label": "카테고리 일치도",
+      "score": 100.0,
+      "weight": 33.3,
+      "contribution": 33.3,
+      "reason": "카테고리 완전 일치"
+    },
+    {
+      "reasonTag": "RATING",
+      "label": "판매자 평점",
+      "score": 79.0,
+      "weight": 16.6,
+      "contribution": 13.1,
+      "reason": "평점 4.0/5.0"
+    },
+    {
+      "reasonTag": "TEXT_SIMILARITY",
+      "label": "텍스트 유사도",
+      "score": 0.0,
+      "weight": 0.0,
+      "contribution": 0.0,
+      "reason": "임베딩 미구현으로 이번 계산에서 제외"
+    }
+  ]
+}</code></pre>
+        </section>
+
+        <section class="panel">
+            <h2>필드 설명</h2>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>필드</th>
+                    <th>설명</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td><code>totalScore</code></td>
+                    <td>추천 대상 주문 요청의 최종 점수입니다.</td>
+                </tr>
+                <tr>
+                    <td><code>scoreItems</code></td>
+                    <td>항목별 점수 목록입니다.</td>
+                </tr>
+                <tr>
+                    <td><code>reasonTag</code></td>
+                    <td>항목을 코드 레벨에서 식별하기 위한 태그입니다.</td>
+                </tr>
+                <tr>
+                    <td><code>score</code></td>
+                    <td>각 항목의 원점수입니다.</td>
+                </tr>
+                <tr>
+                    <td><code>weight</code></td>
+                    <td>현재 계산 시 적용된 재분배 가중치입니다.</td>
+                </tr>
+                <tr>
+                    <td><code>contribution</code></td>
+                    <td>최종 총점에 실제로 기여한 값입니다.</td>
+                </tr>
+                <tr>
+                    <td><code>reason</code></td>
+                    <td>화면에 보여줄 근거 문구입니다.</td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <section class="panel result">
+        <h2>실행 결과</h2>
+        <pre id="result"><code>상품 ID를 입력한 뒤 "불러오기"를 누르세요.</code></pre>
+    </section>
+</div>
+
+<script>
+    const productIdInput = document.getElementById("productId");
+    const fetchBtn = document.getElementById("fetchBtn");
+    const result = document.getElementById("result");
+    const errorBox = document.getElementById("errorBox");
+
+    const sample = {
+        orderRequest: {
+            id: 101,
+            title: "회식용 도시락 30인분",
+            description: "금요일 저녁 배달 요청",
+            eventDateTime: "2026-08-30T18:30:00",
+            quantity: 30,
+            budgetType: "TOTAL",
+            budget: 250000,
+            category: "도시락",
+            deliveryAddress: "서울시 강남구 ...",
+            latitude: null,
+            longitude: null,
+            status: "MATCHING"
+        },
+        totalScore: 87.4,
+        scoreItems: [
+            {
+                reasonTag: "DISTANCE",
+                label: "거리 인접도",
+                score: 0.0,
+                weight: 0.0,
+                contribution: 0.0,
+                reason: "위경도 정보가 없어 이번 계산에서 제외"
+            },
+            {
+                reasonTag: "BUDGET",
+                label: "예산 적합도",
+                score: 92.0,
+                weight: 41.7,
+                contribution: 38.4,
+                reason: "예산 적합도 92%"
+            },
+            {
+                reasonTag: "CATEGORY",
+                label: "카테고리 일치도",
+                score: 100.0,
+                weight: 33.3,
+                contribution: 33.3,
+                reason: "카테고리 완전 일치"
+            },
+            {
+                reasonTag: "RATING",
+                label: "판매자 평점",
+                score: 79.0,
+                weight: 16.6,
+                contribution: 13.1,
+                reason: "평점 4.0/5.0"
+            },
+            {
+                reasonTag: "TEXT_SIMILARITY",
+                label: "텍스트 유사도",
+                score: 0.0,
+                weight: 0.0,
+                contribution: 0.0,
+                reason: "임베딩 미구현으로 이번 계산에서 제외"
+            }
+        ]
+    };
+
+    function render(data) {
+        result.textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function fetchRecommendations() {
+        const productId = productIdInput.value.trim();
+        if (!productId) {
+            errorBox.textContent = "productId를 입력하세요.";
+            errorBox.style.display = "block";
+            return;
+        }
+
+        errorBox.style.display = "none";
+        result.textContent = "불러오는 중...";
+
+        try {
+            const response = await fetch(`/api/products/${productId}/order-requests/recommendations`);
+            if (!response.ok) {
+                throw new Error("추천 데이터를 불러오지 못했습니다.");
+            }
+
+            const data = await response.json();
+            render(data);
+        } catch (error) {
+            errorBox.textContent = error.message;
+            errorBox.style.display = "block";
+            render(sample);
+        }
+    }
+
+    fetchBtn.addEventListener("click", fetchRecommendations);
+    render(sample);
+</script>
+</body>
+</html>
