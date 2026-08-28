@@ -31,46 +31,114 @@ import java.util.List;
  */
 public class ProductEntity {
 
-    @Id
+    // Id
+    @Id // PK
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * 최소 수주(주문) 수량
+     */
     @Column(name = "min_headcount", nullable = false)
     private Integer minHeadcount;
 
+    /**
+     * 최대 수주(주문) 수량
+     */
     @Column(name = "max_headcount", nullable = false)
     private Integer maxHeadcount;
 
-    @Column(name = "min_order_amount", nullable = false)
-    private Integer minOrderAmount;
+    /**
+     *  1인분 가격
+     */
+    @Column(name = "servingPrice", nullable = false)
+    private Integer servingPrice;
 
+    /**
+     * 최대 배달(배송) 반경
+     */
     @Column(name = "delivery_radius_km", nullable = false)
     private Double deliveryRadiusKm;
 
+    /**
+     * 가게 주소
+     */
     @Column(name = "store_address", nullable = false)
     private String storeAddress;
 
+    /**
+     * 상품/메뉴명
+     */
+    @Column(name = "product_name", nullable = false)
+    private String productName;
+
+    /**
+     * 가게 위도
+     */
+    @Column(name = "latitude", nullable = true)
+    private Double latitude;
+
+    /**
+     * 가게 경도
+     */
+    @Column(name = "longitude", nullable = true)
+    private Double longitude;
+
+    /**
+     * 상품(음식) 카테고리
+     */
     @Column(name = "category", nullable = false)
     private String category;
 
+    /**
+     * 상품(음식) 설명
+     */
     @Column(name = "description", nullable = true, columnDefinition = "TEXT")
     private String description;
 
+    /**
+     * 가게 정기 휴무 요일
+     */
     @Enumerated(EnumType.STRING)
     @Column(name = "day_of_week", nullable = true)
     private DayOfWeek dayOfWeek;
 
+    /**
+     * 가게 평점
+     */
     @Column(name = "rating_avg", nullable = true)
     @ColumnDefault("0.0")
     private Double ratingAvg;
 
+    /**
+     * 가게 특정 불가 날짜
+     */
     @Convert(converter = LocalDateListConverter.class)
     @Column(name = "unavailable_dates", nullable = true, columnDefinition = "TEXT")
     private List<LocalDate> unavailableDates;
 
+    /**
+     * 가게 또는 상품(음식) 이미지
+     */
     @Column(name = "image_url", nullable = true, columnDefinition = "TEXT")
     private String imageUrl;
 
+    /**
+     * 추후 로그인 구현 시 삭제 예정인 컬럼
+     */
+    @Column(name = "owner_account_id")
+    private Long ownerAccountId;
+
+    /**
+     * 상품 Soft Delete 옵션
+     */
+    @Column(name = "hidden", nullable = false)
+    @ColumnDefault("false")
+    private boolean hidden;
+
+    /**
+     * 데이터 수정 일자 등록
+     */
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
@@ -78,55 +146,72 @@ public class ProductEntity {
      * 정적 팩토리 메소드를 통해서만 생성되도록 하는 생성자이다.
      */
     private ProductEntity(
+            String productName,
             Integer minHeadcount,
             Integer maxHeadcount,
-            Integer minOrderAmount,
+            Integer servingPrice,
             Double deliveryRadiusKm,
             String storeAddress,
+            Double latitude,
+            Double longitude,
             String category,
             String description,
             DayOfWeek dayOfWeek,
             List<LocalDate> unavailableDates,
-            String imageUrl
+            String imageUrl,
+            Long ownerAccountId
     ) {
         this.minHeadcount = minHeadcount;
         this.maxHeadcount = maxHeadcount;
-        this.minOrderAmount = minOrderAmount;
+        this.servingPrice = servingPrice;
         this.deliveryRadiusKm = deliveryRadiusKm;
         this.storeAddress = storeAddress;
+        this.productName = productName;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.category = category;
         this.description = description;
         this.dayOfWeek = dayOfWeek;
         this.unavailableDates = normalizeUnavailableDates(unavailableDates);
         this.imageUrl = imageUrl;
+        this.ownerAccountId = ownerAccountId;
+        this.hidden = false;
     }
 
     /**
      * 새 판매 조건 엔티티를 생성한다.
      */
     public static ProductEntity create(
+            String productName,
             Integer minHeadcount,
             Integer maxHeadcount,
-            Integer minOrderAmount,
+            Integer servingPrice,
             Double deliveryRadiusKm,
             String storeAddress,
+            Double latitude,
+            Double longitude,
             String category,
             String description,
             DayOfWeek dayOfWeek,
             List<LocalDate> unavailableDates,
-            String imageUrl
+            String imageUrl,
+            Long ownerAccountId
     ) {
         return new ProductEntity(
+                productName,
                 minHeadcount,
                 maxHeadcount,
-                minOrderAmount,
+                servingPrice,
                 deliveryRadiusKm,
                 storeAddress,
+                latitude,
+                longitude,
                 category,
                 description,
                 dayOfWeek,
                 unavailableDates,
-                imageUrl
+                imageUrl,
+                ownerAccountId
         );
     }
 
@@ -134,11 +219,14 @@ public class ProductEntity {
      * null 이 아닌 값만 반영해 판매 조건을 부분 수정한다.
      */
     public void update(
+            String productName,
             Integer minHeadcount,
             Integer maxHeadcount,
-            Integer minOrderAmount,
+            Integer servingPrice,
             Double deliveryRadiusKm,
             String storeAddress,
+            Double latitude,
+            Double longitude,
             String category,
             String description,
             DayOfWeek dayOfWeek,
@@ -153,8 +241,8 @@ public class ProductEntity {
             this.maxHeadcount = maxHeadcount;
         }
 
-        if(minOrderAmount != null) {
-            this.minOrderAmount = minOrderAmount;
+        if(servingPrice != null) {
+            this.servingPrice = servingPrice;
         }
 
         if(deliveryRadiusKm != null) {
@@ -163,6 +251,18 @@ public class ProductEntity {
 
         if(storeAddress != null) {
             this.storeAddress = storeAddress;
+        }
+
+        if (productName != null) {
+            this.productName = productName;
+        }
+
+        if(latitude != null) {
+            this.latitude = latitude;
+        }
+
+        if(longitude != null) {
+            this.longitude = longitude;
         }
 
         if(category != null) {
@@ -187,10 +287,26 @@ public class ProductEntity {
     }
 
     /**
+     * 판매 조건을 소프트 삭제 상태로 바꾼다.
+     */
+    public void softDelete(Long requesterAccountId) {
+        // TODO: 로그인 담당 개발이 끝나면 여기서 현재 로그인 사용자의 accountId를 전달받아
+        //       ownerAccountId와 일치하는 경우에만 숨김 처리하도록 검증을 강화한다.
+        if (this.ownerAccountId != null
+                && requesterAccountId != null
+                && !this.ownerAccountId.equals(requesterAccountId)) {
+            throw new IllegalArgumentException("본인이 등록한 판매 조건만 삭제할 수 있습니다.");
+        }
+
+        this.hidden = true;
+    }
+
+    /**
      * 엔티티가 처음 저장될 때 수정 시각을 현재 시각으로 초기화한다.
      */
     @PrePersist
     protected void onCreate() {
+        this.hidden = false;
         this.updatedAt = LocalDateTime.now();
     }
 

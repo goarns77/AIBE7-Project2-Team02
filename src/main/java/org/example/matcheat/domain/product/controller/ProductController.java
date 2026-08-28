@@ -30,6 +30,8 @@ public class ProductController {
     public ResponseEntity<ProductResponseDTO> create(
             @Valid @RequestBody ProductCreateDTO dto
     ) {
+        // TODO: 로그인 담당 개발이 끝나면 현재 로그인한 사용자의 accountId를 전달해서
+        //       본인 상품으로 저장되도록 바꾼다.
         ProductResponseDTO response = productService.create(dto);
 
         return ResponseEntity
@@ -45,6 +47,8 @@ public class ProductController {
             @Valid @RequestPart("product") ProductCreateDTO dto,
             @RequestPart(value = "imageFile", required = false) MultipartFile imageFile
     ) {
+        // TODO: 로그인 담당 개발이 끝나면 현재 로그인한 사용자의 accountId를 전달해서
+        //       본인 상품으로 저장되도록 바꾼다.
         ProductResponseDTO response = productService.create(dto, imageFile);
 
         return ResponseEntity
@@ -75,15 +79,15 @@ public class ProductController {
     }
 
     /**
-     * 수량, 카테고리, 최소 주문 금액 조건으로 판매 조건을 조회한다.
+     * 수량, 카테고리, 1인분 가격 조건으로 판매 조건을 조회한다.
      */
     @GetMapping("/search")
     public ResponseEntity<List<ProductResponseDTO>> search(
             @RequestParam(required = false) String quantity,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) String minOrderAmount
+            @RequestParam(required = false) String servingPrice
     ) {
-        List<ProductResponseDTO> response = productService.search(quantity, category, minOrderAmount);
+        List<ProductResponseDTO> response = productService.search(quantity, category, servingPrice);
 
         return ResponseEntity.ok(response);
     }
@@ -111,6 +115,20 @@ public class ProductController {
             @RequestPart(value = "imageFile", required = false) MultipartFile imageFile
     ) {
         ProductResponseDTO response = productService.update(id, dto, imageFile);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 판매 조건을 소프트 삭제한다.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ProductResponseDTO> softDelete(
+            @PathVariable Long id
+    ) {
+        // TODO: 로그인 담당 개발이 끝나면 현재 로그인한 사용자의 accountId를 주입받아
+        //       본인 상품만 삭제하도록 바꾼다.
+        ProductResponseDTO response = productService.softDelete(id);
 
         return ResponseEntity.ok(response);
     }

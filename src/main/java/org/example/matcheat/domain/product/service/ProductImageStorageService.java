@@ -9,6 +9,9 @@ import java.util.Base64;
 @Service
 public class ProductImageStorageService {
 
+    /**
+     * 업로드된 이미지 파일을 Base64 데이터 URL 형태로 변환해 저장 가능한 문자열로 만든다.
+     */
     public String storeImage(MultipartFile imageFile) throws IOException {
         if (imageFile == null || imageFile.isEmpty()) {
             return null;

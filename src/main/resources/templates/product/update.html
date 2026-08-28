@@ -93,13 +93,18 @@
     <a href="/product/list">📋 판매 조건 전체 목록 테스트 페이지로 이동</a>
 </div>
 
-<div class="form-group" style="background-color: #f8f9fa; padding: 15px; border: 1px solid #e9ecef; border-radius: 5px; margin-bottom: 25px;">
-    <label for="searchId" style="width: auto; margin-right: 10px;">수정할 판매 조건 ID:</label>
-    <input type="number" id="searchId" placeholder="예: 1" style="width: 120px; margin-right: 10px;">
-    <button type="button" id="searchBtn" class="btn-search">🔍 데이터 불러오기</button>
-</div>
+    <div class="form-group" style="background-color: #f8f9fa; padding: 15px; border: 1px solid #e9ecef; border-radius: 5px; margin-bottom: 25px;">
+        <label for="searchId" style="width: auto; margin-right: 10px;">수정할 판매 조건 ID:</label>
+        <input type="number" id="searchId" placeholder="예: 1" style="width: 120px; margin-right: 10px;">
+        <button type="button" id="searchBtn" class="btn-search">🔍 데이터 불러오기</button>
+    </div>
 
-<form id="productUpdateForm">
+    <form id="productUpdateForm">
+    <div class="form-group">
+        <label for="productName">상품/메뉴명</label>
+        <input type="text" id="productName" required disabled>
+    </div>
+
     <div class="form-group">
         <label for="productId">판매 조건 ID</label>
         <input type="text" id="productId" readonly style="background-color: #e9ecef; border: 1px solid #ced4da;">
@@ -117,8 +122,8 @@
     </div>
 
     <div class="form-group">
-        <label for="minOrderAmount">최소 주문 금액</label>
-        <input type="number" id="minOrderAmount" min="1" required disabled>
+        <label for="servingPrice">1인분 가격</label>
+        <input type="number" id="servingPrice" min="1" required disabled>
     </div>
 
     <div class="form-group">
@@ -183,10 +188,11 @@
     const searchBtn = document.getElementById("searchBtn");
     
     const updateForm = document.getElementById("productUpdateForm");
+    const productNameInput = document.getElementById("productName");
     const productIdInput = document.getElementById("productId");
     const minHeadcountInput = document.getElementById("minHeadcount");
     const maxHeadcountInput = document.getElementById("maxHeadcount");
-    const minOrderAmountInput = document.getElementById("minOrderAmount");
+    const servingPriceInput = document.getElementById("servingPrice");
     const deliveryRadiusKmInput = document.getElementById("deliveryRadiusKm");
     const storeAddressInput = document.getElementById("storeAddress");
     const categoryInput = document.getElementById("category");
@@ -260,10 +266,11 @@
             const product = await response.json();
 
             // 폼 필드 바인딩 및 비활성화 해제
+            productNameInput.value = product.productName ?? "";
             productIdInput.value = product.id;
             minHeadcountInput.value = product.minHeadcount;
             maxHeadcountInput.value = product.maxHeadcount;
-            minOrderAmountInput.value = product.minOrderAmount;
+            servingPriceInput.value = product.servingPrice ?? "";
             deliveryRadiusKmInput.value = product.deliveryRadiusKm;
             storeAddressInput.value = product.storeAddress;
             categoryInput.value = product.category;
@@ -276,9 +283,10 @@
             updatePreview(product.imageUrl ? encodeURI(product.imageUrl) : null);
 
             // 입력 필드 및 전송 버튼 활성화
+            productNameInput.disabled = false;
             minHeadcountInput.disabled = false;
             maxHeadcountInput.disabled = false;
-            minOrderAmountInput.disabled = false;
+            servingPriceInput.disabled = false;
             deliveryRadiusKmInput.disabled = false;
             storeAddressInput.disabled = false;
             categoryInput.disabled = false;
@@ -299,10 +307,12 @@
 
             // 데이터 로드 실패 시 폼 리셋 및 비활성화
             updateForm.reset();
+            productNameInput.value = "";
             productIdInput.value = "";
+            productNameInput.disabled = true;
             minHeadcountInput.disabled = true;
             maxHeadcountInput.disabled = true;
-            minOrderAmountInput.disabled = true;
+            servingPriceInput.disabled = true;
             deliveryRadiusKmInput.disabled = true;
             storeAddressInput.disabled = true;
             categoryInput.disabled = true;
@@ -342,9 +352,10 @@
         }
 
         const requestData = {
+            productName: productNameInput.value,
             minHeadcount: Number(minHeadcountInput.value),
             maxHeadcount: Number(maxHeadcountInput.value),
-            minOrderAmount: Number(minOrderAmountInput.value),
+            servingPrice: Number(servingPriceInput.value),
             deliveryRadiusKm: Number(deliveryRadiusKmInput.value),
             storeAddress: storeAddressInput.value,
             category: categoryInput.value,
