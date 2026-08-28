@@ -97,7 +97,7 @@ class HardFilterTest {
         when(order.getBudgetType()).thenReturn(BudgetType.PER_PERSON);
         when(order.getBudget()).thenReturn(BigDecimal.valueOf(20000));
 
-        when(product.getMinOrderAmount()).thenReturn(18000);
+        when(product.getServingPrice()).thenReturn(18000);
 
         boolean result = hardFilter.matchesBudget(order, product);
 
@@ -112,7 +112,7 @@ class HardFilterTest {
         when(order.getBudgetType()).thenReturn(BudgetType.PER_PERSON);
         when(order.getBudget()).thenReturn(BigDecimal.valueOf(15000));
 
-        when(product.getMinOrderAmount()).thenReturn(18000);
+        when(product.getServingPrice()).thenReturn(18000);
 
         boolean result = hardFilter.matchesBudget(order, product);
 
@@ -128,7 +128,7 @@ class HardFilterTest {
         when(order.getBudget()).thenReturn(BigDecimal.valueOf(600000));
         when(order.getQuantity()).thenReturn(30);
 
-        when(product.getMinOrderAmount()).thenReturn(18000);
+        when(product.getServingPrice()).thenReturn(18000);
 
         boolean result = hardFilter.matchesBudget(order, product);
 
@@ -144,7 +144,7 @@ class HardFilterTest {
         when(order.getBudget()).thenReturn(BigDecimal.valueOf(500000));
         when(order.getQuantity()).thenReturn(30);
 
-        when(product.getMinOrderAmount()).thenReturn(18000);
+        when(product.getServingPrice()).thenReturn(18000);
 
         boolean result = hardFilter.matchesBudget(order, product);
 
@@ -166,7 +166,7 @@ class HardFilterTest {
         when(product.getMinHeadcount()).thenReturn(10);
         when(product.getMaxHeadcount()).thenReturn(50);
         when(product.getCategory()).thenReturn("한식");
-        when(product.getMinOrderAmount()).thenReturn(15000);
+        when(product.getServingPrice()).thenReturn(15000);
         when(product.getUnavailableDates())
                 .thenReturn(List.of(
                         LocalDate.of(2026, 9, 10),
@@ -192,7 +192,7 @@ class HardFilterTest {
         when(product.getMinHeadcount()).thenReturn(10);
         when(product.getMaxHeadcount()).thenReturn(50);
         when(product.getCategory()).thenReturn("양식");
-        when(product.getMinOrderAmount()).thenReturn(15000);
+        when(product.getServingPrice()).thenReturn(15000);
 
         boolean result = hardFilter.matches(order, product);
 

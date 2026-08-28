@@ -43,7 +43,7 @@ public class HardFilter {
             ProductResponseDTO product
     ) {
         BigDecimal unitPrice =
-                BigDecimal.valueOf(product.getMinOrderAmount());
+                BigDecimal.valueOf(product.getServingPrice());
 
         return switch (order.getBudgetType()) {
             case PER_PERSON -> order.getBudget().compareTo(unitPrice) >= 0;
