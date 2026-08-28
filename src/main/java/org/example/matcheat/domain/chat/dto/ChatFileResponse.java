@@ -3,28 +3,37 @@ package org.example.matcheat.domain.chat.dto;
 import lombok.Builder;
 import lombok.Getter;
 import org.example.matcheat.domain.chat.entity.ChatFile;
+import org.example.matcheat.domain.chat.entity.ChatMessage;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
 public class ChatFileResponse {
-	private Long fileId;
+
+	private Long id;
 	private Long chatRoomId;
-	private Long uploaderId;
+	private Long senderId;
 	private String originalFileName;
-	private String fileType;
+	private String storedFileName;
+	private String filePath;
 	private Long fileSize;
+
+	// [P1-5 수정] String -> ChatMessage.MessageType Enum으로 변경
+	private ChatMessage.MessageType fileType;
+
 	private LocalDateTime createdAt;
 
 	public static ChatFileResponse from(ChatFile chatFile) {
 		return ChatFileResponse.builder()
-				.fileId(chatFile.getId())
+				.id(chatFile.getId())
 				.chatRoomId(chatFile.getChatRoomId())
-				.uploaderId(chatFile.getUploaderId())
+				.senderId(chatFile.getSenderId())
 				.originalFileName(chatFile.getOriginalFileName())
-				.fileType(chatFile.getFileType())
+				.storedFileName(chatFile.getStoredFileName())
+				.filePath(chatFile.getFilePath())
 				.fileSize(chatFile.getFileSize())
+				.fileType(chatFile.getFileType()) // Enum 타입 매핑
 				.createdAt(chatFile.getCreatedAt())
 				.build();
 	}

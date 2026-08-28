@@ -1,6 +1,7 @@
 package org.example.matcheat.domain.chat.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.example.matcheat.domain.chat.dto.ChatFileResponse;
@@ -19,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Tag(name = "Chat File API", description = "채팅방 파일(이미지, PDF) 업로드, 조회, 다운로드 API")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -27,13 +29,16 @@ public class ChatFileController {
 	private final ChatFileService chatFileService;
 
 	@Operation(summary = "파일 업로드 (이미지/PDF)", description = "채팅방에 이미지 또는 PDF 파일을 업로드합니다.")
+
 	@PostMapping(value = "/chat-rooms/{chatRoomId}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ChatFileResponse> uploadFile(
 			@PathVariable Long chatRoomId,
+			@Parameter(description = "업로더 유저 ID (기본값: 1)", example = "1")
+			@RequestParam("senderId") Long senderId,
 			@RequestPart("file") MultipartFile file) throws IOException {
 
-		Long currentUserId = 1L; // 테스트용 임시 유저 ID
-		ChatFileResponse response = chatFileService.uploadFile(chatRoomId, currentUserId, file);
+		// 전달받은 uploaderId를 서비스에 그대로 넘깁니다.
+		ChatFileResponse response = chatFileService.uploadFile(chatRoomId, senderId, file);
 		return ResponseEntity.ok(response);
 	}
 

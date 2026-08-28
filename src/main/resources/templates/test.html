@@ -2,57 +2,151 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>STOMP WebSocket Test</title>
+    <title>STOMP WebSocket & Chat History Test</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body>
-<h2>WebSocket STOMP 테스트</h2>
+<h2>WebSocket STOMP & 채팅 내역 테스트</h2>
+
+<!-- 1. 서버 연결 -->
 <div>
     <button onclick="connect()">1. 서버 연결 (Connect)</button>
-    <button onclick="subscribe()">2. 1번 방 구독 (Subscribe)</button>
+    <span id="connectionStatus" style="color: gray; margin-left: 10px;">[연결 대기 중]</span>
 </div>
 <br>
+
+<!-- 2. 방 번호 설정 및 구독 -->
 <div>
-    <input type="text" id="message" placeholder="메시지 입력">
+    <label for="roomId"><b>채팅방 ID (roomId): </b></label>
+    <input type="number" id="roomId" value="1" style="width: 60px;">
+    <button onclick="subscribe()">2. 해당 방 구독 (Subscribe)</button>
+    <button onclick="loadChatHistory()">4. 이전 대화 내역 불러오기 (REST API)</button>
+</div>
+<br>
+
+<!-- 3. 메시지 전송 -->
+<div>
+    <input type="text" id="message" placeholder="메시지 입력" style="width: 250px;">
     <button onclick="sendMessage()">3. 메시지 전송 (Send)</button>
 </div>
 
-<h3>수신된 메시지:</h3>
+<h3>채팅 메시지 목록:</h3>
 <ul id="responses"></ul>
 
 <script>
     let stompClient = null;
+    let currentSubscription = null;
 
     function connect() {
-        // WebSocketConfig에서 설정한 엔드포인트 경로
         const socket = new WebSocket('ws://localhost:8080/ws-stomp');
         stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function (frame) {
-            alert('연결 성공: ' + frame);
+            document.getElementById('connectionStatus').innerText = '🟢 연결 성공';
+            document.getElementById('connectionStatus').style.color = 'green';
+            alert('서버 연결 성공: ' + frame);
+        }, function (error) {
+            document.getElementById('connectionStatus').innerText = '🔴 연결 실패';
+            document.getElementById('connectionStatus').style.color = 'red';
+            alert('연결 에러: ' + error);
         });
     }
 
     function subscribe() {
-        // 1번 채팅방 구독 (/sub/chat/room/1)
-        stompClient.subscribe('/sub/chat/room/1', function (response) {
+        if (!stompClient || !stompClient.connected) {
+            alert('먼저 1번 [서버 연결] 버튼을 눌러주세요!');
+            return;
+        }
+
+        const roomId = document.getElementById('roomId').value;
+        if (!roomId) {
+            alert('채팅방 ID를 입력해주세요.');
+            return;
+        }
+
+        if (currentSubscription) {
+            currentSubscription.unsubscribe();
+        }
+
+        const destination = '/sub/chat/room/' + roomId;
+        currentSubscription = stompClient.subscribe(destination, function (response) {
             const message = JSON.parse(response.body);
-            const li = document.createElement('li');
-            li.appendChild(document.createTextNode(`[작성자 ${message.senderId}]: ${message.message}`));
-            document.getElementById('responses').appendChild(li);
+            appendMessage(message);
         });
-        alert('1번 채팅방 구독 완료!');
+
+        alert(roomId + '번 채팅방 구독 완료!');
+    }
+
+    // 4. REST API를 통해 이전 대화 목록 조회
+    function loadChatHistory() {
+        const roomId = document.getElementById('roomId').value;
+        if (!roomId) {
+            alert('채팅방 ID를 입력해주세요.');
+            return;
+        }
+
+        fetch(`http://localhost:8080/api/v1/chat-rooms/${roomId}/messages`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('이전 내역을 가져오는데 실패했습니다.');
+                }
+                return response.json();
+            })
+            .then(messages => {
+                // 이전 내역 출력을 위해 기존 리스트 한번 비우기
+                document.getElementById('responses').innerHTML = '';
+
+                // 가져온 이전 메시지들을 순서대로 화면에 표시
+                messages.forEach(msg => {
+                    appendMessage(msg, true);
+                });
+                alert(`${messages.length}개의 이전 메시지를 불러왔습니다.`);
+            })
+            .catch(error => {
+                console.error(error);
+                alert('에러 발생: ' + error.message);
+            });
     }
 
     function sendMessage() {
+        if (!stompClient || !stompClient.connected) {
+            alert('서버에 연결되어 있지 않습니다.');
+            return;
+        }
+
+        const roomId = Number(document.getElementById('roomId').value);
         const msg = document.getElementById('message').value;
-        // 메시지 발행 (/pub/chat/message)
+
+        if (!msg) {
+            alert('메시지를 입력해주세요.');
+            return;
+        }
+
         stompClient.send("/pub/chat/message", {}, JSON.stringify({
-            'chatRoomId': 1,
+            'chatRoomId': roomId,
             'senderId': 100,
+            'messageType': 'TEXT',
             'message': msg
         }));
+
+        document.getElementById('message').value = '';
+    }
+
+    // 메시지 렌더링 공통 함수
+    function appendMessage(msg, isHistory = false) {
+        const li = document.createElement('li');
+        const prefix = isHistory ? '[과거기록]' : '[실시간]';
+
+        if (msg.messageType === 'IMAGE') {
+            li.innerHTML = `${prefix} [작성자 ${msg.senderId}]: <a href="http://localhost:8080${msg.message}" target="_blank">🖼️ 이미지 다운로드 (${msg.originalFileName})</a>`;
+        } else if (msg.messageType === 'PDF') {
+            li.innerHTML = `${prefix} [작성자 ${msg.senderId}]: <a href="http://localhost:8080${msg.message}" target="_blank">📄 PDF 다운로드 (${msg.originalFileName})</a>`;
+        } else {
+            li.innerText = `${prefix} [작성자 ${msg.senderId}]: ${msg.message}`;
+        }
+
+        document.getElementById('responses').appendChild(li);
     }
 </script>
 </body>
