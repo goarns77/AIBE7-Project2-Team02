@@ -1,0 +1,519 @@
+/* 주문 등록, 목록, 상세 등 주문 화면에서 사용하는 스타일 */
+
+
+/* 주문 목록 영역 */
+.order-list {
+    margin-top: 24px;
+    border-top: 1px solid #ddd;
+}
+
+
+/* 주문 한 건을 게시판형 카드로 표시 */
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 20px 16px;
+    border-bottom: 1px solid #ddd;
+}
+
+
+/* 주문의 주요 정보 영역 */
+.order-item-main {
+    flex: 1;
+    min-width: 0;
+}
+
+
+/* 주문 상태와 제목 */
+.order-item-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.order-item-title h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.order-item-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+
+/* 카테고리, 수량, 예산, 일시, 배송지를 표시하는 정보 Grid */
+.order-item-summary {
+    display: grid;
+    grid-template-columns: 140px 100px 180px 200px;
+    column-gap: 16px;
+    row-gap: 12px;
+
+    margin-top: 12px;
+}
+
+
+.order-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.order-meta-label {
+    display: block;
+    height: 16px;
+    line-height: 16px;
+
+    font-size: 13px;
+    color: #777;
+}
+
+.order-meta-value {
+    display: block;
+    height: 24px;
+    line-height: 24px;
+}
+
+
+/* 배송지는 Grid의 전체 너비를 사용 */
+.order-meta-address {
+    grid-column: 1 / -1;
+
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+}
+
+
+/* 상세 보기 영역 */
+.order-item-actions {
+    flex-shrink: 0;
+    margin-left: 24px;
+}
+
+
+/* 주문 목록 페이지 상단 제목 및 주요 액션 영역 */
+.order-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    margin-bottom: 24px;
+}
+
+.order-page-header h1 {
+    margin: 0 0 8px;
+}
+
+.order-page-header p {
+    margin: 0;
+}
+
+
+/* 주문 검색 영역 */
+.order-toolbar {
+    margin-bottom: 24px;
+}
+
+.order-search-form {
+    display: flex;
+    width: 100%;
+    gap: 8px;
+}
+
+.order-search-form input {
+    flex: 1;
+    padding: 10px 12px;
+}
+
+.order-search-form button {
+    padding: 10px 18px;
+}
+
+
+/* 주문 진행 상태를 표시하는 배지 */
+.order-status {
+    display: inline-block;
+
+    padding: 4px 10px;
+    border-radius: 12px;
+
+    background-color: #eee;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+/* 주문 상세 페이지로 이동하는 보조 액션 */
+.order-item-actions a {
+    display: inline-block;
+
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    color: #222;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.order-item-actions a:hover {
+    background-color: #f5f5f5;
+}
+
+
+/* 화면 폭이 좁아질 때 주문 정보를 세로로 정리 */
+@media (max-width: 900px) {
+
+    .order-item {
+        align-items: flex-start;
+    }
+
+    .order-item-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .order-meta-address {
+        grid-column: 1 / -1;
+    }
+}
+
+/* 주문 상세 페이지 상단 제목과 진행 상태 영역 */
+.order-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    margin-bottom: 24px;
+}
+
+.order-detail-header h1 {
+    margin: 0 0 8px;
+}
+
+.order-detail-header p {
+    margin: 0;
+}
+
+/* 주문 상세 페이지의 정보 카드 */
+.order-detail-card {
+    margin-bottom: 20px;
+    padding: 24px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    background-color: #fff;
+}
+
+.order-detail-card h2 {
+    margin: 0 0 20px;
+    padding-bottom: 16px;
+
+    border-bottom: 1px solid #eee;
+
+    font-size: 20px;
+}
+
+/* 주문 상세 정보의 라벨과 값을 정렬 */
+.order-detail-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.order-detail-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    align-items: baseline;
+}
+
+.order-detail-label {
+    color: #777;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* 상세 요청사항 본문 */
+.order-detail-description {
+    margin: 0;
+
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+/* 주문 상세 페이지 하단 액션 영역 */
+.order-detail-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: 24px;
+}
+
+.order-detail-action-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.order-detail-action-group form {
+    margin: 0;
+}
+
+/* 목록으로 이동하는 보조 액션 */
+.order-detail-back {
+    color: #444;
+    text-decoration: none;
+}
+
+.order-detail-back:hover {
+    text-decoration: underline;
+}
+
+/* 주문 수정/취소 버튼의 공통 형태 */
+.order-detail-button {
+    display: inline-block;
+
+    padding: 10px 16px;
+    border-radius: 6px;
+
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* 주문 수정 */
+.order-detail-edit {
+    border: 1px solid #222;
+    background-color: #222;
+    color: #fff;
+}
+
+/* 주문 취소 */
+.order-detail-cancel {
+    border: 1px solid #ccc;
+    background-color: #fff;
+    color: #222;
+}
+
+/* 주문 진행 단계를 보여주는 타임라인 */
+.order-progress {
+    display: flex;
+    align-items: center;
+
+    margin-bottom: 24px;
+    padding: 20px 24px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+/* 진행 단계 하나 */
+.order-progress-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    white-space: nowrap;
+
+    font-size: 14px;
+    color: #777;
+}
+
+/* 진행 단계 번호 */
+.order-progress-number {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 28px;
+    height: 28px;
+
+    border: 1px solid #ccc;
+    border-radius: 50%;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* 진행 단계 사이 연결선 */
+.order-progress-line {
+    flex: 1;
+
+    height: 1px;
+    margin: 0 24px;
+
+    background-color: #ddd;
+}
+
+/* 현재 진행 중인 주문 단계 */
+.order-progress-step.is-active {
+    color: #222;
+    font-weight: 600;
+}
+
+.order-progress-step.is-active .order-progress-number {
+    border-color: #222;
+    background-color: #222;
+    color: #fff;
+}
+
+/* 이미 통과한 주문 단계 */
+.order-progress-step.is-complete {
+    color: #444;
+}
+
+.order-progress-step.is-complete .order-progress-number {
+    border-color: #777;
+    background-color: #777;
+    color: #fff;
+}
+
+/* 이미 통과한 단계 사이의 연결선 */
+.order-progress-line.is-complete {
+    background-color: #777;
+}
+
+/* 신규 주문 등록 페이지 상단 안내 영역 */
+.order-form-header {
+    margin-bottom: 24px;
+}
+
+.order-form-header h1 {
+    margin: 0 0 8px;
+}
+
+.order-form-header p {
+    margin: 0;
+}
+
+/* 신규 주문 등록 폼 카드 */
+.order-form-card {
+    padding: 32px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    background-color: #fff;
+}
+
+/* 신규 주문 등록 폼의 2열 입력 영역 */
+.order-form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+
+    margin-bottom: 24px;
+}
+
+/* 신규 주문 등록 폼의 개별 입력 항목 */
+.order-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.order-form-field input,
+.order-form-field select,
+.order-form-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 10px 12px;
+}
+
+/* 희망 예산의 기준과 금액을 한 줄로 배치 */
+.order-budget-inputs {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 8px;
+}
+
+.order-budget-inputs select,
+.order-budget-inputs input {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 10px 12px;
+}
+
+/* 한 줄 전체 너비를 사용하는 주문 입력 항목 */
+.order-form-full {
+    margin-bottom: 24px;
+}
+
+.order-form-full > input,
+.order-form-full > select,
+.order-form-full > textarea {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 10px 12px;
+}
+
+.order-form-full textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* 기타 카테고리 직접 입력 영역 */
+.order-custom-category {
+    margin-top: 12px;
+}
+
+.order-custom-category[hidden] {
+    display: none;
+}
+
+/* 신규 주문 등록 폼 하단 액션 영역 */
+.order-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+
+    margin-top: 8px;
+}
+
+/* 주문 등록 화면 하단 액션 버튼의 공통 크기 */
+.order-form-cancel,
+.order-form-submit {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    box-sizing: border-box;
+    height: 42px;
+    padding: 0 16px;
+
+    border-radius: 6px;
+
+    font: inherit;
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* 주문 작성 취소 */
+.order-form-cancel {
+    border: 1px solid #ccc;
+
+    background-color: #fff;
+    color: #222;
+
+    text-decoration: none;
+}
+
+/* 주문 등록 주요 액션 */
+.order-form-submit {
+    border: 1px solid #222;
+
+    background-color: #222;
+    color: #fff;
+
+    cursor: pointer;
+}
