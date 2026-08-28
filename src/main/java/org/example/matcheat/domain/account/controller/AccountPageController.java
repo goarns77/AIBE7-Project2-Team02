@@ -14,4 +14,16 @@ public class AccountPageController {
     public String signup() {
         return "account/signup";
     }
+
+    @GetMapping({
+            "/mypage",
+            "/mypage/requests",
+            "/mypage/purchases",
+            "/mypage/sales",
+            "/mypage/offers",
+            "/mypage/chats"
+    })
+    public String mypage() {
+        return "account/mypage";
+    }
 }

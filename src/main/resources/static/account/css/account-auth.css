@@ -148,6 +148,11 @@ body.account-page {
   box-shadow: 0 0 0 3px rgba(13, 76, 146, 0.12);
 }
 
+.account-form input[aria-invalid='true'] {
+  border-color: var(--account-error);
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.1);
+}
+
 .account-inline-field {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -182,6 +187,10 @@ body.account-page {
 .account-message.is-success,
 .account-field-message.is-success {
   color: var(--account-success);
+}
+
+.account-field-message:not(.is-success) {
+  color: var(--account-error);
 }
 
 .account-submit {
