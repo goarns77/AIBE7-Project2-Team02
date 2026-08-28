@@ -29,24 +29,39 @@ public class ProductService {
      */
     @Transactional
     public ProductResponseDTO create(ProductCreateDTO dto) {
-        return create(dto, null);
+        return create(dto, null, null);
     }
 
+    /**
+     * 이미지 파일이 포함된 생성 요청도 동일한 생성 로직으로 처리한다.
+     */
     @Transactional
     public ProductResponseDTO create(ProductCreateDTO dto, MultipartFile imageFile) {
+        return create(dto, imageFile, null);
+    }
+
+    /**
+     * 로그인 연동 전 임시로 판매자 식별값까지 받을 수 있도록 열어둔 생성 경로이다.
+     */
+    @Transactional
+    public ProductResponseDTO create(ProductCreateDTO dto, MultipartFile imageFile, Long ownerAccountId) {
         String imageUrl = storeImageOrNull(imageFile);
 
         ProductEntity product = ProductEntity.create(
+                dto.getProductName(),
                 dto.getMinHeadcount(),
                 dto.getMaxHeadcount(),
-                dto.getMinOrderAmount(),
+                dto.getServingPrice(),
                 dto.getDeliveryRadiusKm(),
                 dto.getStoreAddress(),
+                dto.getLatitude(),
+                dto.getLongitude(),
                 dto.getCategory(),
                 dto.getDescription(),
                 dto.getDayOfWeek(),
                 dto.getUnavailableDates(),
-                imageUrl
+                imageUrl,
+                ownerAccountId
         );
 
         ProductEntity savedProduct = productRepository.save(product);
@@ -59,7 +74,7 @@ public class ProductService {
      */
     @Transactional(readOnly = true)
     public ProductResponseDTO findById(Long id) {
-        ProductEntity product = productRepository.findById(id)
+        ProductEntity product = productRepository.findByIdAndHiddenFalse(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
                 ));
@@ -72,7 +87,7 @@ public class ProductService {
      */
     @Transactional(readOnly = true)
     public List<ProductResponseDTO> findAll() {
-        return productRepository.findAll().stream()
+        return productRepository.findAllByHiddenFalseOrderByUpdatedAtDescIdDesc().stream()
                 .map(ProductResponseDTO::from)
                 .toList();
     }
@@ -81,19 +96,19 @@ public class ProductService {
      * 선택한 조건에 맞는 판매 조건만 조회한다.
      */
     @Transactional(readOnly = true)
-    public List<ProductResponseDTO> search(String quantity, String category, String minOrderAmount) {
+    public List<ProductResponseDTO> search(String quantity, String category, String servingPrice) {
         Integer parsedQuantity = parseNullableInteger(quantity);
         String normalizedCategory = normalizeText(category);
-        Integer parsedMinOrderAmount = parseNullableInteger(minOrderAmount);
+        Integer parsedServingPrice = parseNullableInteger(servingPrice);
 
-        if (parsedQuantity == null && normalizedCategory == null && parsedMinOrderAmount == null) {
+        if (parsedQuantity == null && normalizedCategory == null && parsedServingPrice == null) {
             return findAll();
         }
 
-        return productRepository.findAll().stream()
+        return productRepository.findAllByHiddenFalseOrderByUpdatedAtDescIdDesc().stream()
                 .filter(product -> matchesQuantity(product, parsedQuantity))
                 .filter(product -> matchesCategory(product, normalizedCategory))
-                .filter(product -> matchesMinOrderAmount(product, parsedMinOrderAmount))
+                .filter(product -> matchesServingPrice(product, parsedServingPrice))
                 .sorted((left, right) -> {
                     int updatedAtCompare = right.getUpdatedAt().compareTo(left.getUpdatedAt());
                     if (updatedAtCompare != 0) {
@@ -114,9 +129,12 @@ public class ProductService {
         return update(id, dto, null);
     }
 
+    /**
+     * 이미지 변경이 포함된 수정 요청도 동일한 수정 로직으로 처리한다.
+     */
     @Transactional
     public ProductResponseDTO update(Long id, @Valid ProductUpdateDTO dto, MultipartFile imageFile) {
-        ProductEntity product = productRepository.findById(id)
+        ProductEntity product = productRepository.findByIdAndHiddenFalse(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
                 ));
@@ -127,17 +145,43 @@ public class ProductService {
         }
 
         product.update(
+                dto.getProductName(),
                 dto.getMinHeadcount(),
                 dto.getMaxHeadcount(),
-                dto.getMinOrderAmount(),
+                dto.getServingPrice(),
                 dto.getDeliveryRadiusKm(),
                 dto.getStoreAddress(),
+                dto.getLatitude(),
+                dto.getLongitude(),
                 dto.getCategory(),
                 dto.getDescription(),
                 dto.getDayOfWeek(),
                 dto.getUnavailableDates(),
                 imageUrl
         );
+
+        return ProductResponseDTO.from(product);
+    }
+
+    /**
+     * 판매 조건을 소프트 삭제한다.
+     */
+    @Transactional
+    public ProductResponseDTO softDelete(Long id) {
+        return softDelete(id, null);
+    }
+
+    /**
+     * 로그인 연동 전에는 현재는 null 허용, 이후에는 소유자 검증용 식별자를 전달받는다.
+     */
+    @Transactional
+    public ProductResponseDTO softDelete(Long id, Long ownerAccountId) {
+        ProductEntity product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
+                ));
+
+        product.softDelete(ownerAccountId);
 
         return ProductResponseDTO.from(product);
     }
@@ -181,12 +225,12 @@ public class ProductService {
                 && product.getCategory().toLowerCase(Locale.ROOT).contains(category.toLowerCase(Locale.ROOT));
     }
 
-    private boolean matchesMinOrderAmount(ProductEntity product, Integer minOrderAmount) {
-        if (minOrderAmount == null) {
+    private boolean matchesServingPrice(ProductEntity product, Integer servingPrice) {
+        if (servingPrice == null) {
             return true;
         }
 
-        return product.getMinOrderAmount() <= minOrderAmount;
+        return product.getServingPrice() <= servingPrice;
     }
 
     private String storeImageOrNull(MultipartFile imageFile) {

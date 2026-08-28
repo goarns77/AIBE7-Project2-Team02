@@ -14,17 +14,21 @@ import java.util.List;
  */
 public class ProductResponseDTO {
     private final Long id;
+    private final String productName;
     private final Integer minHeadcount;
     private final Integer maxHeadcount;
-    private final Integer minOrderAmount;
+    private final Integer servingPrice;
     private final Double deliveryRadiusKm;
     private final String storeAddress;
+    private final Double latitude;
+    private final Double longitude;
     private final String category;
     private final String description;
     private final DayOfWeek dayOfWeek;
     private final Double ratingAvg;
     private final List<LocalDate> unavailableDates;
     private final String imageUrl;
+    private final boolean hidden;
     private final LocalDateTime updatedAt;
 
     /**
@@ -32,11 +36,14 @@ public class ProductResponseDTO {
      */
     private ProductResponseDTO(ProductEntity product) {
         this.id = product.getId();
+        this.productName = product.getProductName();
         this.minHeadcount = product.getMinHeadcount();
         this.maxHeadcount = product.getMaxHeadcount();
-        this.minOrderAmount = product.getMinOrderAmount();
+        this.servingPrice = product.getServingPrice();
         this.deliveryRadiusKm = product.getDeliveryRadiusKm();
         this.storeAddress = product.getStoreAddress();
+        this.latitude = product.getLatitude();
+        this.longitude = product.getLongitude();
         this.category = product.getCategory();
         this.description = product.getDescription();
         this.dayOfWeek = product.getDayOfWeek();
@@ -45,6 +52,7 @@ public class ProductResponseDTO {
                 product.getUnavailableDates() == null ? List.of() : product.getUnavailableDates()
         );
         this.imageUrl = product.getImageUrl();
+        this.hidden = product.isHidden();
         this.updatedAt = product.getUpdatedAt();
     }
 

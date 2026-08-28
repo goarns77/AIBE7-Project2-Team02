@@ -4,34 +4,33 @@ import lombok.Builder;
 import lombok.Getter;
 import org.example.matcheat.domain.quote.entity.Quote;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Builder
 public class QuoteResponse {
-	private Long quoteId;
+
+	private Long id;
 	private Long chatRoomId;
 	private Long buyerId;
 	private Long sellerId;
+	private Quote.SenderRole senderRole; // [P1-4 추가]
 	private Integer quantity;
 	private Long unitPrice;
 	private Long deliveryFee;
 	private Long totalAmount;
-	private String status;
-	private LocalDateTime createdAt;
+	private Quote.QuoteStatus status;
 
 	public static QuoteResponse from(Quote quote) {
 		return QuoteResponse.builder()
-				.quoteId(quote.getId())
+				.id(quote.getId())
 				.chatRoomId(quote.getChatRoomId())
 				.buyerId(quote.getBuyerId())
 				.sellerId(quote.getSellerId())
+				.senderRole(quote.getSenderRole()) // [P1-4 추가]
 				.quantity(quote.getQuantity())
 				.unitPrice(quote.getUnitPrice())
 				.deliveryFee(quote.getDeliveryFee())
 				.totalAmount(quote.getTotalAmount())
-				.status(quote.getStatus() != null ? quote.getStatus().name() : null)
-				.createdAt(quote.getCreatedAt())
+				.status(quote.getStatus())
 				.build();
 	}
 }
