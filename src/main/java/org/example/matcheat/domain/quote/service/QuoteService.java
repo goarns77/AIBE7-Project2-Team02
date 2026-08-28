@@ -27,8 +27,19 @@ public class QuoteService {
 		// 1. 견적 금액 계산
 		long totalAmount = calculateTotalAmount(request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee());
 
-		// 2. 견적서(Quote) 생성 (chatRoomId는 일단 null)
+		// 2. ChatRoom을 먼저 생성 및 저장 (quoteId는 일단 null)
+		ChatRoom chatRoom = ChatRoom.builder()
+				.originType(ChatRoom.OriginType.PROPOSAL)
+				.quoteId(null) // 아래에서 Quote 생성 후 업데이트
+				.buyerId(currentUserId)
+				.sellerId(sellerId)
+				.build();
+
+		ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+
+		// 3. 확보된 chatRoomId를 넣어 Quote 생성 및 저장
 		Quote quote = Quote.builder()
+				.chatRoomId(savedChatRoom.getId()) // 👈 NULL이 아닌 채로 세팅되어 NOT NULL 제약조건 통과
 				.buyerId(currentUserId)
 				.sellerId(sellerId)
 				.quantity(request.getQuantity())
@@ -40,18 +51,8 @@ public class QuoteService {
 
 		Quote savedQuote = quoteRepository.save(quote);
 
-		// 3. 연결할 채팅방(ChatRoom) 자동 생성 (OriginType.PROPOSAL)
-		ChatRoom chatRoom = ChatRoom.builder()
-				.originType(ChatRoom.OriginType.PROPOSAL)
-				.quoteId(savedQuote.getId()) // 생성된 quote_id 세팅
-				.buyerId(currentUserId)
-				.sellerId(sellerId)
-				.build();
-
-		ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
-
-		// 4. 견적서에 생성된 chatRoomId 역방향 연결
-		savedQuote.updateChatRoomId(savedChatRoom.getId());
+		// 4. ChatRoom에 생성된 quoteId 역방향 연결
+		savedChatRoom.updateQuoteId(savedQuote.getId());
 
 		return QuoteResponse.from(savedQuote);
 	}
