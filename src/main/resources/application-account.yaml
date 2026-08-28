@@ -1,0 +1,13 @@
+app:
+  account:
+    password-encoder: bcrypt
+    jwt:
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:https://matcheat.local}
+      audience: ${JWT_AUDIENCE:matcheat-api}
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:PT1H}
+    admin-bootstrap:
+      enabled: ${ADMIN_BOOTSTRAP_ENABLED:false}
+      email: ${ADMIN_EMAIL:}
+      password: ${ADMIN_PASSWORD:}
+      name: ${ADMIN_NAME:}
