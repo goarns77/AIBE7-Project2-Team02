@@ -1,10 +1,13 @@
 package org.example.matcheat.domain.product.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -13,7 +16,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "seller_conditions")
@@ -46,12 +53,23 @@ public class ProductEntity {
     @Column(name = "category", nullable = false)
     private String category;
 
+    @Column(name = "description", nullable = true, columnDefinition = "TEXT")
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "day_of_week", nullable = true)
+    private DayOfWeek dayOfWeek;
+
     @Column(name = "rating_avg", nullable = true)
     @ColumnDefault("0.0")
     private Double ratingAvg;
 
-    @Column(name = "seller_unavailable_dates", nullable = true, columnDefinition = "TEXT")
-    private String sellerUnavailableDates;
+    @Convert(converter = LocalDateListConverter.class)
+    @Column(name = "unavailable_dates", nullable = true, columnDefinition = "TEXT")
+    private List<LocalDate> unavailableDates;
+
+    @Column(name = "image_url", nullable = true, columnDefinition = "TEXT")
+    private String imageUrl;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
@@ -66,7 +84,10 @@ public class ProductEntity {
             Double deliveryRadiusKm,
             String storeAddress,
             String category,
-            String sellerUnavailableDates
+            String description,
+            DayOfWeek dayOfWeek,
+            List<LocalDate> unavailableDates,
+            String imageUrl
     ) {
         this.minHeadcount = minHeadcount;
         this.maxHeadcount = maxHeadcount;
@@ -74,7 +95,10 @@ public class ProductEntity {
         this.deliveryRadiusKm = deliveryRadiusKm;
         this.storeAddress = storeAddress;
         this.category = category;
-        this.sellerUnavailableDates = sellerUnavailableDates;
+        this.description = description;
+        this.dayOfWeek = dayOfWeek;
+        this.unavailableDates = normalizeUnavailableDates(unavailableDates);
+        this.imageUrl = imageUrl;
     }
 
     /**
@@ -87,7 +111,10 @@ public class ProductEntity {
             Double deliveryRadiusKm,
             String storeAddress,
             String category,
-            String sellerUnavailableDates
+            String description,
+            DayOfWeek dayOfWeek,
+            List<LocalDate> unavailableDates,
+            String imageUrl
     ) {
         return new ProductEntity(
                 minHeadcount,
@@ -96,7 +123,10 @@ public class ProductEntity {
                 deliveryRadiusKm,
                 storeAddress,
                 category,
-                sellerUnavailableDates
+                description,
+                dayOfWeek,
+                unavailableDates,
+                imageUrl
         );
     }
 
@@ -110,7 +140,10 @@ public class ProductEntity {
             Double deliveryRadiusKm,
             String storeAddress,
             String category,
-            String sellerUnavailableDates
+            String description,
+            DayOfWeek dayOfWeek,
+            List<LocalDate> unavailableDates,
+            String imageUrl
     ) {
         if(minHeadcount != null) {
             this.minHeadcount = minHeadcount;
@@ -136,8 +169,20 @@ public class ProductEntity {
             this.category = category;
         }
 
-        if(sellerUnavailableDates != null) {
-            this.sellerUnavailableDates = sellerUnavailableDates;
+        if (description != null) {
+            this.description = description;
+        }
+
+        if(dayOfWeek != null) {
+            this.dayOfWeek = dayOfWeek;
+        }
+
+        if (unavailableDates != null) {
+            this.unavailableDates = normalizeUnavailableDates(unavailableDates);
+        }
+
+        if (imageUrl != null) {
+            this.imageUrl = imageUrl;
         }
     }
 
@@ -155,5 +200,13 @@ public class ProductEntity {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    private List<LocalDate> normalizeUnavailableDates(List<LocalDate> unavailableDates) {
+        if (unavailableDates == null || unavailableDates.isEmpty()) {
+            return List.of();
+        }
+
+        return new ArrayList<>(unavailableDates);
     }
 }
