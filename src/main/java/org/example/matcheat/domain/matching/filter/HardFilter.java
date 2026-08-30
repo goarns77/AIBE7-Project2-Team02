@@ -47,10 +47,10 @@ public class HardFilter {
                     case PER_PERSON -> order.getBudget().multiply(BigDecimal.valueOf(order.getQuantity()));
                 };
 
-        BigDecimal minOrderAmount =
+        BigDecimal servicePrice =
                 BigDecimal.valueOf(product.getServingPrice());
 
-        return totalBudget.compareTo(minOrderAmount) >= 0;
+        return totalBudget.compareTo(servicePrice) >= 0;
     }
 
     /**
