@@ -1,13 +1,18 @@
 package org.example.matcheat.domain.chat.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "chat_rooms")
+@EntityListeners(AuditingEntityListener.class) // [추가] Auditing 기능 활성화
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatRoom {
 
@@ -15,38 +20,47 @@ public class ChatRoom {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	private Long proposalId; // nullable (INQUIRY인 경우 null 가능)
-
-	private Long quoteId;    // nullable (견적서 생성 시 업데이트)
+	private Long proposalId;
+	private Long quoteId;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private OriginType originType; // PROPOSAL | INQUIRY
+	private OriginType originType;
 
-	@Column(nullable = false)
 	private Long buyerId;
-
-	@Column(nullable = false)
 	private Long sellerId;
 
+	@Enumerated(EnumType.STRING)
+	private Status status = Status.ACTIVE;
+
+	@CreatedDate // [추가] 생성 일시 자동 세팅
+	@Column(updatable = false)
 	private LocalDateTime createdAt;
 
 	public enum OriginType {
-		PROPOSAL, INQUIRY
+		INQUIRY,
+		PROPOSAL
+	}
+
+	public enum Status {
+		ACTIVE,
+		CLOSED
 	}
 
 	@Builder
-	public ChatRoom(Long proposalId, Long quoteId, OriginType originType, Long buyerId, Long sellerId) {
+	public ChatRoom(Long proposalId, Long quoteId, OriginType originType, Long buyerId, Long sellerId, Status status) {
 		this.proposalId = proposalId;
 		this.quoteId = quoteId;
 		this.originType = originType;
 		this.buyerId = buyerId;
 		this.sellerId = sellerId;
-		this.createdAt = LocalDateTime.now();
+		this.status = status != null ? status : Status.ACTIVE;
 	}
 
-	// 견적서 연동 메서드
 	public void updateQuoteId(Long quoteId) {
 		this.quoteId = quoteId;
+	}
+
+	public void close() {
+		this.status = Status.CLOSED;
 	}
 }

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>로그인 | MatchEAT</title>
+  <link rel="stylesheet" href="/account/css/account-auth.css">
+</head>
+<body class="account-page">
+  <main class="account-shell">
+    <section class="account-brand" aria-label="MatchEAT 소개">
+      <a class="account-wordmark" href="/">Match<span>EAT</span></a>
+      <p class="account-kicker">BUSINESS FOOD MATCHING</p>
+      <h1>필요한 식사와<br>준비된 판매자를 연결합니다.</h1>
+      <p class="account-intro">대량 주문부터 맞춤 견적까지, 한 계정으로 구매와 판매를 시작하세요.</p>
+      <div class="account-brand-mark" aria-hidden="true">M</div>
+    </section>
+
+    <section class="account-card" aria-labelledby="login-title">
+      <p class="account-step">ACCOUNT / 01</p>
+      <h2 id="login-title">다시 만나 반갑습니다</h2>
+      <p class="account-muted">가입한 이메일과 비밀번호로 로그인하세요.</p>
+
+      <form id="account-login-form" class="account-form" novalidate>
+        <label for="email">이메일</label>
+        <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>
+        <p class="account-field-message" data-field-error="email" aria-live="polite"></p>
+
+        <label for="password">비밀번호</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="64" required>
+        <p class="account-field-message" data-field-error="password" aria-live="polite"></p>
+
+        <p id="account-form-message" class="account-message" role="alert" aria-live="polite"></p>
+        <button class="account-submit" type="submit">로그인</button>
+      </form>
+
+      <p class="account-switch">계정이 없나요? <a href="/signup">회원가입</a></p>
+    </section>
+  </main>
+  <script type="module" src="/account/js/login.js"></script>
+</body>
+</html>

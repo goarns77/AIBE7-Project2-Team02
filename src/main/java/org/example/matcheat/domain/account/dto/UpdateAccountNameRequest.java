@@ -1,0 +1,10 @@
+package org.example.matcheat.domain.account.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record UpdateAccountNameRequest(
+        @NotBlank(message = "이름을 입력해 주세요.")
+        @Size(max = 50, message = "이름은 50자 이하여야 합니다.")
+        String name) {
+}
