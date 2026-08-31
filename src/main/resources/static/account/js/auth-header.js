@@ -28,8 +28,11 @@ if (header) {
         link.hidden = loggedIn;
     });
 
+    const isAdmin =
+        loggedIn && readCurrentUserRole() === 'ADMIN';
+
     memberLinks.forEach(link => {
-        link.hidden = !loggedIn;
+        link.hidden = !loggedIn || isAdmin;
     });
 
     if (logoutButton) {
@@ -42,8 +45,6 @@ if (header) {
     }
 
     if (adminLink) {
-        adminLink.hidden =
-            !loggedIn ||
-            readCurrentUserRole() !== 'ADMIN';
+        adminLink.hidden = !isAdmin;
     }
 }

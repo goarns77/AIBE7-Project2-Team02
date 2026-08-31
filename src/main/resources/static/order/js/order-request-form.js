@@ -88,8 +88,6 @@ if (form) {
             budget: Number(form.elements.namedItem('budget').value),
             category,
             deliveryAddress: form.elements.namedItem('deliveryAddress').value.trim(),
-            latitude: Number(form.elements.namedItem('latitude').value),
-            longitude: Number(form.elements.namedItem('longitude').value)
         };
 
         const url = mode === 'edit'
@@ -126,9 +124,11 @@ if (form) {
         const body = await readApiBody(response);
 
         if (mode === 'edit') {
-            window.location.href = `/requests/${requestId}`;
+            window.location.href =
+                `/requests/${requestId}`;
         } else {
-            window.location.href = `/requests/${body.id}`;
+            window.location.href =
+                `/requests/${body.id}/matches`;
         }
     });
 }

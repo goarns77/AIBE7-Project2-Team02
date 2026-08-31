@@ -180,6 +180,11 @@
              th:attr="data-buyer-id=${orderRequest.buyerId}"
              hidden>
 
+            <a th:href="@{/requests/{id}/matches(id=${orderRequest.id})}"
+               class="order-detail-button order-detail-match">
+                매칭 결과 보기
+            </a>
+
             <a th:href="@{/requests/{id}/edit(id=${orderRequest.id})}"
                class="order-detail-button order-detail-edit">
                 주문 수정

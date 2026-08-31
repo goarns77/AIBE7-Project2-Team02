@@ -11,8 +11,10 @@
 <h1>판매 조건 등록 테스트</h1>
 
 <div class="nav" style="margin-bottom: 20px;">
-    <a href="/product/list" style="margin-right: 15px; text-decoration: none; color: #28a745; font-weight: bold;">📋 판매 조건 전체 목록 테스트 페이지로 이동</a>
-    <a href="/product/update" style="margin-right: 15px; text-decoration: none; color: #28a745; font-weight: bold;">✏️ 판매 조건 수정 테스트 페이지로 이동</a>
+    <a href="/product/list" style="margin-right: 15px; text-decoration: none; color: #28a745; font-weight: bold;">📋 판매
+        조건 전체 목록 테스트 페이지로 이동</a>
+    <a href="/product/update" style="margin-right: 15px; text-decoration: none; color: #28a745; font-weight: bold;">✏️
+        판매 조건 수정 테스트 페이지로 이동</a>
 </div>
 
 <form id="productForm">
@@ -81,7 +83,8 @@
         <label for="imageFile">상품 이미지</label>
         <input type="file" id="imageFile" accept="image/*">
         <div style="margin-top: 10px;">
-            <img id="imagePreview" alt="이미지 미리보기" style="display:none; width:160px; height:160px; object-fit:cover; border:1px solid #ddd; border-radius:8px;">
+            <img id="imagePreview" alt="이미지 미리보기"
+                 style="display:none; width:160px; height:160px; object-fit:cover; border:1px solid #ddd; border-radius:8px;">
         </div>
     </div>
 
@@ -92,7 +95,12 @@
 <h2>응답 결과</h2>
 <pre id="result"></pre>
 
-<script>
+<script type="module">
+    import {
+        authFetch,
+        readApiBody
+    } from "/account/js/auth-client.js";
+
     const form = document.getElementById("productForm");
     const result = document.getElementById("result");
     const imageFileInput = document.getElementById("imageFile");
@@ -137,21 +145,46 @@
         };
 
         const formData = new FormData();
-        formData.append("product", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
+        formData.append("product", new Blob([JSON.stringify(requestData)], {type: "application/json"}));
 
         const imageFile = imageFileInput.files?.[0];
         if (imageFile) {
             formData.append("imageFile", imageFile);
         }
 
-        const response = await fetch("/api/v1/products", {
-            method: "POST",
-            body: formData
-        });
+        const response =
+            await authFetch(
+                "/api/v1/products",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
 
-        const data = await response.json();
+        const data =
+            await readApiBody(response);
 
-        result.textContent = JSON.stringify(data, null, 2);
+        if (response.status === 401) {
+            const redirect =
+                encodeURIComponent(
+                    window.location.pathname
+                );
+
+            window.location.href =
+                `/login?redirect=${redirect}`;
+
+            return;
+        }
+
+        if (!response.ok) {
+            result.textContent =
+                JSON.stringify(data, null, 2);
+
+            return;
+        }
+
+        result.textContent =
+            JSON.stringify(data, null, 2);
     });
 </script>
 
