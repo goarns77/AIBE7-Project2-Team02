@@ -57,16 +57,7 @@ public class ProposalAccessService {
         }
 
         SellerApplicationRepository.SellerApplication seller =
-                sellerApplicationRepository.findByUserId(userId)
-                        .orElseThrow(() -> new AccessDeniedException(
-                                "판매자 등록이 필요한 기능입니다."
-                        ));
-
-        if (seller.status() != SellerVerificationStatus.APPROVED) {
-            throw new AccessDeniedException(
-                    "승인된 판매자만 제안을 보낼 수 있습니다."
-            );
-        }
+                requireApprovedSeller(userId);
 
         // 등록 상품 제안인 경우 현재 로그인 사용자의 상품인지 확인한다.
         if (dto.getProductId() != null) {
@@ -133,5 +124,33 @@ public class ProposalAccessService {
         }
 
         return proposalService.findByRequestId(requestId);
+    }
+
+    /**
+     * 현재 사용자가 승인된 판매자인지 확인한다.
+     */
+    public void validateSellerEligibility(Long userId) {
+        requireApprovedSeller(userId);
+    }
+
+    /**
+     * 승인된 판매자 정보를 반환한다.
+     */
+    private SellerApplicationRepository.SellerApplication requireApprovedSeller(
+            Long userId
+    ) {
+        SellerApplicationRepository.SellerApplication seller =
+                sellerApplicationRepository.findByUserId(userId)
+                        .orElseThrow(() -> new AccessDeniedException(
+                                "판매자 등록이 필요한 기능입니다."
+                        ));
+
+        if (seller.status() != SellerVerificationStatus.APPROVED) {
+            throw new AccessDeniedException(
+                    "승인된 판매자만 제안을 보낼 수 있습니다."
+            );
+        }
+
+        return seller;
     }
 }

@@ -108,6 +108,20 @@ public class ProductService {
     }
 
     /**
+     * 현재 로그인 사용자가 등록한 판매 조건 목록을 조회한다.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductResponseDTO> findMine(Long ownerAccountId) {
+        return productRepository
+                .findAllByOwnerAccountIdAndHiddenFalseOrderByUpdatedAtDescIdDesc(
+                        ownerAccountId
+                )
+                .stream()
+                .map(ProductResponseDTO::from)
+                .toList();
+    }
+
+    /**
      * 모든 판매 조건을 목록으로 조회한다.
      */
     @Transactional(readOnly = true)

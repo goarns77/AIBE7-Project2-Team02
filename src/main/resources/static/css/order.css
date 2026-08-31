@@ -517,3 +517,10 @@
 
     cursor: pointer;
 }
+
+/* 판매자가 주문에 수주 제안을 등록하는 주요 액션 */
+.order-detail-proposal {
+    border: 1px solid #222;
+    background-color: #222;
+    color: #fff;
+}

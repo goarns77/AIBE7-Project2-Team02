@@ -5,16 +5,46 @@ import {authFetch, readApiBody, readCurrentUserId} from '/account/js/auth-client
  */
 const ownerActions = document.getElementById('orderOwnerActions');
 const cancelButton = document.getElementById('cancelOrderButton');
+const sellerActions =
+    document.getElementById('orderSellerActions');
 
 const currentUserId = readCurrentUserId();
 
-if (ownerActions) {
-    const buyerId = Number(ownerActions.dataset.buyerId);
+/**
+ * 주문 상세에서 현재 사용자의 역할에 맞는 액션을 표시한다.
+ */
+async function initializeOrderActions() {
+    if (currentUserId === null) {
+        return;
+    }
 
-    if (currentUserId !== null && currentUserId === buyerId) {
-        ownerActions.hidden = false;
+    const buyerId = ownerActions
+        ? Number(ownerActions.dataset.buyerId)
+        : sellerActions
+            ? Number(sellerActions.dataset.buyerId)
+            : null;
+
+    // 구매자는 자신의 주문 관리 버튼만 표시한다.
+    if (buyerId === currentUserId) {
+        if (ownerActions) {
+            ownerActions.hidden = false;
+        }
+
+        return;
+    }
+
+    // 주문 소유자가 아니라면 승인 판매자인지 서버에서 확인한다.
+    if (sellerActions) {
+        const response =
+            await authFetch('/api/v1/proposals/eligibility');
+
+        if (response.ok) {
+            sellerActions.hidden = false;
+        }
     }
 }
+
+initializeOrderActions();
 
 if (cancelButton) {
     cancelButton.addEventListener('click', async () => {

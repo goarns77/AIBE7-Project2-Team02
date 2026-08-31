@@ -24,6 +24,13 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     Optional<ProductEntity> findByIdAndHiddenFalse(Long id);
 
     /**
+     * 특정 사용자가 등록한 숨김 상태가 아닌 판매 조건을 최신순으로 조회한다.
+     */
+    List<ProductEntity> findAllByOwnerAccountIdAndHiddenFalseOrderByUpdatedAtDescIdDesc(
+            Long ownerAccountId
+    );
+
+    /**
      * 수량, 카테고리, 1인분 가격 조건에 맞는 판매 조건을 조회한다.
      */
     @Query(value = """

@@ -1,0 +1,423 @@
+/* 수주 제안 작성 및 조회 화면에서 사용하는 스타일 */
+
+.proposal-page-header {
+    margin-bottom: 24px;
+}
+
+.proposal-page-header h1 {
+    margin: 0 0 8px;
+}
+
+.proposal-page-header p {
+    margin: 0;
+}
+
+.proposal-order-summary {
+    margin-bottom: 20px;
+    padding: 24px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    background-color: #fff;
+}
+
+.proposal-order-summary h2 {
+    margin: 0 0 20px;
+    padding-bottom: 16px;
+
+    border-bottom: 1px solid #eee;
+
+    font-size: 20px;
+}
+
+.proposal-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.proposal-summary-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.proposal-summary-label {
+    color: #777;
+    font-size: 13px;
+}
+
+.proposal-form-card {
+    padding: 32px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    background-color: #fff;
+}
+
+.proposal-form-card h2 {
+    margin: 0 0 16px;
+    font-size: 20px;
+}
+
+.proposal-mode-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+
+    margin-bottom: 28px;
+}
+
+.proposal-mode-button {
+    padding: 12px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    background-color: #fff;
+
+    cursor: pointer;
+}
+
+.proposal-mode-button.is-active {
+    border-color: #222;
+
+    background-color: #222;
+    color: #fff;
+}
+
+.proposal-form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 24px;
+
+    margin-bottom: 24px;
+}
+
+.proposal-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.proposal-form-field input,
+.proposal-form-field select,
+.proposal-form-field textarea {
+    width: 100%;
+
+    padding: 10px 12px;
+
+    border: 1px solid #ccc;
+}
+
+.proposal-form-field textarea {
+    resize: vertical;
+}
+
+.proposal-form-full {
+    margin-bottom: 24px;
+}
+
+.proposal-form-hint {
+    margin: 0;
+
+    color: #777;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.proposal-preparation-input {
+    display: flex;
+    align-items: center;
+
+    max-width: 220px;
+
+    gap: 8px;
+}
+
+.proposal-product-preview {
+    display: flex;
+    align-items: center;
+
+    gap: 16px;
+
+    margin-top: 8px;
+    padding: 16px;
+
+    border: 1px solid #eee;
+    border-radius: 8px;
+
+    background-color: #fafafa;
+}
+
+.proposal-product-preview img {
+    width: 88px;
+    height: 88px;
+
+    border-radius: 8px;
+
+    object-fit: cover;
+}
+
+.proposal-product-preview p {
+    margin: 6px 0 0;
+
+    color: #666;
+    line-height: 1.5;
+}
+
+.proposal-form-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    gap: 8px;
+
+    margin-top: 32px;
+}
+
+.proposal-cancel-button,
+.proposal-submit-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    height: 42px;
+    padding: 0 18px;
+
+    border-radius: 6px;
+
+    font: inherit;
+    font-size: 14px;
+}
+
+.proposal-cancel-button {
+    border: 1px solid #ccc;
+
+    background-color: #fff;
+    color: #222;
+}
+
+.proposal-submit-button {
+    border: 1px solid #222;
+
+    background-color: #222;
+    color: #fff;
+
+    cursor: pointer;
+}
+
+/* 받은 제안과 보낸 제안 목록 화면 */
+
+.proposal-list-header {
+    margin-bottom: 24px;
+}
+
+.proposal-list-header h1 {
+    margin: 0 0 8px;
+}
+
+.proposal-list-header p {
+    margin: 0;
+}
+
+.proposal-list-card {
+    padding: 24px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    background-color: #fff;
+}
+
+.proposal-list-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+
+    margin-bottom: 24px;
+}
+
+.proposal-list-tab {
+    padding: 12px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    background-color: #fff;
+
+    cursor: pointer;
+}
+
+.proposal-list-tab.is-active {
+    border-color: #222;
+
+    background-color: #222;
+    color: #fff;
+}
+
+.proposal-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.proposal-list-item {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 24px;
+
+    padding: 24px 4px;
+
+    border-bottom: 1px solid #eee;
+}
+
+.proposal-list-item:first-child {
+    padding-top: 4px;
+}
+
+.proposal-list-item:last-child {
+    padding-bottom: 4px;
+    border-bottom: none;
+}
+
+.proposal-list-item-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.proposal-list-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    gap: 16px;
+}
+
+.proposal-list-item-header h2 {
+    margin: 6px 0 0;
+
+    font-size: 19px;
+}
+
+.proposal-request-number {
+    color: #777;
+
+    font-size: 13px;
+}
+
+.proposal-status-badge {
+    flex-shrink: 0;
+
+    padding: 5px 10px;
+
+    border-radius: 14px;
+
+    background-color: #eee;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.proposal-list-meta {
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 20px;
+
+    margin-top: 20px;
+}
+
+.proposal-list-meta > div {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+.proposal-list-meta-label {
+    color: #777;
+
+    font-size: 13px;
+}
+
+.proposal-list-description {
+    margin: 20px 0 0;
+
+    color: #555;
+
+    line-height: 1.6;
+
+    white-space: pre-wrap;
+}
+
+.proposal-list-date {
+    display: block;
+
+    margin-top: 16px;
+
+    color: #999;
+
+    font-size: 12px;
+}
+
+.proposal-list-item-actions {
+    display: flex;
+    align-items: center;
+
+    flex-shrink: 0;
+}
+
+.proposal-list-order-link {
+    padding: 9px 14px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    background-color: #fff;
+
+    font-size: 14px;
+}
+
+.proposal-list-order-link:hover {
+    background-color: #f5f5f5;
+}
+
+.proposal-list-empty {
+    padding: 60px 20px;
+
+    text-align: center;
+
+    color: #777;
+}
+
+@media (max-width: 760px) {
+
+    .proposal-list-item {
+        flex-direction: column;
+    }
+
+    .proposal-list-meta {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .proposal-list-item-actions {
+        justify-content: flex-end;
+    }
+
+}
+
+@media (max-width: 760px) {
+    .proposal-summary-grid,
+    .proposal-form-row,
+    .proposal-mode-buttons {
+        grid-template-columns: 1fr;
+    }
+}

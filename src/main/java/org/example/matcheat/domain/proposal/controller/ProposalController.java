@@ -91,4 +91,18 @@ public class ProposalController {
                 proposalAccessService.findSent(userId)
         );
     }
+
+    /**
+     * 현재 사용자가 제안을 보낼 수 있는 승인 판매자인지 확인한다.
+     */
+    @GetMapping("/proposals/eligibility")
+    public ResponseEntity<Void> checkEligibility(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        proposalAccessService.validateSellerEligibility(userId);
+
+        return ResponseEntity.noContent().build();
+    }
 }

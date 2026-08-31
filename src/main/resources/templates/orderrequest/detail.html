@@ -193,6 +193,20 @@
             </button>
 
         </div>
+        <div id="orderSellerActions"
+             class="order-detail-action-group"
+             th:if="${orderRequest.status.name() == 'MATCHING'}"
+             th:attr="
+        data-buyer-id=${orderRequest.buyerId},
+        data-request-id=${orderRequest.id}"
+             hidden>
+
+            <a th:href="@{/requests/{id}/proposals/new(id=${orderRequest.id})}"
+               class="order-detail-button order-detail-proposal">
+                제안하기
+            </a>
+
+        </div>
 
     </section>
 </main>
