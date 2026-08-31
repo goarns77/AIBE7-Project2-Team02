@@ -7,6 +7,9 @@ import java.time.Instant;
 import java.util.Optional;
 
 public interface SellerApplicationRepository {
+
+    Optional<SellerApplication> findByUserId(long userId);
+
     Optional<SellerVerificationStatus> findStatusByUserId(long userId);
 
     boolean existsByUserId(long userId);

@@ -22,6 +22,15 @@ public class JpaSellerApplicationRepository implements SellerApplicationReposito
     }
 
     @Override
+    public Optional<SellerApplication> findByUserId(long userId) {
+        return sellerProfiles.findByUser_Id(userId)
+                .map(profile -> new SellerApplication(
+                        profile.id(),
+                        profile.verificationStatus()
+                ));
+    }
+
+    @Override
     public Optional<SellerVerificationStatus> findStatusByUserId(long userId) {
         return sellerProfiles.findByUser_Id(userId).map(SellerProfileEntity::verificationStatus);
     }
