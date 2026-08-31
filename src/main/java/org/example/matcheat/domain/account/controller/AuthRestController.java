@@ -1,5 +1,7 @@
 package org.example.matcheat.domain.account.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.example.matcheat.domain.account.dto.EmailAvailabilityResponse;
 import org.example.matcheat.domain.account.dto.LoginRequest;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@Tag(name = "Authentication", description = "회원가입, 이메일 확인, JWT 로그인 API")
 public class AuthRestController {
     private final AccountAuthService accountAuthService;
 
@@ -39,6 +42,9 @@ public class AuthRestController {
     }
 
     @PostMapping("/login")
+    @Operation(
+            summary = "로그인 및 Access Token 발급",
+            description = "반환된 accessToken을 Swagger UI의 Authorize에 입력하면 보호 API를 호출할 수 있습니다.")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = LoginResponse.from(accountAuthService.login(request.email(), request.password()));
         return ResponseEntity.ok()

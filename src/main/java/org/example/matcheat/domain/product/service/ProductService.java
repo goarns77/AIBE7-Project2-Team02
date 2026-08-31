@@ -9,8 +9,8 @@ import org.example.matcheat.domain.product.dto.ProductResponseDTO;
 import org.example.matcheat.domain.product.dto.ProductUpdateDTO;
 import org.example.matcheat.domain.product.entity.ProductEntity;
 import org.example.matcheat.domain.product.repository.ProductRepository;
-import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
