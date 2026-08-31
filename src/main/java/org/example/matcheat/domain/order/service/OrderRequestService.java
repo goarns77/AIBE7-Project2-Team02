@@ -25,8 +25,9 @@ public class OrderRequestService {
      * = 이 메서드 안의 DB 작업은 모두 성공하거나, 문제가 생기면 모두 되돌린다.
      */
     @Transactional
-    public OrderRequestResponseDTO create(OrderRequestCreateDTO dto) {
+    public OrderRequestResponseDTO create(Long buyerId, OrderRequestCreateDTO dto) {
         OrderRequest orderRequest = OrderRequest.create(
+                buyerId,
                 dto.getTitle(),
                 dto.getDescription(),
                 dto.getEventDateTime(),
@@ -58,6 +59,18 @@ public class OrderRequestService {
     }
 
     /**
+     * 현재 구매자가 등록한 주문 목록을 조회
+     */
+    @Transactional(readOnly = true)
+    public List<OrderRequestResponseDTO> findByBuyerId(Long buyerId) {
+        return orderRequestRepository
+                .findAllByBuyerIdOrderByIdDesc(buyerId)
+                .stream()
+                .map(OrderRequestResponseDTO::from)
+                .toList();
+    }
+
+    /**
      * 전체 주문 요청 목록을 조회
      */
     @Transactional(readOnly = true)
@@ -72,11 +85,17 @@ public class OrderRequestService {
      * MATCHING 상태의 주문 요청 정보를 수정
      */
     @Transactional
-    public OrderRequestResponseDTO update(Long id, OrderRequestUpdateDTO dto) {
+    public OrderRequestResponseDTO update(Long id, Long buyerId, OrderRequestUpdateDTO dto) {
         OrderRequest orderRequest = orderRequestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 주문 요청입니다. id=%s".formatted(id)
                 ));
+
+        if (!orderRequest.getBuyerId().equals(buyerId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "본인이 등록한 주문만 수정할 수 있습니다."
+            );
+        }
 
         if (orderRequest.getStatus() != RequestStatus.MATCHING) {
             throw new IllegalStateException(
@@ -104,11 +123,17 @@ public class OrderRequestService {
      * MATCHING 상태의 주문 요청을 취소
      */
     @Transactional
-    public OrderRequestResponseDTO cancel(Long id) {
+    public OrderRequestResponseDTO cancel(Long id, Long buyerId) {
         OrderRequest orderRequest = orderRequestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 주문 요청입니다. id=%s".formatted(id)
                 ));
+
+        if (!orderRequest.getBuyerId().equals(buyerId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "본인이 등록한 주문만 취소할 수 있습니다."
+            );
+        }
 
         orderRequest.cancel();
 

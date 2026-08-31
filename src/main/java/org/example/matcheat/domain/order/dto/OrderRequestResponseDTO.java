@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 public class OrderRequestResponseDTO {
+    private final Long buyerId;
     private final String title;
     private final String description;
     private final Long id;
@@ -28,6 +29,7 @@ public class OrderRequestResponseDTO {
 
     private OrderRequestResponseDTO(OrderRequest orderRequest) {
         this.id = orderRequest.getId();
+        this.buyerId = orderRequest.getBuyerId();
         this.title = orderRequest.getTitle();
         this.description = orderRequest.getDescription();
         this.eventDateTime = orderRequest.getEventDateTime();

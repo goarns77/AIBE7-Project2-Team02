@@ -26,7 +26,7 @@
         매칭 중
     </span>
     </section>
-    
+
     <!-- 주문의 현재 진행 단계를 보여주는 영역 -->
     <section class="order-progress"
              th:if="${orderRequest.status.name() != 'CANCELLED'}">
@@ -174,28 +174,30 @@
             목록으로
         </a>
 
-        <div class="order-detail-action-group"
-             th:if="${orderRequest.status.name() == 'MATCHING'}">
+        <div id="orderOwnerActions"
+             class="order-detail-action-group"
+             th:if="${orderRequest.status.name() == 'MATCHING'}"
+             th:attr="data-buyer-id=${orderRequest.buyerId}"
+             hidden>
 
             <a th:href="@{/requests/{id}/edit(id=${orderRequest.id})}"
                class="order-detail-button order-detail-edit">
                 주문 수정
             </a>
 
-            <form th:action="@{/requests/{id}/cancel(id=${orderRequest.id})}"
-                  method="post">
-
-                <button type="submit"
-                        class="order-detail-button order-detail-cancel">
-                    주문 취소
-                </button>
-
-            </form>
+            <button type="button"
+                    id="cancelOrderButton"
+                    class="order-detail-button order-detail-cancel"
+                    th:attr="data-request-id=${orderRequest.id}">
+                주문 취소
+            </button>
 
         </div>
 
     </section>
 </main>
-
+<script type="module"
+        th:src="@{/order/js/order-request-detail.js}">
+</script>
 </body>
 </html>
