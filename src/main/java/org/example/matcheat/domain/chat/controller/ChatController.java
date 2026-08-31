@@ -9,36 +9,37 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/chat-rooms")
+@RequestMapping("/api/v1/chat-rooms")
 @RequiredArgsConstructor
 public class ChatController {
 
 	private final ChatService chatService;
 
-	/**
-	 * 채팅방 생성 API (단순 문의 및 제안서 기반 생성 공통)
-	 * POST /api/chat-rooms
-	 */
 	@PostMapping
 	public ResponseEntity<ChatRoomResponse> createChatRoom(
 			@RequestBody ChatRoomCreateRequest request
-			// TODO: 추후 Spring Security 적용 시 @AuthenticationPrincipal 사용
-			// @AuthenticationPrincipal CustomUserDetails userDetails
 	) {
-		// 인증 구현 전 임시 사용자 ID 하드코딩 (예: 구매자 ID = 1L)
-		Long currentUserId = 1L;
+		// [수정] 별도로 하드코딩하지 않고 resolveCurrentUserId()로 일원화.
+		// 인증 붙으면 이 메서드 하나만 바꾸면 이 클래스의 모든 엔드포인트에 적용된다.
+		Long currentUserId = resolveCurrentUserId();
 
 		ChatRoomResponse response = chatService.createChatRoom(request, currentUserId);
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
-	/**
-	 * 단건 채팅방 상세 조회 API
-	 * GET /api/chat-rooms/{chatRoomId}
-	 */
 	@GetMapping("/{chatRoomId}")
 	public ResponseEntity<ChatRoomResponse> getChatRoom(@PathVariable Long chatRoomId) {
-		ChatRoomResponse response = chatService.getChatRoom(chatRoomId);
+		Long currentUserId = resolveCurrentUserId();
+		ChatRoomResponse response = chatService.getChatRoom(chatRoomId, currentUserId);
 		return ResponseEntity.ok(response);
+	}
+
+	// -----------------------------------------------------------
+	// 인증 붙기 전 임시 처리 — 교체 지점을 한 곳으로 모아둔다.
+	// QuoteController.resolveCurrentUserId()와 동일한 패턴.
+	// -----------------------------------------------------------
+	private Long resolveCurrentUserId() {
+		// TODO: SecurityContext/JWT 적용 시 인증된 사용자의 userId로 교체
+		return 1L;
 	}
 }

@@ -1,3 +1,4 @@
+// domain/chat/dto/ChatFileResponse.java
 package org.example.matcheat.domain.chat.dto;
 
 import lombok.Builder;
@@ -16,12 +17,9 @@ public class ChatFileResponse {
 	private Long senderId;
 	private String originalFileName;
 	private String storedFileName;
-	private String filePath;
+	// [수정 P1-5] filePath 제거 (서버 절대경로 보안 노출 방지)
 	private Long fileSize;
-
-	// [P1-5 수정] String -> ChatMessage.MessageType Enum으로 변경
 	private ChatMessage.MessageType fileType;
-
 	private LocalDateTime createdAt;
 
 	public static ChatFileResponse from(ChatFile chatFile) {
@@ -31,9 +29,8 @@ public class ChatFileResponse {
 				.senderId(chatFile.getSenderId())
 				.originalFileName(chatFile.getOriginalFileName())
 				.storedFileName(chatFile.getStoredFileName())
-				.filePath(chatFile.getFilePath())
 				.fileSize(chatFile.getFileSize())
-				.fileType(chatFile.getFileType()) // Enum 타입 매핑
+				.fileType(chatFile.getFileType())
 				.createdAt(chatFile.getCreatedAt())
 				.build();
 	}
