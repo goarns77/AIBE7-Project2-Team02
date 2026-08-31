@@ -7,6 +7,7 @@ import org.example.matcheat.domain.product.dto.ProductResponseDTO;
 import org.example.matcheat.domain.product.dto.ProductUpdateDTO;
 import org.example.matcheat.domain.product.entity.ProductEntity;
 import org.example.matcheat.domain.product.repository.ProductRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -78,6 +79,30 @@ public class ProductService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
                 ));
+
+        return ProductResponseDTO.from(product);
+    }
+
+    /**
+     * 현재 로그인 사용자가 소유한 판매 조건을 조회한다.
+     */
+    @Transactional(readOnly = true)
+    public ProductResponseDTO findOwnedById(
+            Long id,
+            Long ownerAccountId
+    ) {
+        ProductEntity product = productRepository.findByIdAndHiddenFalse(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
+                ));
+
+        if (product.getOwnerAccountId() == null
+                || !product.getOwnerAccountId().equals(ownerAccountId)) {
+
+            throw new AccessDeniedException(
+                    "본인이 등록한 판매 조건만 제안에 사용할 수 있습니다."
+            );
+        }
 
         return ProductResponseDTO.from(product);
     }
