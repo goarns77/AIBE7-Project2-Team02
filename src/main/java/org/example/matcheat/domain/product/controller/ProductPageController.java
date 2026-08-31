@@ -12,7 +12,7 @@ public class ProductPageController {
     /**
      * 판매 조건 목록 테스트 페이지로 이동한다.
      */
-    @GetMapping("/product/list")
+    @GetMapping("/product")
     public String listPage() {
         return "product/list";
     }
@@ -22,7 +22,15 @@ public class ProductPageController {
      */
     @GetMapping("/product/new")
     public String createPage() {
-        return "product/test";
+        return "product/create";
+    }
+
+    /**
+     * 판매 조건 상세 테스트 페이지로 이동한다.
+     */
+    @GetMapping("/product/detail")
+    public String detailPage() {
+        return "product/detail";
     }
 
     /**

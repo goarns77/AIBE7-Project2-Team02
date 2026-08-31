@@ -5,6 +5,7 @@ import org.example.matcheat.domain.product.dto.ProductResponseDTO;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * 주문 조건과 판매 조건을 비교해 하드 필터 통과 여부를 판단하는 컴포넌트
@@ -35,22 +36,40 @@ public class HardFilter {
     }
 
     /**
-     * 주문의 총예산이 판매자의 최소 주문 금액 이상인지 확인
+     * 주문 예산으로 해당 상품의 주문 수량만큼 구매할 수 있는지 확인
      */
-    public boolean matchesMinOrderAmount(
+    public boolean matchesBudget(
             OrderRequestResponseDTO order,
             ProductResponseDTO product
     ) {
-        BigDecimal totalBudget =
-                switch (order.getBudgetType()) {
-                    case TOTAL -> order.getBudget();
-                    case PER_PERSON -> order.getBudget().multiply(BigDecimal.valueOf(order.getQuantity()));
-                };
-
-        BigDecimal servicePrice =
+        BigDecimal unitPrice =
                 BigDecimal.valueOf(product.getServingPrice());
 
-        return totalBudget.compareTo(servicePrice) >= 0;
+        return switch (order.getBudgetType()) {
+            case PER_PERSON -> order.getBudget().compareTo(unitPrice) >= 0;
+
+            case TOTAL -> {
+                BigDecimal totalPrice =
+                        unitPrice.multiply(
+                                BigDecimal.valueOf(order.getQuantity())
+                        );
+
+                yield order.getBudget().compareTo(totalPrice) >= 0;
+            }
+        };
+    }
+
+    /**
+     * 주문 행사 날짜가 판매자의 판매 불가 날짜에 포함되지 않는지 확인
+     */
+    public boolean matchesAvailableDate(
+            OrderRequestResponseDTO order,
+            ProductResponseDTO product
+    ) {
+        LocalDate eventDate = order.getEventDateTime().toLocalDate();
+
+        return product.getUnavailableDates() == null
+                || !product.getUnavailableDates().contains(eventDate);
     }
 
     /**
@@ -62,6 +81,7 @@ public class HardFilter {
     ) {
         return matchesQuantity(order, product)
                 && matchesCategory(order, product)
-                && matchesMinOrderAmount(order, product);
+                && matchesBudget(order, product)
+                && matchesAvailableDate(order, product);
     }
 }

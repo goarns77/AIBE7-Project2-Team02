@@ -19,6 +19,11 @@ public interface OrderRequestRepository extends JpaRepository<OrderRequest, Long
     List<OrderRequest> findAllByStatus(RequestStatus status);
 
     /**
+     * 특정 구매자가 등록한 주문을 조회
+     */
+    List<OrderRequest> findAllByBuyerIdOrderByIdDesc(Long buyerId);
+
+    /**
      * 제목 또는 음식 카테고리에 검색어가 포함된 주문을 조회
      */
     @Query("""

@@ -8,6 +8,8 @@ import org.example.matcheat.domain.order.dto.OrderRequestUpdateDTO;
 import org.example.matcheat.domain.order.service.OrderRequestService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,10 +31,13 @@ public class OrderRequestController {
      */
     @PostMapping
     public ResponseEntity<OrderRequestResponseDTO> create(
+            @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody OrderRequestCreateDTO dto
     ) {
-        // Service에게 주문 요청 생성을 요청
-        OrderRequestResponseDTO response = orderRequestService.create(dto);
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        OrderRequestResponseDTO response =
+                orderRequestService.create(userId, dto);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -62,14 +67,32 @@ public class OrderRequestController {
     }
 
     /**
+     * 현재 로그인한 구매자가 등록한 주문 목록을 조회
+     */
+    @GetMapping("/me")
+    public ResponseEntity<List<OrderRequestResponseDTO>> findMine(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        return ResponseEntity.ok(
+                orderRequestService.findByBuyerId(userId)
+        );
+    }
+
+    /**
      * 주문 요청 ID로 기존 주문 요청 정보를 수정
      */
     @PatchMapping("/{id}")
     public ResponseEntity<OrderRequestResponseDTO> update(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
             @Valid @RequestBody OrderRequestUpdateDTO dto
     ) {
-        OrderRequestResponseDTO response = orderRequestService.update(id, dto);
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        OrderRequestResponseDTO response =
+                orderRequestService.update(id, userId, dto);
 
         return ResponseEntity.ok(response);
     }
@@ -79,9 +102,13 @@ public class OrderRequestController {
      */
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<OrderRequestResponseDTO> cancel(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id
     ) {
-        OrderRequestResponseDTO response = orderRequestService.cancel(id);
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        OrderRequestResponseDTO response =
+                orderRequestService.cancel(id, userId);
 
         return ResponseEntity.ok(response);
     }
