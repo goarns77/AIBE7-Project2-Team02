@@ -3,6 +3,9 @@ spring:
     name: MatchEAT
   profiles:
     include: db, ai, account
+app:
+  kakao:
+    rest-api-key: ${KAKAO_REST_API_KEY:}
 ---
 spring:
   config:

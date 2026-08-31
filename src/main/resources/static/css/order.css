@@ -524,3 +524,14 @@
     background-color: #222;
     color: #fff;
 }
+
+/* 현재 주문 조건으로 계산된 맞춤 상품 결과로 이동 */
+.order-detail-match {
+    border: 1px solid #10b981;
+    background-color: #fff;
+    color: #087a55;
+}
+
+.order-detail-match:hover {
+    background-color: #eefaf5;
+}

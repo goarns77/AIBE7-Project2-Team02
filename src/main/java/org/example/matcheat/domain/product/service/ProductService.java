@@ -2,6 +2,7 @@ package org.example.matcheat.domain.product.service;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.common.location.GeocodingService;
 import org.example.matcheat.domain.account.enums.SellerVerificationStatus;
 import org.example.matcheat.domain.account.repository.SellerApplicationRepository;
 import org.example.matcheat.domain.product.dto.ProductCreateDTO;
@@ -26,6 +27,7 @@ import java.util.Locale;
 public class ProductService {
     private final ProductRepository productRepository;
     private final ProductImageStorageService productImageStorageService;
+    private final GeocodingService geocodingService;
     private final SellerApplicationRepository sellerApplicationRepository;
 
     /**
@@ -45,6 +47,11 @@ public class ProductService {
 
         String imageUrl = storeImageOrNull(imageFile);
 
+        GeocodingService.Coordinates coordinates =
+                geocodingService.geocode(
+                        dto.getStoreAddress()
+                );
+
         ProductEntity product = ProductEntity.create(
                 dto.getProductName(),
                 dto.getMinHeadcount(),
@@ -52,8 +59,8 @@ public class ProductService {
                 dto.getServingPrice(),
                 dto.getDeliveryRadiusKm(),
                 dto.getStoreAddress(),
-                dto.getLatitude(),
-                dto.getLongitude(),
+                coordinates.latitude(),
+                coordinates.longitude(),
                 dto.getCategory(),
                 dto.getDescription(),
                 dto.getDayOfWeek(),
@@ -198,6 +205,21 @@ public class ProductService {
             imageUrl = storeImageOrNull(imageFile);
         }
 
+        Double latitude = null;
+        Double longitude = null;
+
+        if (dto.getStoreAddress() != null
+                && !dto.getStoreAddress().isBlank()) {
+
+            GeocodingService.Coordinates coordinates =
+                    geocodingService.geocode(
+                            dto.getStoreAddress()
+                    );
+
+            latitude = coordinates.latitude();
+            longitude = coordinates.longitude();
+        }
+
         product.update(
                 ownerAccountId,
                 dto.getProductName(),
@@ -206,8 +228,8 @@ public class ProductService {
                 dto.getServingPrice(),
                 dto.getDeliveryRadiusKm(),
                 dto.getStoreAddress(),
-                dto.getLatitude(),
-                dto.getLongitude(),
+                latitude,
+                longitude,
                 dto.getCategory(),
                 dto.getDescription(),
                 dto.getDayOfWeek(),
