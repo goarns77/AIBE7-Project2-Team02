@@ -19,10 +19,10 @@
     </section>
 
     <!-- 신규 주문 정보를 입력하는 폼 영역 -->
-    <form class="order-form-card"
-          th:action="@{/requests}"
+    <form id="orderRequestForm"
+          class="order-form-card"
           th:object="${orderRequest}"
-          method="post">
+          data-mode="create">
 
         <!-- 주문 제목과 행사/배송 일시 입력 영역 -->
         <div class="order-form-row">
@@ -161,41 +161,8 @@
 
     </form>
 </main>
-<script>
-    const categorySelect = document.getElementById('category');
-    const customCategoryArea = document.getElementById('customCategoryArea');
-    const customCategoryInput = document.getElementById('customCategory');
-    const orderForm = categorySelect.closest('form');
-
-    categorySelect.addEventListener('change', function () {
-        const isOther = categorySelect.value === '기타';
-
-        customCategoryArea.hidden = !isOther;
-        customCategoryInput.required = isOther;
-
-        if (!isOther) {
-            customCategoryInput.value = '';
-        }
-    });
-
-    orderForm.addEventListener('submit', function () {
-        if (categorySelect.value !== '기타') {
-            return;
-        }
-
-        const customCategory = customCategoryInput.value.trim();
-
-        if (customCategory === '') {
-            return;
-        }
-
-        const option = document.createElement('option');
-        option.value = customCategory;
-        option.textContent = customCategory;
-        option.selected = true;
-
-        categorySelect.appendChild(option);
-    });
+<script type="module"
+        th:src="@{/order/js/order-request-form.js}">
 </script>
 </body>
 

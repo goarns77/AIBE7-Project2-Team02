@@ -33,6 +33,13 @@ public class ProposalService {
         // 존재하지 않는 주문에 제안하는 것을 방지한다.
         orderRequestService.findById(requestId);
 
+        // 같은 판매자가 같은 주문에 최초 제안을 중복 등록하는 것을 방지한다.
+        if (proposalRepository.existsByRequestIdAndSellerId(requestId, sellerId)) {
+            throw new IllegalStateException(
+                    "이미 해당 주문에 제안을 보냈습니다."
+            );
+        }
+
         Proposal proposal = Proposal.create(
                 requestId,
                 sellerId,
