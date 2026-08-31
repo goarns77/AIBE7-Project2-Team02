@@ -216,6 +216,21 @@
     const quantityInput = document.getElementById("quantity");
     const categoryInput = document.getElementById("category");
     const servingPriceInput = document.getElementById("servingPrice");
+    const ACCESS_TOKEN_KEY = "matcheat.accessToken";
+
+    function readAccessToken() {
+        return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    }
+
+    async function authFetch(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        const token = readAccessToken();
+        if (token) {
+            headers.set("Authorization", `Bearer ${token}`);
+        }
+
+        return fetch(url, { ...options, headers });
+    }
 
     function buildSearchParams() {
         const params = new URLSearchParams();
@@ -283,7 +298,7 @@
                 <td>${product.ratingAvg !== null ? product.ratingAvg.toFixed(1) : '-'}</td>
                 <td>${new Date(product.updatedAt).toLocaleString()}</td>
                 <td>
-                    <a href="/product/update?id=${product.id}" class="btn btn-primary">수정</a>
+                    <a href="/product/detail?id=${product.id}" class="btn btn-primary">상세</a>
                     <button type="button" class="btn btn-danger" data-product-id="${product.id}">삭제</button>
                 </td>
             `;
@@ -297,7 +312,7 @@
 
             const params = buildSearchParams();
             const query = params.toString();
-            const response = await fetch(`/api/v1/products/search${query ? `?${query}` : ""}`);
+            const response = await authFetch(`/api/v1/products/search${query ? `?${query}` : ""}`);
 
             if (!response.ok) {
                 throw new Error("판매 조건 목록을 불러오지 못했습니다.");
@@ -306,7 +321,7 @@
             const data = await response.json();
             renderRows(data);
         } catch (error) {
-            productList.innerHTML = `<tr><td colspan="14" class="empty-state">${error.message}</td></tr>`;
+            productList.innerHTML = `<tr><td colspan="15" class="empty-state">${error.message}</td></tr>`;
         }
     }
 
@@ -330,7 +345,7 @@
         deleteButton.disabled = true;
 
         try {
-            const response = await fetch(`/api/v1/products/${productId}`, {
+            const response = await authFetch(`/api/v1/products/${productId}`, {
                 method: "DELETE"
             });
 

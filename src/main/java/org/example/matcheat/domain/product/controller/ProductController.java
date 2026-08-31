@@ -26,7 +26,7 @@ public class ProductController {
     private final ProductService productService;
 
     /**
-     * 새로운 판매 조건을 등록한다.
+     * 새로운 판매 조건을 등록한다. 승인된 판매자만 가능하다.
      */
     @PostMapping
     public ResponseEntity<ProductResponseDTO> create(
@@ -35,8 +35,7 @@ public class ProductController {
     ) {
         Long userId = Long.valueOf(jwt.getSubject());
 
-        ProductResponseDTO response =
-                productService.create(dto, null, userId);
+        ProductResponseDTO response = productService.create(dto, userId);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -44,24 +43,23 @@ public class ProductController {
     }
 
     /**
-     * 새로운 판매 조건을 등록한다. (multipart)
+     * 새로운 판매 조건을 등록한다. (multipart) 승인된 판매자만 가능하다.
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> createMultipart(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestPart("product") ProductCreateDTO dto,
-            @RequestPart(value = "imageFile", required = false)
-            MultipartFile imageFile
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile
     ) {
         Long userId = Long.valueOf(jwt.getSubject());
 
-        ProductResponseDTO response =
-                productService.create(dto, imageFile, userId);
+        ProductResponseDTO response = productService.create(dto, imageFile, userId);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
+
 
     /**
      * 판매 조건 ID로 단건 조회한다.
@@ -114,42 +112,49 @@ public class ProductController {
     }
 
     /**
-     * 판매 조건 ID에 해당하는 항목을 부분 수정한다.
+     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. 본인 소유의 판매 조건만 가능하다.
      */
     @PatchMapping("/{id}")
-    public ResponseEntity<ProductResponseDTO> update(
+    public ResponseEntity<ProductResponseDTO> update (
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
             @Valid @RequestBody ProductUpdateDTO dto
     ) {
-        ProductResponseDTO response = productService.update(id, dto);
+       Long userId = Long.valueOf(jwt.getSubject());
 
-        return ResponseEntity.ok(response);
+       ProductResponseDTO response = productService.update(id, dto, userId);
+
+       return ResponseEntity.ok(response);
     }
 
     /**
-     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. (multipart)
+     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. (multipart) 본인 소유의 판매 조건만 가능하다.
      */
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> updateMultipart(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
             @Valid @RequestPart("product") ProductUpdateDTO dto,
             @RequestPart(value = "imageFile", required = false) MultipartFile imageFile
     ) {
-        ProductResponseDTO response = productService.update(id, dto, imageFile);
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        ProductResponseDTO response = productService.update(id, dto, imageFile, userId);
 
         return ResponseEntity.ok(response);
     }
 
     /**
-     * 판매 조건을 소프트 삭제한다.
+     * 판매 조건을 소프트 삭제한다. 본인 소유의 판매 조건만 가능하다.
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> softDelete(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id
     ) {
-        // TODO: 로그인 담당 개발이 끝나면 현재 로그인한 사용자의 accountId를 주입받아
-        //       본인 상품만 삭제하도록 바꾼다.
-        ProductResponseDTO response = productService.softDelete(id);
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        ProductResponseDTO response = productService.softDelete(id, userId);
 
         return ResponseEntity.ok(response);
     }
