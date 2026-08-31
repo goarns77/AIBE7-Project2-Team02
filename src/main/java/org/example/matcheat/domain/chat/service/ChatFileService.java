@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.matcheat.domain.chat.dto.ChatFileResponse;
 import org.example.matcheat.domain.chat.entity.ChatFile;
 import org.example.matcheat.domain.chat.entity.ChatMessage;
+import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.repository.ChatFileRepository;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -25,12 +26,20 @@ import java.util.stream.Collectors;
 public class ChatFileService {
 
 	private final ChatFileRepository chatFileRepository;
+	private final ChatService chatService; // [추가] 채팅방 존재/참여자 검증용
 
-	// 파일이 저장될 로컬 디렉토리 경로 (프로젝트 루트 하위 uploads/chat-files)
 	private final String uploadDir = System.getProperty("user.dir") + "/uploads/chat-files/";
 
+	/**
+	 * [수정] senderId를 파라미터로 받되, 이 값은 클라이언트가 아니라
+	 * 컨트롤러의 resolveCurrentUserId()가 결정한 값이어야 한다.
+	 * [수정] 채팅방 존재 여부 + 요청자가 참여자인지 검증 추가 (기존엔 둘 다 없었음).
+	 */
 	@Transactional
-	public ChatFileResponse uploadFile(Long chatRoomId, Long senderId, MultipartFile file) throws IOException {
+	public ChatFileResponse uploadFile(Long chatRoomId, Long currentUserId, MultipartFile file) throws IOException {
+		ChatRoom chatRoom = chatService.getChatRoomEntity(chatRoomId);
+		chatRoom.validateParticipant(currentUserId);
+
 		if (file.isEmpty()) {
 			throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
 		}
@@ -38,7 +47,6 @@ public class ChatFileService {
 		String originalFilename = file.getOriginalFilename();
 		String contentType = file.getContentType();
 
-		// [P1-5 수정] 이미지 및 PDF 검증 -> ChatMessage.MessageType Enum 매핑
 		ChatMessage.MessageType fileType;
 		if (contentType != null && contentType.startsWith("image/")) {
 			fileType = ChatMessage.MessageType.IMAGE;
@@ -48,27 +56,23 @@ public class ChatFileService {
 			throw new IllegalArgumentException("이미지(JPG, PNG 등) 및 PDF 파일만 업로드할 수 있습니다.");
 		}
 
-		// 저장 디렉토리 생성 및 검증
 		File dir = new File(uploadDir);
 		if (!dir.exists() && !dir.mkdirs()) {
 			throw new IOException("업로드 디렉토리를 생성할 수 없습니다: " + uploadDir);
 		}
 
-		// 고유 파일명 생성 (중복 방지)
 		String storedFileName = UUID.randomUUID() + "_" + originalFilename;
 		String filePath = uploadDir + storedFileName;
 
-		// 로컬 파일 저장
 		file.transferTo(new File(filePath));
 
-		// DB 메타데이터 저장 (Enum 타입 전달)
 		ChatFile chatFile = ChatFile.builder()
 				.chatRoomId(chatRoomId)
-				.senderId(senderId)
+				.senderId(currentUserId) // 클라이언트가 보낸 값이 아니라 서버가 결정한 값
 				.originalFileName(originalFilename)
 				.storedFileName(storedFileName)
 				.filePath(filePath)
-				.fileType(fileType) // 👈 ChatMessage.MessageType 전달
+				.fileType(fileType)
 				.fileSize(file.getSize())
 				.build();
 
@@ -76,8 +80,14 @@ public class ChatFileService {
 		return ChatFileResponse.from(savedFile);
 	}
 
+	/**
+	 * [수정] 참여자 검증 추가 (기존엔 chatRoomId만 알면 누구나 목록 조회 가능했음).
+	 */
 	@Transactional(readOnly = true)
-	public List<ChatFileResponse> getFilesByChatRoom(Long chatRoomId) {
+	public List<ChatFileResponse> getFilesByChatRoom(Long chatRoomId, Long currentUserId) {
+		ChatRoom chatRoom = chatService.getChatRoomEntity(chatRoomId);
+		chatRoom.validateParticipant(currentUserId);
+
 		return chatFileRepository.findByChatRoomIdOrderByCreatedAtDesc(chatRoomId)
 				.stream()
 				.map(ChatFileResponse::from)
@@ -86,9 +96,20 @@ public class ChatFileService {
 
 	@Transactional(readOnly = true)
 	public ChatFile getChatFileEntity(Long fileId) {
-		// TODO: [P2-8] Security Principal 연동 시 요청자가 해당 chatRoomId의 참여자(buyer/seller)인지 확인하는 권한 검증 로직 추가 필요
 		return chatFileRepository.findById(fileId)
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 파일입니다. ID: " + fileId));
+	}
+
+	/**
+	 * [신규] 다운로드 전용 조회 — 파일이 속한 채팅방의 참여자인지 검증한다.
+	 * 기존 downloadFile 컨트롤러는 fileId만 알면 누구나 다운로드 가능했다.
+	 */
+	@Transactional(readOnly = true)
+	public ChatFile getChatFileForDownload(Long fileId, Long currentUserId) {
+		ChatFile chatFile = getChatFileEntity(fileId);
+		ChatRoom chatRoom = chatService.getChatRoomEntity(chatFile.getChatRoomId());
+		chatRoom.validateParticipant(currentUserId);
+		return chatFile;
 	}
 
 	public Resource loadFileAsResource(String filePath) throws MalformedURLException {

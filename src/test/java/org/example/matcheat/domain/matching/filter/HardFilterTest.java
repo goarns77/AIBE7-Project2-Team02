@@ -6,6 +6,10 @@ import org.example.matcheat.domain.product.dto.ProductResponseDTO;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -33,7 +37,7 @@ class HardFilterTest {
     }
 
     @Test
-    void 주문_수량이_판매_가능_최소_인원보다_적으면_false를_반환한다() {
+    void 주문_수량이_최소_인원보다_적으면_false를_반환한다() {
         OrderRequestResponseDTO order = mock(OrderRequestResponseDTO.class);
         ProductResponseDTO product = mock(ProductResponseDTO.class);
 
@@ -47,7 +51,7 @@ class HardFilterTest {
     }
 
     @Test
-    void 주문_수량이_판매_가능_최대_인원보다_많으면_false를_반환한다() {
+    void 주문_수량이_최대_인원보다_많으면_false를_반환한다() {
         OrderRequestResponseDTO order = mock(OrderRequestResponseDTO.class);
         ProductResponseDTO product = mock(ProductResponseDTO.class);
 
@@ -61,7 +65,7 @@ class HardFilterTest {
     }
 
     @Test
-    void 주문_카테고리와_판매_카테고리가_같으면_true를_반환한다() {
+    void 주문_카테고리와_상품_카테고리가_같으면_true를_반환한다() {
         OrderRequestResponseDTO order = mock(OrderRequestResponseDTO.class);
         ProductResponseDTO product = mock(ProductResponseDTO.class);
 
@@ -74,7 +78,7 @@ class HardFilterTest {
     }
 
     @Test
-    void 주문_카테고리와_판매_카테고리가_다르면_false를_반환한다() {
+    void 주문_카테고리와_상품_카테고리가_다르면_false를_반환한다() {
         OrderRequestResponseDTO order = mock(OrderRequestResponseDTO.class);
         ProductResponseDTO product = mock(ProductResponseDTO.class);
 
@@ -87,46 +91,65 @@ class HardFilterTest {
     }
 
     @Test
-    void 총예산이_최소_주문_금액_이상이면_true를_반환한다() {
+    void 일인당_예산이_상품_일인당_가격_이상이면_true를_반환한다() {
         OrderRequestResponseDTO order = mock(OrderRequestResponseDTO.class);
         ProductResponseDTO product = mock(ProductResponseDTO.class);
 
-        when(order.getBudgetType()).thenReturn(BudgetType.TOTAL);
-        when(order.getBudget()).thenReturn(BigDecimal.valueOf(500000));
-        when(product.getMinOrderAmount()).thenReturn(300000);
+        when(order.getBudgetType()).thenReturn(BudgetType.PER_PERSON);
+        when(order.getBudget()).thenReturn(BigDecimal.valueOf(20000));
 
-        boolean result = hardFilter.matchesMinOrderAmount(order, product);
+        when(product.getServingPrice()).thenReturn(18000);
+
+        boolean result = hardFilter.matchesBudget(order, product);
 
         assertThat(result).isTrue();
     }
 
     @Test
-    void 총예산이_최소_주문_금액보다_적으면_false를_반환한다() {
+    void 일인당_예산이_상품_일인당_가격보다_적으면_false를_반환한다() {
         OrderRequestResponseDTO order = mock(OrderRequestResponseDTO.class);
         ProductResponseDTO product = mock(ProductResponseDTO.class);
 
-        when(order.getBudgetType()).thenReturn(BudgetType.TOTAL);
-        when(order.getBudget()).thenReturn(BigDecimal.valueOf(200000));
-        when(product.getMinOrderAmount()).thenReturn(300000);
+        when(order.getBudgetType()).thenReturn(BudgetType.PER_PERSON);
+        when(order.getBudget()).thenReturn(BigDecimal.valueOf(15000));
 
-        boolean result = hardFilter.matchesMinOrderAmount(order, product);
+        when(product.getServingPrice()).thenReturn(18000);
+
+        boolean result = hardFilter.matchesBudget(order, product);
 
         assertThat(result).isFalse();
     }
 
     @Test
-    void 인당_예산과_수량을_곱한_총예산이_최소_주문_금액_이상이면_true를_반환한다() {
+    void 총예산이_상품_총액_이상이면_true를_반환한다() {
         OrderRequestResponseDTO order = mock(OrderRequestResponseDTO.class);
         ProductResponseDTO product = mock(ProductResponseDTO.class);
 
-        when(order.getBudgetType()).thenReturn(BudgetType.PER_PERSON);
-        when(order.getBudget()).thenReturn(BigDecimal.valueOf(18000));
+        when(order.getBudgetType()).thenReturn(BudgetType.TOTAL);
+        when(order.getBudget()).thenReturn(BigDecimal.valueOf(600000));
         when(order.getQuantity()).thenReturn(30);
-        when(product.getMinOrderAmount()).thenReturn(500000);
 
-        boolean result = hardFilter.matchesMinOrderAmount(order, product);
+        when(product.getServingPrice()).thenReturn(18000);
+
+        boolean result = hardFilter.matchesBudget(order, product);
 
         assertThat(result).isTrue();
+    }
+
+    @Test
+    void 총예산이_상품_총액보다_적으면_false를_반환한다() {
+        OrderRequestResponseDTO order = mock(OrderRequestResponseDTO.class);
+        ProductResponseDTO product = mock(ProductResponseDTO.class);
+
+        when(order.getBudgetType()).thenReturn(BudgetType.TOTAL);
+        when(order.getBudget()).thenReturn(BigDecimal.valueOf(500000));
+        when(order.getQuantity()).thenReturn(30);
+
+        when(product.getServingPrice()).thenReturn(18000);
+
+        boolean result = hardFilter.matchesBudget(order, product);
+
+        assertThat(result).isFalse();
     }
 
     @Test
@@ -138,11 +161,40 @@ class HardFilterTest {
         when(order.getCategory()).thenReturn("한식");
         when(order.getBudgetType()).thenReturn(BudgetType.TOTAL);
         when(order.getBudget()).thenReturn(BigDecimal.valueOf(500000));
+        when(order.getEventDateTime())
+                .thenReturn(LocalDateTime.of(2026, 9, 15, 12, 0));
 
         when(product.getMinHeadcount()).thenReturn(10);
         when(product.getMaxHeadcount()).thenReturn(50);
         when(product.getCategory()).thenReturn("한식");
-        when(product.getMinOrderAmount()).thenReturn(300000);
+        when(product.getServingPrice()).thenReturn(15000);
+        when(product.getUnavailableDates())
+                .thenReturn(List.of(
+                        LocalDate.of(2026, 9, 10),
+                        LocalDate.of(2026, 9, 12)
+                ));
+
+        when(product.isHidden())
+                .thenReturn(false);
+
+        when(product.getDayOfWeek())
+                .thenReturn(DayOfWeek.MONDAY);
+
+        when(order.getLatitude())
+                .thenReturn(37.5665);
+
+        when(order.getLongitude())
+                .thenReturn(126.9780);
+
+        when(product.getLatitude())
+                .thenReturn(37.5759);
+
+        when(product.getLongitude())
+                .thenReturn(126.9768);
+
+        when(product.getDeliveryRadiusKm())
+                .thenReturn(5.0);
+
 
         boolean result = hardFilter.matches(order, product);
 
@@ -162,9 +214,259 @@ class HardFilterTest {
         when(product.getMinHeadcount()).thenReturn(10);
         when(product.getMaxHeadcount()).thenReturn(50);
         when(product.getCategory()).thenReturn("양식");
-        when(product.getMinOrderAmount()).thenReturn(300000);
+        when(product.getServingPrice()).thenReturn(15000);
 
         boolean result = hardFilter.matches(order, product);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void 주문_행사일이_판매_불가_날짜에_포함되지_않으면_true를_반환한다() {
+        OrderRequestResponseDTO order = mock(OrderRequestResponseDTO.class);
+        ProductResponseDTO product = mock(ProductResponseDTO.class);
+
+        when(order.getEventDateTime())
+                .thenReturn(LocalDateTime.of(2026, 9, 15, 12, 0));
+
+        when(product.getUnavailableDates())
+                .thenReturn(List.of(
+                        LocalDate.of(2026, 9, 10),
+                        LocalDate.of(2026, 9, 12)
+                ));
+
+        boolean result = hardFilter.matchesAvailableDate(order, product);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void 주문_행사일이_판매_불가_날짜에_포함되면_false를_반환한다() {
+        OrderRequestResponseDTO order = mock(OrderRequestResponseDTO.class);
+        ProductResponseDTO product = mock(ProductResponseDTO.class);
+
+        when(order.getEventDateTime())
+                .thenReturn(LocalDateTime.of(2026, 9, 12, 12, 0));
+
+        when(product.getUnavailableDates())
+                .thenReturn(List.of(
+                        LocalDate.of(2026, 9, 10),
+                        LocalDate.of(2026, 9, 12)
+                ));
+
+        boolean result = hardFilter.matchesAvailableDate(order, product);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void 숨김되지_않은_상품이면_true를_반환한다() {
+        ProductResponseDTO product =
+                mock(ProductResponseDTO.class);
+
+        when(product.isHidden())
+                .thenReturn(false);
+
+        boolean result =
+                hardFilter.matchesVisible(product);
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void 숨김된_상품이면_false를_반환한다() {
+        ProductResponseDTO product =
+                mock(ProductResponseDTO.class);
+
+        when(product.isHidden())
+                .thenReturn(true);
+
+        boolean result =
+                hardFilter.matchesVisible(product);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void 행사_요일이_정기_휴무일이_아니면_true를_반환한다() {
+        OrderRequestResponseDTO order =
+                mock(OrderRequestResponseDTO.class);
+
+        ProductResponseDTO product =
+                mock(ProductResponseDTO.class);
+
+        // 2026-09-15는 화요일
+        when(order.getEventDateTime())
+                .thenReturn(
+                        LocalDateTime.of(
+                                2026,
+                                9,
+                                15,
+                                12,
+                                0
+                        )
+                );
+
+        when(product.getDayOfWeek())
+                .thenReturn(DayOfWeek.MONDAY);
+
+        boolean result =
+                hardFilter.matchesOperatingDay(
+                        order,
+                        product
+                );
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void 행사_요일이_정기_휴무일이면_false를_반환한다() {
+        OrderRequestResponseDTO order =
+                mock(OrderRequestResponseDTO.class);
+
+        ProductResponseDTO product =
+                mock(ProductResponseDTO.class);
+
+        // 2026-09-15는 화요일
+        when(order.getEventDateTime())
+                .thenReturn(
+                        LocalDateTime.of(
+                                2026,
+                                9,
+                                15,
+                                12,
+                                0
+                        )
+                );
+
+        when(product.getDayOfWeek())
+                .thenReturn(DayOfWeek.TUESDAY);
+
+        boolean result =
+                hardFilter.matchesOperatingDay(
+                        order,
+                        product
+                );
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void 정기_휴무일이_없으면_true를_반환한다() {
+        OrderRequestResponseDTO order =
+                mock(OrderRequestResponseDTO.class);
+
+        ProductResponseDTO product =
+                mock(ProductResponseDTO.class);
+
+        when(product.getDayOfWeek())
+                .thenReturn(null);
+
+        boolean result =
+                hardFilter.matchesOperatingDay(
+                        order,
+                        product
+                );
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void 배송지가_배송_가능_반경_안이면_true를_반환한다() {
+        OrderRequestResponseDTO order =
+                mock(OrderRequestResponseDTO.class);
+
+        ProductResponseDTO product =
+                mock(ProductResponseDTO.class);
+
+        // 서울시청 부근
+        when(order.getLatitude())
+                .thenReturn(37.5665);
+
+        when(order.getLongitude())
+                .thenReturn(126.9780);
+
+        // 광화문 부근
+        when(product.getLatitude())
+                .thenReturn(37.5759);
+
+        when(product.getLongitude())
+                .thenReturn(126.9768);
+
+        when(product.getDeliveryRadiusKm())
+                .thenReturn(5.0);
+
+        boolean result =
+                hardFilter.matchesDeliveryRadius(
+                        order,
+                        product
+                );
+
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void 배송지가_배송_가능_반경_밖이면_false를_반환한다() {
+        OrderRequestResponseDTO order =
+                mock(OrderRequestResponseDTO.class);
+
+        ProductResponseDTO product =
+                mock(ProductResponseDTO.class);
+
+        // 서울시청
+        when(order.getLatitude())
+                .thenReturn(37.5665);
+
+        when(order.getLongitude())
+                .thenReturn(126.9780);
+
+        // 수원
+        when(product.getLatitude())
+                .thenReturn(37.2636);
+
+        when(product.getLongitude())
+                .thenReturn(127.0286);
+
+        when(product.getDeliveryRadiusKm())
+                .thenReturn(10.0);
+
+        boolean result =
+                hardFilter.matchesDeliveryRadius(
+                        order,
+                        product
+                );
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void 판매자_위치정보가_없으면_false를_반환한다() {
+        OrderRequestResponseDTO order =
+                mock(OrderRequestResponseDTO.class);
+
+        ProductResponseDTO product =
+                mock(ProductResponseDTO.class);
+
+        when(order.getLatitude())
+                .thenReturn(37.5665);
+
+        when(order.getLongitude())
+                .thenReturn(126.9780);
+
+        when(product.getLatitude())
+                .thenReturn(null);
+
+        when(product.getLongitude())
+                .thenReturn(null);
+
+        when(product.getDeliveryRadiusKm())
+                .thenReturn(10.0);
+
+        boolean result =
+                hardFilter.matchesDeliveryRadius(
+                        order,
+                        product
+                );
 
         assertThat(result).isFalse();
     }

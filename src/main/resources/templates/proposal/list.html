@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>제안 관리 | MatchEAT</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/common.css}">
+
+    <link rel="stylesheet"
+          th:href="@{/css/proposal.css}">
+</head>
+
+<body>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+
+    <section class="proposal-list-header">
+
+        <div>
+            <h1>제안 관리</h1>
+
+            <p>
+                받은 제안과 내가 보낸 제안을 확인할 수 있습니다.
+            </p>
+        </div>
+
+    </section>
+
+    <section class="proposal-list-card">
+
+        <div class="proposal-list-tabs">
+
+            <button type="button"
+                    class="proposal-list-tab is-active"
+                    data-proposal-tab="received">
+                받은 제안
+            </button>
+
+            <button type="button"
+                    class="proposal-list-tab"
+                    data-proposal-tab="sent">
+                보낸 제안
+            </button>
+
+        </div>
+
+        <div id="proposalList"
+             class="proposal-list">
+
+            <div class="proposal-list-empty">
+                제안 목록을 불러오는 중입니다.
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script type="module"
+        th:src="@{/proposal/js/proposal-list.js}">
+</script>
+
+</body>
+</html>

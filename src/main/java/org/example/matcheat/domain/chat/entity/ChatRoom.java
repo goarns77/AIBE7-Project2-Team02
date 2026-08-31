@@ -1,3 +1,4 @@
+// domain/chat/entity/ChatRoom.java
 package org.example.matcheat.domain.chat.entity;
 
 import jakarta.persistence.*;
@@ -11,8 +12,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "chat_rooms")
 @Getter
-@EntityListeners(AuditingEntityListener.class) // [추가] Auditing 기능 활성화
+@EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatRoom {
 
@@ -24,15 +26,17 @@ public class ChatRoom {
 	private Long quoteId;
 
 	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
 	private OriginType originType;
 
 	private Long buyerId;
 	private Long sellerId;
 
 	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
 	private Status status = Status.ACTIVE;
 
-	@CreatedDate // [추가] 생성 일시 자동 세팅
+	@CreatedDate
 	@Column(updatable = false)
 	private LocalDateTime createdAt;
 
@@ -56,6 +60,22 @@ public class ChatRoom {
 		this.status = status != null ? status : Status.ACTIVE;
 	}
 
+	// ---------------------------------------------------------------
+	// 자율 검증 (객체지향 가드)
+	// ---------------------------------------------------------------
+
+	public boolean isParticipant(Long userId) {
+		if (userId == null) return false;
+		return userId.equals(this.buyerId) || userId.equals(this.sellerId);
+	}
+
+	public void validateParticipant(Long userId) {
+		if (!isParticipant(userId)) {
+			throw new IllegalArgumentException("해당 채팅방에 접근 권한이 없습니다.");
+		}
+	}
+
+	// 기존 메서드명 그대로 유지 (QuoteService 등 다른 도메인에서 이 이름으로 호출 중)
 	public void updateQuoteId(Long quoteId) {
 		this.quoteId = quoteId;
 	}
