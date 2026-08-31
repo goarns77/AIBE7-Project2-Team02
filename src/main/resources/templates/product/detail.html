@@ -1,0 +1,382 @@
+<!-- Created by DINKIssTyle on 2026. Copyright (C) 2026 DINKI'ssTyle. All rights reserved. -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>판매 조건 상세</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+            color: #222;
+            background: #fafafa;
+        }
+
+        .page {
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+
+        .nav {
+            margin-bottom: 20px;
+        }
+
+        .nav a {
+            margin-right: 14px;
+            text-decoration: none;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #ffffff 0%, #f3f8ff 100%);
+            border: 1px solid #e6ebf1;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            margin: 0 0 8px;
+        }
+
+        .hero p {
+            margin: 0;
+            color: #5b6472;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+        }
+
+        .image-card,
+        .info-card {
+            background: #fff;
+            border: 1px solid #e6ebf1;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
+        }
+
+        .image-card {
+            padding: 16px;
+        }
+
+        .image-card img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            border-radius: 12px;
+            background: #f4f6f8;
+            display: block;
+        }
+
+        .image-placeholder {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: grid;
+            place-items: center;
+            border-radius: 12px;
+            background: repeating-linear-gradient(
+                45deg,
+                #f7f9fb,
+                #f7f9fb 12px,
+                #eef2f7 12px,
+                #eef2f7 24px
+            );
+            color: #718096;
+            font-weight: 700;
+        }
+
+        .info-card {
+            padding: 22px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .meta {
+            padding: 14px 16px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #edf2f7;
+        }
+
+        .meta .label {
+            display: block;
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .meta .value {
+            font-size: 15px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .wide {
+            grid-column: 1 / -1;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 22px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #fff;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+
+        .btn-secondary:hover {
+            background: #f8fafc;
+        }
+
+        .status {
+            padding: 14px 16px;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #e6ebf1;
+            color: #475569;
+        }
+
+        .error {
+            color: #b42318;
+            border-color: #fecaca;
+            background: #fff5f5;
+        }
+
+        @media (max-width: 820px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .meta-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="nav">
+        <a href="/product">📋 목록으로</a>
+        <a href="/product/new">➕ 새 등록</a>
+    </div>
+
+    <section class="hero">
+        <h1>판매 조건 상세</h1>
+        <p>목록에서 선택한 상품을 먼저 확인한 뒤, 필요할 때만 수정 화면으로 이동합니다.</p>
+    </section>
+
+    <div id="statusBox" class="status">상세 정보를 불러오는 중입니다...</div>
+
+    <section id="detailContent" class="content" style="display:none;">
+        <div class="image-card">
+            <div id="imageHolder"></div>
+        </div>
+
+        <div class="info-card">
+            <div class="meta-grid">
+                <div class="meta">
+                    <span class="label">판매 조건 ID</span>
+                    <span class="value" id="productId"></span>
+                </div>
+                <div class="meta">
+                    <span class="label">상품/메뉴명</span>
+                    <span class="value" id="productName"></span>
+                </div>
+                <div class="meta">
+                    <span class="label">최소 수주 수량</span>
+                    <span class="value" id="minHeadcount"></span>
+                </div>
+                <div class="meta">
+                    <span class="label">최대 수주 수량</span>
+                    <span class="value" id="maxHeadcount"></span>
+                </div>
+                <div class="meta">
+                    <span class="label">1인분 가격</span>
+                    <span class="value" id="servingPrice"></span>
+                </div>
+                <div class="meta">
+                    <span class="label">배송 반경</span>
+                    <span class="value" id="deliveryRadiusKm"></span>
+                </div>
+                <div class="meta">
+                    <span class="label">가게 주소</span>
+                    <span class="value" id="storeAddress"></span>
+                </div>
+                <div class="meta">
+                    <span class="label">음식 카테고리</span>
+                    <span class="value" id="category"></span>
+                </div>
+                <div class="meta wide">
+                    <span class="label">설명</span>
+                    <span class="value" id="description"></span>
+                </div>
+                <div class="meta">
+                    <span class="label">정기 휴무 요일</span>
+                    <span class="value" id="dayOfWeek"></span>
+                </div>
+                <div class="meta">
+                    <span class="label">평점</span>
+                    <span class="value" id="ratingAvg"></span>
+                </div>
+                <div class="meta wide">
+                    <span class="label">특정 불가 날짜</span>
+                    <span class="value" id="unavailableDates"></span>
+                </div>
+                <div class="meta wide">
+                    <span class="label">최종 수정일</span>
+                    <span class="value" id="updatedAt"></span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a id="estimateButton" class="btn btn-secondary" href="#">견적 요청하기</a>
+                <a id="editButton" class="btn btn-primary" href="#">수정하기</a>
+                <a class="btn btn-secondary" href="/product">목록으로 돌아가기</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    const statusBox = document.getElementById("statusBox");
+    const detailContent = document.getElementById("detailContent");
+    const imageHolder = document.getElementById("imageHolder");
+    const estimateButton = document.getElementById("estimateButton");
+    const editButton = document.getElementById("editButton");
+    const ACCESS_TOKEN_KEY = "matcheat.accessToken";
+
+    const dayOfWeekMap = {
+        MONDAY: "월요일",
+        TUESDAY: "화요일",
+        WEDNESDAY: "수요일",
+        THURSDAY: "목요일",
+        FRIDAY: "금요일",
+        SATURDAY: "토요일",
+        SUNDAY: "일요일"
+    };
+
+    function getIdFromQuery() {
+        return new URLSearchParams(window.location.search).get("id");
+    }
+
+    function readAccessToken() {
+        return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    }
+
+    async function authFetch(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        const token = readAccessToken();
+        if (token) {
+            headers.set("Authorization", `Bearer ${token}`);
+        }
+
+        return fetch(url, { ...options, headers });
+    }
+
+    function formatUnavailableDates(unavailableDates) {
+        if (!Array.isArray(unavailableDates) || unavailableDates.length === 0) {
+            return "-";
+        }
+
+        return unavailableDates.join(", ");
+    }
+
+    function formatMoney(value) {
+        return value != null ? `${Number(value).toLocaleString()}원` : "-";
+    }
+
+    function formatNumber(value, suffix = "") {
+        return value != null ? `${value}${suffix}` : "-";
+    }
+
+    function renderImage(imageUrl, productName) {
+        if (!imageUrl) {
+            imageHolder.innerHTML = `<div class="image-placeholder">이미지 없음</div>`;
+            return;
+        }
+
+        imageHolder.innerHTML = `<img src="${encodeURI(imageUrl)}" alt="${productName || "상품 이미지"}">`;
+    }
+
+    async function loadDetail() {
+        const id = getIdFromQuery();
+        if (!id) {
+            statusBox.textContent = "상세를 확인할 상품 ID가 없습니다.";
+            statusBox.classList.add("error");
+            return;
+        }
+
+        try {
+            const response = await authFetch(`/api/v1/products/${id}`);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error("존재하지 않는 판매 조건입니다.");
+                }
+                throw new Error("상세 정보를 불러오지 못했습니다.");
+            }
+
+            const product = await response.json();
+
+            document.getElementById("productId").textContent = formatNumber(product.id);
+            document.getElementById("productName").textContent = product.productName ?? "-";
+            document.getElementById("minHeadcount").textContent = formatNumber(product.minHeadcount);
+            document.getElementById("maxHeadcount").textContent = formatNumber(product.maxHeadcount);
+            document.getElementById("servingPrice").textContent = formatMoney(product.servingPrice);
+            document.getElementById("deliveryRadiusKm").textContent = formatNumber(product.deliveryRadiusKm, "km");
+            document.getElementById("storeAddress").textContent = product.storeAddress ?? "-";
+            document.getElementById("category").textContent = product.category ?? "-";
+            document.getElementById("description").textContent = product.description ?? "-";
+            document.getElementById("dayOfWeek").textContent = dayOfWeekMap[product.dayOfWeek] ?? "-";
+            document.getElementById("ratingAvg").textContent = product.ratingAvg != null ? product.ratingAvg.toFixed(1) : "-";
+            document.getElementById("unavailableDates").textContent = formatUnavailableDates(product.unavailableDates);
+            document.getElementById("updatedAt").textContent = product.updatedAt ? new Date(product.updatedAt).toLocaleString() : "-";
+
+            renderImage(product.imageUrl, product.productName);
+            estimateButton.href = `/estimates/new?itemName=${encodeURIComponent(product.productName ?? "")}`;
+            editButton.href = `/product/update?id=${product.id}`;
+
+            statusBox.style.display = "none";
+            detailContent.style.display = "grid";
+        } catch (error) {
+            statusBox.textContent = error.message;
+            statusBox.classList.add("error");
+        }
+    }
+
+    window.addEventListener("DOMContentLoaded", loadDetail);
+</script>
+</body>
+</html>

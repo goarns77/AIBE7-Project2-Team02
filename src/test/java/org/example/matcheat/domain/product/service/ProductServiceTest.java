@@ -1,6 +1,8 @@
 package org.example.matcheat.domain.product.service;
 
 import org.example.matcheat.common.location.GeocodingService;
+import org.example.matcheat.domain.account.enums.SellerVerificationStatus;
+import org.example.matcheat.domain.account.repository.SellerApplicationRepository;
 import org.example.matcheat.domain.product.dto.ProductCreateDTO;
 import org.example.matcheat.domain.product.dto.ProductResponseDTO;
 import org.example.matcheat.domain.product.dto.ProductUpdateDTO;
@@ -30,20 +32,36 @@ class ProductServiceTest {
     private final GeocodingService geocodingService =
             mock(GeocodingService.class);
 
+    private final SellerApplicationRepository sellerApplicationRepository =
+            mock(SellerApplicationRepository.class);
+
     private final ProductService productService =
             new ProductService(
                     productRepository,
                     productImageStorageService,
-                    geocodingService
+                    geocodingService,
+                    sellerApplicationRepository
             );
 
     @Test
     void 상품_생성_시_매장_주소를_좌표로_변환해_저장한다() {
+        Long ownerAccountId = 5L;
+
         ProductCreateDTO dto =
                 mock(ProductCreateDTO.class);
 
         String address =
                 "서울특별시 중구 세종대로 110";
+
+        when(
+                sellerApplicationRepository.findStatusByUserId(
+                        ownerAccountId
+                )
+        ).thenReturn(
+                Optional.of(
+                        SellerVerificationStatus.APPROVED
+                )
+        );
 
         when(dto.getProductName())
                 .thenReturn("한식 도시락");
@@ -83,9 +101,11 @@ class ProductServiceTest {
                         )
                 );
 
-        when(productRepository.save(
-                any(ProductEntity.class)
-        )).thenAnswer(
+        when(
+                productRepository.save(
+                        any(ProductEntity.class)
+                )
+        ).thenAnswer(
                 invocation ->
                         invocation.getArgument(0)
         );
@@ -94,7 +114,7 @@ class ProductServiceTest {
                 productService.create(
                         dto,
                         null,
-                        5L
+                        ownerAccountId
                 );
 
         assertThat(result.getStoreAddress())
@@ -106,6 +126,9 @@ class ProductServiceTest {
         assertThat(result.getLongitude())
                 .isEqualTo(126.977918351844);
 
+        verify(sellerApplicationRepository)
+                .findStatusByUserId(ownerAccountId);
+
         verify(geocodingService)
                 .geocode(address);
 
@@ -116,6 +139,7 @@ class ProductServiceTest {
     @Test
     void 상품_주소를_수정하면_좌표도_다시_변환한다() {
         Long productId = 1L;
+        Long ownerAccountId = 5L;
 
         ProductEntity product =
                 ProductEntity.create(
@@ -132,7 +156,7 @@ class ProductServiceTest {
                         DayOfWeek.MONDAY,
                         List.of(),
                         null,
-                        5L
+                        ownerAccountId
                 );
 
         when(
@@ -163,7 +187,8 @@ class ProductServiceTest {
         ProductResponseDTO result =
                 productService.update(
                         productId,
-                        dto
+                        dto,
+                        ownerAccountId
                 );
 
         assertThat(result.getStoreAddress())

@@ -44,3 +44,7 @@ out/
 
 ### Isolated account module cache ###
 .gradle-account-module/
+
+### chat-files ###
+uploads/chat-files/*
+!uploads/chat-files/.gitkeep

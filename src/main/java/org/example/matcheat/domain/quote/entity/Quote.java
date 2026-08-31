@@ -1,3 +1,4 @@
+// domain/quote/entity/Quote.java
 package org.example.matcheat.domain.quote.entity;
 
 import jakarta.persistence.*;
@@ -5,9 +6,15 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "quotes")
 @Getter
+@EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Quote {
 
@@ -15,11 +22,13 @@ public class Quote {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	// [설계] 채팅 없이 견적만 존재할 수 있어야 하므로 nullable 유지.
+	// 실제 DB 컬럼도 nullable = true (제약 추가하지 않음).
 	private Long chatRoomId;
+
 	private Long buyerId;
 	private Long sellerId;
 
-	// [P1-4 추가] 발신자 역할 (BUYER, SELLER)
 	@Enumerated(EnumType.STRING)
 	private SenderRole senderRole;
 
@@ -31,7 +40,10 @@ public class Quote {
 	@Enumerated(EnumType.STRING)
 	private QuoteStatus status;
 
-	// [P1-4 추가] SenderRole Enum
+	@CreatedDate
+	@Column(updatable = false)
+	private LocalDateTime createdAt;
+
 	public enum SenderRole {
 		BUYER,
 		SELLER
@@ -45,7 +57,14 @@ public class Quote {
 	}
 
 	@Builder
-	public Quote(Long chatRoomId, Long buyerId, Long sellerId, SenderRole senderRole, Integer quantity, Long unitPrice, Long deliveryFee, Long totalAmount, QuoteStatus status) {
+	public Quote(Long chatRoomId, Long buyerId, Long sellerId, SenderRole senderRole,
+	             Integer quantity, Long unitPrice, Long deliveryFee, Long totalAmount, QuoteStatus status) {
+		if (buyerId == null || sellerId == null) {
+			throw new IllegalArgumentException("buyerId와 sellerId는 필수입니다.");
+		}
+		if (senderRole == null) {
+			throw new IllegalArgumentException("senderRole은 필수입니다.");
+		}
 		this.chatRoomId = chatRoomId;
 		this.buyerId = buyerId;
 		this.sellerId = sellerId;
@@ -57,7 +76,66 @@ public class Quote {
 		this.status = status != null ? status : QuoteStatus.SENT;
 	}
 
-	// [P0-3 추가] Quote 상태 전이 가드 (SENT 상태에서만 변경 가능)
+	/**
+	 * 금액은 클라이언트가 보낸 값을 그대로 믿지 않고 서버가 계산한다.
+	 * (기존 QuoteService.calculateTotalAmount와 동일한 규칙을 엔티티로 이동해
+	 *  생성/수정 경로 어디서 호출해도 같은 계산 로직을 타도록 한다.)
+	 */
+	public static long calculateTotalAmount(Integer quantity, Long unitPrice, Long deliveryFee) {
+		long qty = (quantity != null) ? quantity : 0;
+		long price = (unitPrice != null) ? unitPrice : 0L;
+		long fee = (deliveryFee != null) ? deliveryFee : 0L;
+		return (qty * price) + fee;
+	}
+
+	// ---------------------------------------------------------------
+	// 자율 검증 (객체지향 가드)
+	// 서비스 레이어는 이 메서드들만 호출하고, 파라미터 출처(하드코딩 or JWT)는
+	// 신경 쓰지 않는다. 인증이 붙으면 서비스에서 넘기는 userId 값만 바뀌면 된다.
+	// ---------------------------------------------------------------
+
+	/** 이 견적서의 구매자 또는 판매자인지 (조회 권한) */
+	public boolean isParticipant(Long userId) {
+		if (userId == null) return false;
+		return userId.equals(this.buyerId) || userId.equals(this.sellerId);
+	}
+
+	public void validateParticipant(Long userId) {
+		if (!isParticipant(userId)) {
+			throw new IllegalArgumentException("해당 견적서에 접근 권한이 없습니다.");
+		}
+	}
+
+	/** 이 견적서를 보낸 당사자인지 (내용 수정 권한 / 자진 철회 권한) */
+	public boolean isSender(Long userId) {
+		if (userId == null) return false;
+		Long senderId = (this.senderRole == SenderRole.SELLER) ? this.sellerId : this.buyerId;
+		return senderId.equals(userId);
+	}
+
+	public void validateSenderOnly(Long userId) {
+		if (!isSender(userId)) {
+			throw new IllegalArgumentException("견적서를 보낸 당사자만 수행할 수 있습니다.");
+		}
+	}
+
+	/** 이 견적서를 받은 상대방인지 (수락/거절 권한) */
+	public boolean isCounterparty(Long userId) {
+		if (userId == null) return false;
+		Long counterpartyId = (this.senderRole == SenderRole.SELLER) ? this.buyerId : this.sellerId;
+		return counterpartyId.equals(userId);
+	}
+
+	public void validateCounterpartyOnly(Long userId) {
+		if (!isCounterparty(userId)) {
+			throw new IllegalArgumentException("견적서를 받은 상대방만 수행할 수 있습니다.");
+		}
+	}
+
+	// ---------------------------------------------------------------
+	// 상태 전이 (기존 로직 유지)
+	// ---------------------------------------------------------------
+
 	public void updateStatus(QuoteStatus newStatus) {
 		if (this.status != QuoteStatus.SENT) {
 			throw new IllegalStateException("이미 처리 완료된 견적서의 상태는 변경할 수 없습니다. 현재 상태: " + this.status);
@@ -68,7 +146,6 @@ public class Quote {
 		this.status = newStatus;
 	}
 
-	// [P0-3 추가] 견적 내용 수정 가드 (SENT 상태일 때만 수정 허용)
 	public void updateQuoteDetails(Integer quantity, Long unitPrice, Long deliveryFee, Long totalAmount) {
 		if (this.status != QuoteStatus.SENT) {
 			throw new IllegalStateException("SENT 상태의 견적서만 수정할 수 있습니다. 현재 상태: " + this.status);
@@ -77,12 +154,5 @@ public class Quote {
 		this.unitPrice = unitPrice;
 		this.deliveryFee = deliveryFee;
 		this.totalAmount = totalAmount;
-	}
-
-	// [P1-4 추가] createQuoteInChatRoom 지원용 업데이트 메서드
-	public void updateSenderRoleAndUsers(Long buyerId, Long sellerId, SenderRole senderRole) {
-		this.buyerId = buyerId;
-		this.sellerId = sellerId;
-		this.senderRole = senderRole;
 	}
 }

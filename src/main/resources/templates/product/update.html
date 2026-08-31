@@ -90,7 +90,8 @@
 
 <div class="nav">
     <a href="/product/new">➕ 새 판매 조건 등록 테스트 페이지로 이동</a>
-    <a href="/product/list">📋 판매 조건 전체 목록 테스트 페이지로 이동</a>
+    <a href="/product">📋 판매 조건 전체 목록 테스트 페이지로 이동</a>
+    <a href="#" id="detailBackLink" style="display:none;">🔎 상세 페이지로 돌아가기</a>
 </div>
 
     <div class="form-group" style="background-color: #f8f9fa; padding: 15px; border: 1px solid #e9ecef; border-radius: 5px; margin-bottom: 25px;">
@@ -202,9 +203,25 @@
     const imageFileInput = document.getElementById("imageFile");
     const imagePreview = document.getElementById("imagePreview");
     const submitBtn = document.getElementById("submitBtn");
+    const detailBackLink = document.getElementById("detailBackLink");
+    const ACCESS_TOKEN_KEY = "matcheat.accessToken";
 
     const messageBox = document.getElementById("messageBox");
     const resultElement = document.getElementById("result");
+
+    function readAccessToken() {
+        return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    }
+
+    async function authFetch(url, options = {}) {
+        const headers = new Headers(options.headers || {});
+        const token = readAccessToken();
+        if (token) {
+            headers.set("Authorization", `Bearer ${token}`);
+        }
+
+        return fetch(url, { ...options, headers });
+    }
 
     // 메시지 출력 유틸리티
     function showMessage(text, isSuccess) {
@@ -255,7 +272,7 @@
         resultElement.textContent = "조회 중...";
 
         try {
-            const response = await fetch(`/api/v1/products/${id}`);
+            const response = await authFetch(`/api/v1/products/${id}`);
             if (!response.ok) {
                 if (response.status === 404) {
                     throw new Error("존재하지 않는 판매 조건 ID입니다.");
@@ -301,6 +318,8 @@
 
             // 검색창 값 동기화
             searchIdInput.value = id;
+            detailBackLink.href = `/product/detail?id=${id}`;
+            detailBackLink.style.display = "inline";
         } catch (error) {
             resultElement.textContent = error.message;
             showMessage(error.message, false);
@@ -323,6 +342,7 @@
             imageFileInput.value = "";
             updatePreview(null);
             submitBtn.disabled = true;
+            detailBackLink.style.display = "none";
         }
     }
 
@@ -374,7 +394,7 @@
                 formData.append("imageFile", imageFile);
             }
 
-            const response = await fetch(`/api/v1/products/${id}`, {
+            const response = await authFetch(`/api/v1/products/${id}`, {
                 method: "PATCH",
                 body: formData
             });
