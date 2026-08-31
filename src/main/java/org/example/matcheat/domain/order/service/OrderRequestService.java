@@ -1,6 +1,7 @@
 package org.example.matcheat.domain.order.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.common.location.GeocodingService;
 import org.example.matcheat.domain.order.dto.OrderRequestCreateDTO;
 import org.example.matcheat.domain.order.dto.OrderRequestResponseDTO;
 import org.example.matcheat.domain.order.dto.OrderRequestUpdateDTO;
@@ -19,30 +20,48 @@ import java.util.List;
 @RequiredArgsConstructor // final 필드인 Repository를 생성자로 주입
 public class OrderRequestService {
     private final OrderRequestRepository orderRequestRepository;
+    private final GeocodingService geocodingService;
 
     /**
      * {@code @Transactional}: 이 메서드의 DB 작업을 하나의 트랜잭션으로 처리
      * = 이 메서드 안의 DB 작업은 모두 성공하거나, 문제가 생기면 모두 되돌린다.
      */
+    /**
+     * 주문 요청을 등록한다.
+     */
     @Transactional
-    public OrderRequestResponseDTO create(Long buyerId, OrderRequestCreateDTO dto) {
-        OrderRequest orderRequest = OrderRequest.create(
-                buyerId,
-                dto.getTitle(),
-                dto.getDescription(),
-                dto.getEventDateTime(),
-                dto.getQuantity(),
-                dto.getBudgetType(),
-                dto.getBudget(),
-                dto.getCategory(),
-                dto.getDeliveryAddress(),
-                dto.getLatitude(),
-                dto.getLongitude()
+    public OrderRequestResponseDTO create(
+            Long buyerId,
+            OrderRequestCreateDTO dto
+    ) {
+        GeocodingService.Coordinates coordinates =
+                geocodingService.geocode(
+                        dto.getDeliveryAddress()
+                );
+
+        OrderRequest orderRequest =
+                OrderRequest.create(
+                        buyerId,
+                        dto.getTitle(),
+                        dto.getDescription(),
+                        dto.getEventDateTime(),
+                        dto.getQuantity(),
+                        dto.getBudgetType(),
+                        dto.getBudget(),
+                        dto.getCategory(),
+                        dto.getDeliveryAddress(),
+                        coordinates.latitude(),
+                        coordinates.longitude()
+                );
+
+        OrderRequest savedOrderRequest =
+                orderRequestRepository.save(
+                        orderRequest
+                );
+
+        return OrderRequestResponseDTO.from(
+                savedOrderRequest
         );
-
-        OrderRequest savedOrderRequest = orderRequestRepository.save(orderRequest); // 실제 DB 저장
-
-        return OrderRequestResponseDTO.from(savedOrderRequest); // 저장된 Entity를 응답용 DTO로 변환
     }
 
     /**
@@ -103,6 +122,21 @@ public class OrderRequestService {
             );
         }
 
+        Double latitude = null;
+        Double longitude = null;
+
+        if (dto.getDeliveryAddress() != null
+                && !dto.getDeliveryAddress().isBlank()) {
+
+            GeocodingService.Coordinates coordinates =
+                    geocodingService.geocode(
+                            dto.getDeliveryAddress()
+                    );
+
+            latitude = coordinates.latitude();
+            longitude = coordinates.longitude();
+        }
+
         orderRequest.update(
                 dto.getTitle(),
                 dto.getDescription(),
@@ -112,8 +146,8 @@ public class OrderRequestService {
                 dto.getBudget(),
                 dto.getCategory(),
                 dto.getDeliveryAddress(),
-                dto.getLatitude(),
-                dto.getLongitude()
+                latitude,
+                longitude
         );
 
         return OrderRequestResponseDTO.from(orderRequest);
