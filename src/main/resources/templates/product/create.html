@@ -152,12 +152,12 @@
             formData.append("imageFile", imageFile);
         }
 
-        const response = await fetch("/api/v1/products", {
+        const response = await authFetch("/api/v1/products", {
             method: "POST",
             body: formData
         });
 
-        const data = await response.json();
+        const data = await readApiBody(response);
 
         result.textContent = JSON.stringify(data, null, 2);
     });
