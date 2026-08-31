@@ -5,6 +5,7 @@ import org.example.matcheat.domain.chat.dto.ChatMessageCreateRequest;
 import org.example.matcheat.domain.chat.dto.ChatMessageResponse;
 import org.example.matcheat.domain.chat.entity.ChatFile;
 import org.example.matcheat.domain.chat.entity.ChatMessage;
+import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.repository.ChatFileRepository;
 import org.example.matcheat.domain.chat.repository.ChatMessageRepository;
 import org.example.matcheat.domain.chat.repository.ChatRoomRepository;
@@ -21,22 +22,21 @@ public class ChatMessageService {
 
 	private final ChatMessageRepository chatMessageRepository;
 	private final ChatFileRepository chatFileRepository;
-	private final ChatRoomRepository chatRoomRepository; // [P2-8 추가] 채팅방 존재 검증용
+	private final ChatRoomRepository chatRoomRepository;
 
 	/**
-	 * 웹소켓 메시지 저장
+	 * 웹소켓 메시지 저장.
+	 * [수정] senderId를 request에서 받지 않고 파라미터로 받은 currentUserId를 그대로 쓴다.
+	 * [수정] 채팅방 참여자인지 검증 추가 (기존엔 존재 여부만 확인하고 참여자 검증은 없었음).
 	 */
 	@Transactional
-	public ChatMessageResponse saveMessage(ChatMessageCreateRequest request) {
-		// [P2-8] 1. chatRoomId 존재 여부 사전 검증
-		chatRoomRepository.findById(request.getChatRoomId())
+	public ChatMessageResponse saveMessage(ChatMessageCreateRequest request, Long currentUserId) {
+		ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다. ID: " + request.getChatRoomId()));
 
-		// TODO: [P2-8] Security Principal 연동 시 request.getSenderId() 대신 SecurityContext의 인증된 userId를 사용하도록 교체 필요
+		chatRoom.validateParticipant(currentUserId);
 
 		ChatFile chatFile = null;
-
-		// request에 fileId가 포함되어 전달되는 경우 (파일 메시지인 경우)
 		if (request.getFileId() != null) {
 			chatFile = chatFileRepository.findById(request.getFileId())
 					.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 파일입니다. ID: " + request.getFileId()));
@@ -44,10 +44,10 @@ public class ChatMessageService {
 
 		ChatMessage message = ChatMessage.builder()
 				.chatRoomId(request.getChatRoomId())
-				.senderId(request.getSenderId())
+				.senderId(currentUserId) // request.getSenderId() 대신 서버가 결정한 값 사용
 				.content(request.getMessage())
-				.messageType(request.getMessageType()) // Enum 그대로 주입
-				.chatFile(chatFile) // FK 연결
+				.messageType(request.getMessageType())
+				.chatFile(chatFile)
 				.build();
 
 		ChatMessage savedMessage = chatMessageRepository.save(message);
@@ -56,10 +56,15 @@ public class ChatMessageService {
 	}
 
 	/**
-	 * 채팅방 이전 대화 내역 조회 (Fetch Join으로 파일 정보 포함)
+	 * 채팅방 이전 대화 내역 조회.
+	 * [수정] 참여자 검증 추가 (기존엔 누구나 chatRoomId만 알면 조회 가능했음).
 	 */
-	public List<ChatMessageResponse> getChatHistory(Long chatRoomId) {
-		// TODO: [P2-8] Security Principal 연동 시 요청자가 해당 chatRoomId의 참여자(buyer/seller)인지 확인하는 권한 검증 추가 필요
+	public List<ChatMessageResponse> getChatHistory(Long chatRoomId, Long currentUserId) {
+		ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다. ID: " + chatRoomId));
+
+		chatRoom.validateParticipant(currentUserId);
+
 		List<ChatMessage> messages = chatMessageRepository.findHistoryWithFilesByChatRoomId(chatRoomId);
 		return messages.stream()
 				.map(ChatMessageResponse::from)

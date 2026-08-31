@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>MatchEat 채팅 WebSocket 테스트</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 760px; margin: 20px auto; padding: 0 16px; }
+        h2 { margin-bottom: 4px; }
+        label { display: inline-block; margin: 6px 0; }
+        input[type=text], input[type=number] { padding: 4px 6px; margin-left: 4px; }
+        button { padding: 6px 14px; margin-left: 6px; cursor: pointer; }
+        fieldset { margin-top: 14px; border: 1px solid #ccc; border-radius: 6px; }
+        legend { padding: 0 6px; font-weight: bold; }
+        #status { font-weight: bold; }
+        #status.connected { color: green; }
+        #status.disconnected { color: crimson; }
+
+        #messages {
+            height: 340px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px;
+            padding: 10px; background: #fafafa; margin-top: 8px;
+        }
+        .msg { margin-bottom: 10px; max-width: 80%; }
+        .msg.mine { margin-left: auto; text-align: right; }
+        .msg .bubble {
+            display: inline-block; padding: 8px 12px; border-radius: 10px;
+            background: #e8e8ff; word-break: break-word;
+        }
+        .msg.mine .bubble { background: #d1f0d1; }
+        .msg .meta { font-size: 11px; color: #888; margin-top: 2px; }
+        .msg img { max-width: 220px; max-height: 220px; border-radius: 6px; display: block; margin-top: 4px; }
+        .msg .file-box {
+            display: inline-block; padding: 8px 12px; border-radius: 8px; background: #fff3d6;
+            border: 1px solid #e0c98a;
+        }
+        .msg a.download-link { display: inline-block; margin-top: 4px; font-size: 12px; }
+
+        #log {
+            background: #111; color: #0f0; padding: 10px; height: 180px;
+            overflow-y: auto; white-space: pre-wrap; font-family: monospace; font-size: 12px;
+            border-radius: 6px; margin-top: 8px;
+        }
+        .row { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+<h2>MatchEat 채팅 WebSocket 테스트</h2>
+<p>상태: <span id="status" class="disconnected">연결 안 됨</span></p>
+
+<fieldset>
+    <legend>연결 설정</legend>
+    <div class="row">
+        <label>WebSocket 주소:
+            <input type="text" id="serverUrl" value="http://localhost:8080/ws-stomp" size="35">
+        </label>
+    </div>
+    <div class="row">
+        <label>API Base URL:
+            <input type="text" id="apiBaseUrl" value="http://localhost:8080" size="25">
+        </label>
+        <span style="color:#888;font-size:12px;">(REST 호출 - 이전 대화 조회, 파일 업로드/다운로드용)</span>
+    </div>
+    <div class="row">
+        <label>chatRoomId: <input type="number" id="chatRoomId" value="1" size="4"></label>
+        <label>senderId: <input type="number" id="senderId" value="1" size="4"></label>
+        <button onclick="connect()">연결 (+이전 대화 불러오기)</button>
+        <button onclick="disconnect()">연결 종료</button>
+    </div>
+    <div class="row">
+        <label>
+            <input type="checkbox" id="skipHistoryCheckbox">
+            구독만 테스트 (이전 대화 불러오기 생략 — 순수 SUBSCRIBE 동작 확인용)
+        </label>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>대화 내역</legend>
+    <div id="messages"></div>
+</fieldset>
+
+<fieldset>
+    <legend>메시지 전송</legend>
+    <div class="row">
+        <input type="text" id="messageInput" placeholder="보낼 메시지 입력" size="40"
+               onkeydown="if(event.key==='Enter') sendMessage()">
+        <button onclick="sendMessage()">전송</button>
+    </div>
+    <div class="row">
+        <label>파일 첨부 (이미지/PDF): <input type="file" id="fileInput" accept="image/*,application/pdf"></label>
+        <button onclick="uploadFile()">업로드 및 전송</button>
+        <span id="uploadStatus" style="font-size:12px;color:#888;"></span>
+    </div>
+</fieldset>
+
+<h3>디버그 로그</h3>
+<div id="log"></div>
+
+<script>
+    let stompClient = null;
+    let currentSubscription = null; // [추가] 중복 구독 방지용 참조 추적
+
+    function log(msg) {
+        const el = document.getElementById('log');
+        const time = new Date().toLocaleTimeString();
+        el.textContent += `[${time}] ${msg}\n`;
+        el.scrollTop = el.scrollHeight;
+    }
+
+    function setStatus(connected) {
+        const el = document.getElementById('status');
+        el.textContent = connected ? '연결됨' : '연결 안 됨';
+        el.className = connected ? 'connected' : 'disconnected';
+    }
+
+    function apiBase() {
+        return document.getElementById('apiBaseUrl').value.replace(/\/$/, '');
+    }
+
+    function currentSenderId() {
+        return Number(document.getElementById('senderId').value);
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes == null) return '';
+        if (bytes < 1024) return bytes + ' B';
+        return (bytes / 1024).toFixed(1) + ' KB';
+    }
+
+    // ---------- 메시지 렌더링 ----------
+
+    function renderMessage(msg) {
+        const container = document.getElementById('messages');
+        const isMine = Number(msg.senderId) === currentSenderId();
+
+        const wrap = document.createElement('div');
+        wrap.className = 'msg' + (isMine ? ' mine' : '');
+
+        const time = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : '';
+        const downloadUrl = msg.message && msg.message.startsWith('/')
+            ? apiBase() + msg.message
+            : msg.message;
+
+        let bodyHtml;
+        if (msg.messageType === 'IMAGE') {
+            bodyHtml = `
+      <div class="bubble">
+        <img src="${downloadUrl}" alt="${msg.originalFileName || '이미지'}">
+        <a class="download-link" href="${downloadUrl}" target="_blank" download>⬇ ${msg.originalFileName || '다운로드'}</a>
+      </div>`;
+        } else if (msg.messageType === 'PDF') {
+            bodyHtml = `
+      <div class="file-box">
+        📄 ${msg.originalFileName || 'PDF 파일'} ${formatFileSize(msg.fileSize) ? '(' + formatFileSize(msg.fileSize) + ')' : ''}
+        <br><a class="download-link" href="${downloadUrl}" target="_blank" download>⬇ 다운로드</a>
+      </div>`;
+        } else {
+            bodyHtml = `<div class="bubble">${escapeHtml(msg.message || '')}</div>`;
+        }
+
+        wrap.innerHTML = bodyHtml + `<div class="meta">senderId: ${msg.senderId} · ${time}</div>`;
+        container.appendChild(wrap);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // ---------- 이전 대화 내역 조회 ----------
+
+    async function loadHistory(chatRoomId) {
+        const url = `${apiBase()}/api/v1/chat-rooms/${chatRoomId}/messages`;
+        log('이전 대화 내역 조회: ' + url);
+        try {
+            const res = await fetch(url);
+            if (!res.ok) {
+                log(`⚠️ 대화 내역 조회 실패 (HTTP ${res.status})`);
+                return;
+            }
+            const history = await res.json();
+            document.getElementById('messages').innerHTML = '';
+            history.forEach(renderMessage);
+            log(`✅ 이전 메시지 ${history.length}건 로드 완료`);
+        } catch (e) {
+            log('❌ 대화 내역 조회 중 오류: ' + e.message);
+        }
+    }
+
+    // ---------- WebSocket 연결 ----------
+
+    function connect() {
+        // [수정] 이전 연결이 살아있으면 새로 만들기 전에 먼저 정리한다.
+        // "연결 종료" 없이 "연결"을 여러 번 누르면 예전 연결/구독이 남아있는 채로
+        // 새 연결이 하나 더 생겨서, 메시지 하나에 여러 번 수신되는 문제의 원인이었다.
+        if (stompClient && stompClient.active) {
+            log('⚠️ 기존 연결이 살아있어 먼저 종료합니다.');
+            disconnect();
+        }
+
+        const url = document.getElementById('serverUrl').value;
+        const chatRoomId = document.getElementById('chatRoomId').value;
+
+        log('연결 시도: ' + url);
+        const socket = new SockJS(url);
+
+        stompClient = new StompJs.Client({
+            webSocketFactory: () => socket,
+            reconnectDelay: 0,
+            debug: (str) => log('[STOMP] ' + str),
+            onConnect: () => {
+                setStatus(true);
+                log('✅ 연결 성공');
+
+                // [수정] 혹시 남아있는 구독이 있으면 먼저 해제 (중복 구독 방지 2중 안전장치)
+                if (currentSubscription) {
+                    currentSubscription.unsubscribe();
+                    currentSubscription = null;
+                }
+
+                currentSubscription = stompClient.subscribe('/sub/chat/room/' + chatRoomId, (message) => {
+                    const body = JSON.parse(message.body);
+                    log('📩 수신: ' + message.body);
+                    renderMessage(body);
+                });
+                log('📡 구독 시작: /sub/chat/room/' + chatRoomId);
+
+                // [추가] 체크박스가 켜져 있으면 이력 조회(REST)를 생략하고 순수 구독만 테스트한다.
+                // REST 이력 조회는 참여자 검증이 있어서, 켜둔 채로 비참여자 방에 연결하면
+                // "구독 성공" 로그와 "이력 조회 실패" 로그가 같이 떠서 헷갈릴 수 있다.
+                const skipHistory = document.getElementById('skipHistoryCheckbox').checked;
+                if (skipHistory) {
+                    log('ℹ️ 이전 대화 불러오기 생략됨 (구독 단독 테스트 모드)');
+                } else {
+                    loadHistory(chatRoomId);
+                }
+            },
+            onStompError: (frame) => {
+                log('❌ STOMP 에러: ' + frame.headers['message']);
+                log('상세: ' + frame.body);
+            },
+            onWebSocketError: () => {
+                log('❌ WebSocket 연결 자체가 실패했습니다. 서버 주소/포트, CORS, WebSocketConfig 엔드포인트 등록을 확인하세요.');
+            },
+            onWebSocketClose: () => {
+                setStatus(false);
+                log('🔌 연결이 종료되었습니다.');
+            }
+        });
+
+        stompClient.activate();
+    }
+
+    function disconnect() {
+        if (stompClient) {
+            stompClient.deactivate();
+            currentSubscription = null; // [추가] 구독 참조 초기화
+            setStatus(false);
+            log('연결 종료를 요청했습니다.');
+        }
+    }
+
+    // ---------- 텍스트 메시지 전송 ----------
+
+    function sendMessage() {
+        if (!stompClient || !stompClient.connected) {
+            log('⚠️ 먼저 연결하세요.');
+            return;
+        }
+        const chatRoomId = document.getElementById('chatRoomId').value;
+        const senderId = currentSenderId();
+        const messageInput = document.getElementById('messageInput');
+        const message = messageInput.value;
+        if (!message) return;
+
+        publishMessage({
+            chatRoomId: Number(chatRoomId),
+            senderId: senderId,
+            messageType: 'TEXT',
+            message: message
+        });
+
+        messageInput.value = '';
+    }
+
+    function publishMessage(payload) {
+        stompClient.publish({
+            destination: '/pub/chat/message',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        log('📤 전송: ' + JSON.stringify(payload));
+    }
+
+    // ---------- 파일 업로드 (이미지/PDF) ----------
+
+    async function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const statusEl = document.getElementById('uploadStatus');
+        const chatRoomId = document.getElementById('chatRoomId').value;
+        const senderId = currentSenderId();
+
+        if (!fileInput.files.length) {
+            statusEl.textContent = '파일을 선택하세요.';
+            return;
+        }
+        if (!stompClient || !stompClient.connected) {
+            statusEl.textContent = '먼저 WebSocket에 연결하세요.';
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const url = `${apiBase()}/api/v1/chat-rooms/${chatRoomId}/files?senderId=${senderId}`;
+        statusEl.textContent = '업로드 중...';
+        log('📤 파일 업로드 요청: ' + file.name);
+
+        try {
+            const res = await fetch(url, { method: 'POST', body: formData });
+            if (!res.ok) {
+                statusEl.textContent = `업로드 실패 (HTTP ${res.status})`;
+                log(`❌ 파일 업로드 실패 (HTTP ${res.status})`);
+                return;
+            }
+            const uploaded = await res.json();
+            log('✅ 파일 업로드 완료: ' + JSON.stringify(uploaded));
+            statusEl.textContent = '업로드 완료, 메시지 전송 중...';
+
+            // 업로드된 파일 정보를 STOMP 메시지로 전송해 채팅방에 공유
+            publishMessage({
+                chatRoomId: Number(chatRoomId),
+                senderId: senderId,
+                messageType: uploaded.fileType,       // IMAGE 또는 PDF
+                message: uploaded.originalFileName,   // 텍스트 대체용
+                fileId: uploaded.id,
+                originalFileName: uploaded.originalFileName,
+                fileSize: uploaded.fileSize
+            });
+
+            statusEl.textContent = '전송 완료';
+            fileInput.value = '';
+        } catch (e) {
+            statusEl.textContent = '오류 발생';
+            log('❌ 파일 업로드 중 오류: ' + e.message);
+        }
+    }
+</script>
+</body>
+</html>
