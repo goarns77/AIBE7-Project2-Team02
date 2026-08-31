@@ -1,0 +1,102 @@
+import { authFetch, readApiBody, readCurrentUserId } from '/account/js/auth-client.js';
+
+/**
+ * 쿼리스트링의 id로 판매 조건 상세 정보를 조회해 화면에 채운다.
+ * "수정하기" 버튼은 이 판매 조건을 등록한 본인에게만 보인다.
+ */
+const statusBox = document.getElementById('statusBox');
+const detailContent = document.getElementById('detailContent');
+const imageHolder = document.getElementById('imageHolder');
+const estimateButton = document.getElementById('estimateButton');
+const editButton = document.getElementById('editButton');
+
+const dayOfWeekMap = {
+    MONDAY: '월요일',
+    TUESDAY: '화요일',
+    WEDNESDAY: '수요일',
+    THURSDAY: '목요일',
+    FRIDAY: '금요일',
+    SATURDAY: '토요일',
+    SUNDAY: '일요일'
+};
+
+function getIdFromQuery() {
+    return new URLSearchParams(window.location.search).get('id');
+}
+
+function formatUnavailableDates(unavailableDates) {
+    if (!Array.isArray(unavailableDates) || unavailableDates.length === 0) {
+        return '-';
+    }
+
+    return unavailableDates.join(', ');
+}
+
+function formatMoney(value) {
+    return value != null ? `${Number(value).toLocaleString()}원` : '-';
+}
+
+function formatNumber(value, suffix = '') {
+    return value != null ? `${value}${suffix}` : '-';
+}
+
+function renderImage(imageUrl, productName) {
+    if (!imageUrl) {
+        imageHolder.innerHTML = `<div class="product-detail-image-placeholder">이미지 없음</div>`;
+        return;
+    }
+
+    imageHolder.innerHTML = `<img src="${encodeURI(imageUrl)}" alt="${productName || '상품 이미지'}">`;
+}
+
+async function loadDetail() {
+    const id = getIdFromQuery();
+    if (!id) {
+        statusBox.textContent = '상세를 확인할 상품 ID가 없습니다.';
+        statusBox.classList.add('is-error');
+        return;
+    }
+
+    try {
+        const response = await authFetch(`/api/v1/products/${id}`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('존재하지 않는 판매 조건입니다.');
+            }
+            throw new Error('상세 정보를 불러오지 못했습니다.');
+        }
+
+        const product = await readApiBody(response);
+
+        document.getElementById('productId').textContent = formatNumber(product.id);
+        document.getElementById('productName').textContent = product.productName ?? '-';
+        document.getElementById('minHeadcount').textContent = formatNumber(product.minHeadcount);
+        document.getElementById('maxHeadcount').textContent = formatNumber(product.maxHeadcount);
+        document.getElementById('servingPrice').textContent = formatMoney(product.servingPrice);
+        document.getElementById('deliveryRadiusKm').textContent = formatNumber(product.deliveryRadiusKm, 'km');
+        document.getElementById('storeAddress').textContent = product.storeAddress ?? '-';
+        document.getElementById('category').textContent = product.category ?? '-';
+        document.getElementById('description').textContent = product.description ?? '-';
+        document.getElementById('dayOfWeek').textContent = dayOfWeekMap[product.dayOfWeek] ?? '없음';
+        document.getElementById('ratingAvg').textContent = product.ratingAvg != null ? product.ratingAvg.toFixed(1) : '평점 없음';
+        document.getElementById('unavailableDates').textContent = formatUnavailableDates(product.unavailableDates);
+        document.getElementById('updatedAt').textContent = product.updatedAt ? new Date(product.updatedAt).toLocaleString() : '-';
+
+        renderImage(product.imageUrl, product.productName);
+        estimateButton.href = `/estimates/new?itemName=${encodeURIComponent(product.productName ?? '')}`;
+
+        const currentUserId = readCurrentUserId();
+        if (currentUserId !== null && product.ownerAccountId === currentUserId) {
+            editButton.href = `/product/update?id=${product.id}`;
+            editButton.style.display = '';
+        }
+
+        statusBox.style.display = 'none';
+        detailContent.style.display = 'grid';
+    } catch (error) {
+        statusBox.textContent = error.message;
+        statusBox.classList.add('is-error');
+    }
+}
+
+window.addEventListener('DOMContentLoaded', loadDetail);

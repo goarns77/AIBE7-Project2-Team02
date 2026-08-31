@@ -241,16 +241,16 @@ public class ProductService {
     }
 
     /**
-     * 판매 조건을 소프트 삭제한다. 요청자가 소유자인지 확인한 뒤에만 반영한다.
+     * 판매 조건을 소프트 삭제한다. 관리자가 아니라면 요청자가 소유자인지 확인한 뒤에만 반영한다.
      */
     @Transactional
-    public ProductResponseDTO softDelete(Long id, Long ownerAccountId) {
+    public ProductResponseDTO softDelete(Long id, Long ownerAccountId, boolean requesterIsAdmin) {
         ProductEntity product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
                 ));
 
-        product.softDelete(ownerAccountId);
+        product.softDelete(ownerAccountId, requesterIsAdmin);
 
         return ProductResponseDTO.from(product);
     }

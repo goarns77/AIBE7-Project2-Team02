@@ -293,10 +293,12 @@ public class ProductEntity {
 
     /**
      * 판매 조건을 소프트 삭제 상태로 바꾼다.
-     * 요청자가 이 판매 조건의 소유자인지 먼저 검증한다.
+     * 관리자가 아니라면 요청자가 이 판매 조건의 소유자인지 먼저 검증한다.
      */
-    public void softDelete(Long requesterAccountId) {
-        verifyOwner(requesterAccountId);
+    public void softDelete(Long requesterAccountId, boolean requesterIsAdmin) {
+        if (!requesterIsAdmin) {
+            verifyOwner(requesterAccountId);
+        }
 
         this.hidden = true;
     }

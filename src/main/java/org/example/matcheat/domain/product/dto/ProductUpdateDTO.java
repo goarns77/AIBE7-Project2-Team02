@@ -33,10 +33,6 @@ public class ProductUpdateDTO {
 
     private String storeAddress;
 
-    private Double latitude;
-
-    private Double longitude;
-
     private String category;
 
     private String description;

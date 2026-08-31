@@ -15,7 +15,7 @@ import java.util.Optional;
 /**
  * 하드 필터를 통과한 판매자-주문요청 쌍에 대해 소프트 매칭 점수(0~100점)를 산출한다.
  * 기본 가중치는 거리 35% / 예산 25% / 카테고리 20% / 판매자 평점 10% / 설명 텍스트 유사도 10%이다.
- * 아직 값을 계산할 수 없는 항목(거리: 위경도 미입력, 텍스트 유사도: 임베딩 미구현)은
+ * 아직 값을 계산할 수 없는 항목(거리: 위경도 미입력, 텍스트 유사도: 설명 없음/임베딩 실패)은
  * 이번 계산에서 제외하고, 나머지 항목의 가중치를 비율대로 재분배해 합계 100%를 맞춘다.
  */
 public class MatchScoreCalculator {
@@ -24,8 +24,13 @@ public class MatchScoreCalculator {
     private static final double WEIGHT_BUDGET = 25.0;
     private static final double WEIGHT_CATEGORY = 20.0;
     private static final double WEIGHT_RATING = 10.0;
-    // 설명 텍스트 유사도(Gemini 임베딩 기반)는 아직 미구현이라 가중치만 정의해두고 계산에서는 제외한다.
     private static final double WEIGHT_TEXT_SIMILARITY = 10.0;
+
+    private final TextSimilarityCalculator textSimilarityCalculator;
+
+    public MatchScoreCalculator(TextSimilarityCalculator textSimilarityCalculator) {
+        this.textSimilarityCalculator = textSimilarityCalculator;
+    }
 
     /**
      * 판매 조건과 주문 요청 한 쌍에 대한 매칭 점수를 계산한다.
@@ -48,6 +53,13 @@ public class MatchScoreCalculator {
         ratingScore(product).ifPresent(score ->
                 availableScores.add(new WeightedScore("판매자 평점", score, WEIGHT_RATING, ratingReason(product)))
         );
+
+        textSimilarityCalculator.similarityScore(product.getDescription(), orderRequest.getDescription())
+                .ifPresent(score ->
+                        availableScores.add(new WeightedScore(
+                                "텍스트 유사도", score, WEIGHT_TEXT_SIMILARITY, textSimilarityReason(score)
+                        ))
+                );
 
         return toResult(availableScores);
     }
@@ -98,20 +110,38 @@ public class MatchScoreCalculator {
     }
 
     /**
-     * 예산이 1인분 가격 대비 얼마나 여유 있는지로 점수를 매긴다.
+     * 구매자 예산이 필요 금액(1인분 가격 × budgetType에 따른 산정) 대비 얼마나 여유 있는지로 점수를 매긴다.
+     * budgetType이 PER_PERSON이면 1인분 가격 그대로, TOTAL이면 1인분 가격 × 수량을 필요 금액으로 본다.
      * 딱 맞으면 60점, 50% 이상 여유가 있으면 100점이다.
      */
     private double budgetScore(ProductEntity product, OrderRequest orderRequest) {
-        double servingPrice = product.getServingPrice();
-        if (servingPrice <= 0 || orderRequest.getBudget() == null) {
+        double requiredAmount = requiredAmount(product, orderRequest);
+        if (requiredAmount <= 0 || orderRequest.getBudget() == null) {
             return 60;
         }
 
         double budget = orderRequest.getBudget().doubleValue();
-        double surplusRatio = (budget - servingPrice) / servingPrice;
+        double surplusRatio = (budget - requiredAmount) / requiredAmount;
         double score = 60 + Math.min(Math.max(surplusRatio, 0), 0.5) / 0.5 * 40;
 
         return clamp(score);
+    }
+
+    /**
+     * budgetType에 따라 실제로 필요한 금액을 계산한다.
+     * PER_PERSON: 1인분 가격 그대로. TOTAL: 1인분 가격 × 주문 수량.
+     */
+    private double requiredAmount(ProductEntity product, OrderRequest orderRequest) {
+        double servingPrice = product.getServingPrice();
+
+        if (orderRequest.getBudgetType() == null) {
+            return servingPrice;
+        }
+
+        return switch (orderRequest.getBudgetType()) {
+            case PER_PERSON -> servingPrice;
+            case TOTAL -> servingPrice * orderRequest.getQuantity();
+        };
     }
 
     private String budgetReason(ProductEntity product, OrderRequest orderRequest) {
@@ -150,6 +180,13 @@ public class MatchScoreCalculator {
 
     private String ratingReason(ProductEntity product) {
         return "평점 %.1f/5.0".formatted(product.getRatingAvg());
+    }
+
+    /**
+     * 텍스트 유사도 점수에 대한 근거 문구를 만든다.
+     */
+    private String textSimilarityReason(double score) {
+        return "설명 내용 유사도 %.0f%%".formatted(score);
     }
 
     private double clamp(double score) {

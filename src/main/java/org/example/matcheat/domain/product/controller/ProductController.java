@@ -145,7 +145,7 @@ public class ProductController {
     }
 
     /**
-     * 판매 조건을 소프트 삭제한다. 본인 소유의 판매 조건만 가능하다.
+     * 판매 조건을 소프트 삭제한다. 본인 소유의 판매 조건이거나 관리자만 가능하다.
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> softDelete(
@@ -153,8 +153,9 @@ public class ProductController {
             @PathVariable Long id
     ) {
         Long userId = Long.valueOf(jwt.getSubject());
+        boolean isAdmin = "ADMIN".equals(jwt.getClaimAsString("role"));
 
-        ProductResponseDTO response = productService.softDelete(id, userId);
+        ProductResponseDTO response = productService.softDelete(id, userId, isAdmin);
 
         return ResponseEntity.ok(response);
     }
