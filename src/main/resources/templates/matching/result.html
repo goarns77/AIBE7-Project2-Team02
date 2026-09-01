@@ -41,65 +41,7 @@
 
     </section>
 
-    <!-- 매칭에 사용된 주문 조건 -->
-    <section class="matching-summary">
-
-        <div class="matching-summary-item">
-            <span>음식 카테고리</span>
-
-            <strong th:text="${orderRequest.category}">
-                중식
-            </strong>
-        </div>
-
-        <div class="matching-summary-item">
-            <span>희망 예산</span>
-
-            <strong>
-                <span th:text="${orderRequest.budgetType.name() == 'PER_PERSON'
-                                ? '1인당'
-                                : '총'}">
-                    1인당
-                </span>
-
-                <span th:text="${#numbers.formatDecimal(
-                                    orderRequest.budget,
-                                    1,
-                                    'COMMA',
-                                    0,
-                                    'POINT')}">
-                    20000
-                </span>원
-            </strong>
-        </div>
-
-        <div class="matching-summary-item">
-            <span>수량</span>
-
-            <strong>
-                <span th:text="${orderRequest.quantity}">
-                    20
-                </span>명
-            </strong>
-        </div>
-
-        <div class="matching-summary-item matching-summary-address">
-            <span>배송지</span>
-
-            <strong th:text="${orderRequest.deliveryAddress}">
-                서울특별시 강남구 테헤란로 152
-            </strong>
-        </div>
-
-        <div class="matching-summary-item">
-            <span>정렬 기준</span>
-
-            <strong class="matching-sort-label">
-                매칭 점수 높은 순
-            </strong>
-        </div>
-
-    </section>
+    <!-- 주문 상세는 인증된 API 응답으로만 조회하며 HTML에는 포함하지 않는다. -->
 
     <!-- API 조회 상태 -->
     <section id="matchingLoading"

@@ -1,7 +1,6 @@
 package org.example.matcheat.domain.proposal.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.matcheat.domain.order.service.OrderRequestService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,8 +13,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RequiredArgsConstructor
 public class ProposalPageController {
 
-    private final OrderRequestService orderRequestService;
-
     /**
      * 특정 주문에 새로운 수주 제안을 작성하는 화면을 보여준다.
      */
@@ -24,10 +21,7 @@ public class ProposalPageController {
             @PathVariable Long requestId,
             Model model
     ) {
-        model.addAttribute(
-                "orderRequest",
-                orderRequestService.findById(requestId)
-        );
+        model.addAttribute("requestId", requestId);
 
         return "proposal/create";
     }

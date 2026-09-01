@@ -130,15 +130,13 @@
     </span>
                     </div>
 
-                    <!-- 배송지는 두 번째 행 전체를 사용 -->
+                    <!-- 정확한 배송지는 인증된 상세 API에서만 제공한다. -->
                     <div class="order-meta-item order-meta-address">
                         <span class="order-meta-label">
                             배송지
                         </span>
 
-                        <span th:text="${request.deliveryAddress}">
-                            서울특별시 강남구 테헤란로 152
-                        </span>
+                        <span>로그인 후 상세 화면에서 확인</span>
                     </div>
 
                 </div>

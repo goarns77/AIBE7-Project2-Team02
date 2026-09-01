@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>관리자 | MatchEAT</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/account/css/admin.css}">
+</head>
+<body class="admin-body">
+<header th:replace="~{fragments/header::header}"></header>
+
+<main class="admin-shell">
+    <aside class="admin-sidebar">
+        <p class="admin-kicker">CONTROL ROOM</p>
+        <h1>MatchEAT<br>관리자</h1>
+        <p class="admin-identity" data-admin-identity>관리자 계정을 확인하고 있습니다.</p>
+        <nav class="admin-navigation" aria-label="관리자 메뉴">
+            <a th:href="@{/admin}" data-admin-view="dashboard">대시보드</a>
+            <a th:href="@{/admin/users}" data-admin-view="users">회원 관리</a>
+            <a th:href="@{/admin/sellers}" data-admin-view="sellers">판매자 심사</a>
+        </nav>
+        <div class="admin-future">
+            <span>후속 연결</span>
+            <p>신고 · 문의 · 상품 · 주문 · 계약</p>
+        </div>
+    </aside>
+
+    <section class="admin-workspace">
+        <header class="workspace-heading">
+            <div>
+                <p class="admin-kicker" data-view-kicker>OVERVIEW</p>
+                <h2 data-view-title>운영 현황</h2>
+            </div>
+            <span class="live-mark">LIVE</span>
+        </header>
+
+        <div data-panel="dashboard" hidden>
+            <div class="metric-grid">
+                <article class="metric-card is-primary">
+                    <span>전체 회원</span>
+                    <strong data-total-users>-</strong>
+                    <a th:href="@{/admin/users}">회원 관리로 이동</a>
+                </article>
+                <article class="metric-card is-alert">
+                    <span>판매자 심사 대기</span>
+                    <strong data-pending-sellers>-</strong>
+                    <a th:href="@{/admin/sellers}">심사 목록 확인</a>
+                </article>
+            </div>
+            <div class="operations-note">
+                <span>01</span>
+                <div>
+                    <h3>계정 운영 원칙</h3>
+                    <p>회원 정지는 기존 토큰을 즉시 폐기하며, 판매 권한은 승인된 판매자 프로필로 판정합니다.</p>
+                </div>
+            </div>
+        </div>
+
+        <div data-panel="users" hidden>
+            <form class="admin-filter" data-user-filter>
+                <label>검색 <input name="keyword" type="search" placeholder="이름 또는 이메일"></label>
+                <label>상태
+                    <select name="status">
+                        <option value="">전체</option>
+                        <option value="ACTIVE">활성</option>
+                        <option value="SUSPENDED">정지</option>
+                        <option value="WITHDRAWN">탈퇴</option>
+                    </select>
+                </label>
+                <button type="submit">조회</button>
+            </form>
+            <div class="table-frame">
+                <table>
+                    <thead><tr><th>회원</th><th>역할</th><th>상태</th><th>가입일</th><th>관리</th></tr></thead>
+                    <tbody data-user-rows></tbody>
+                </table>
+                <p class="empty-table" data-user-empty hidden>조건에 맞는 회원이 없습니다.</p>
+            </div>
+            <div class="pagination" data-user-pagination></div>
+        </div>
+
+        <div data-panel="sellers" hidden>
+            <form class="admin-filter" data-seller-filter>
+                <label>심사 상태
+                    <select name="status">
+                        <option value="">전체</option>
+                        <option value="PENDING">대기</option>
+                        <option value="APPROVED">승인</option>
+                        <option value="REJECTED">거부</option>
+                    </select>
+                </label>
+                <button type="submit">조회</button>
+            </form>
+            <div class="seller-list" data-seller-rows></div>
+            <p class="empty-table" data-seller-empty hidden>조건에 맞는 판매자 신청이 없습니다.</p>
+            <div class="pagination" data-seller-pagination></div>
+        </div>
+
+        <div class="admin-loading" data-admin-loading>
+            <span></span><p>운영 데이터를 불러오고 있습니다.</p>
+        </div>
+        <p class="admin-error" role="alert" data-admin-error hidden></p>
+    </section>
+</main>
+
+<dialog class="review-dialog" data-rejection-dialog>
+    <form method="dialog" data-rejection-form>
+        <p class="admin-kicker">REJECTION NOTE</p>
+        <h2>판매자 신청 거부</h2>
+        <p>신청자가 확인할 수 있도록 거부 사유를 입력하세요.</p>
+        <textarea name="reason" maxlength="500" required></textarea>
+        <div>
+            <button value="cancel" type="button" data-dialog-cancel>취소</button>
+            <button value="confirm" type="submit">거부 확정</button>
+        </div>
+    </form>
+</dialog>
+
+<script type="module" th:src="@{/account/js/admin.js}"></script>
+</body>
+</html>

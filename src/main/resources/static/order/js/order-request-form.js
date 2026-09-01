@@ -15,14 +15,25 @@ if (form) {
         const redirect = encodeURIComponent(window.location.pathname);
         window.location.href = `/login?redirect=${redirect}`;
     } else if (mode === 'edit') {
-        const buyerId = Number(form.dataset.buyerId);
-
-        if (currentUserId !== buyerId) {
+        const response = await authFetch(`/api/v1/requests/${requestId}`);
+        if (response.status === 401) {
+            const redirect = encodeURIComponent(window.location.pathname);
+            window.location.href = `/login?redirect=${redirect}`;
+            throw new Error('Redirecting to login');
+        }
+        if (!response.ok) {
+            alert('주문 정보를 불러올 수 없습니다.');
+            window.location.href = '/requests';
+            throw new Error('Unable to load order');
+        }
+        const order = await response.json();
+        if (currentUserId !== Number(order.buyerId)) {
             alert('본인이 등록한 주문만 수정할 수 있습니다.');
             window.location.href = `/requests/${requestId}`;
-        } else {
-            form.hidden = false;
+            throw new Error('Forbidden order edit');
         }
+        populateEditForm(order);
+        form.hidden = false;
     } else {
         form.hidden = false;
     }
@@ -131,4 +142,16 @@ if (form) {
                 `/requests/${body.id}/matches`;
         }
     });
+
+    function populateEditForm(order) {
+        form.elements.namedItem('title').value = order.title || '';
+        form.elements.namedItem('eventDateTime').value = order.eventDateTime?.slice(0, 16) || '';
+        form.elements.namedItem('quantity').value = order.quantity ?? '';
+        form.elements.namedItem('budgetType').value = order.budgetType || 'PER_PERSON';
+        form.elements.namedItem('budget').value = order.budget ?? '';
+        form.elements.namedItem('category').value = order.category || '';
+        form.elements.namedItem('category').dataset.originalCategory = order.category || '';
+        form.elements.namedItem('deliveryAddress').value = order.deliveryAddress || '';
+        form.elements.namedItem('description').value = order.description || '';
+    }
 }

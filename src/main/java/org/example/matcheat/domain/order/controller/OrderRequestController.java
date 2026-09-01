@@ -6,6 +6,7 @@ import org.example.matcheat.domain.order.dto.OrderRequestCreateDTO;
 import org.example.matcheat.domain.order.dto.OrderRequestResponseDTO;
 import org.example.matcheat.domain.order.dto.OrderRequestUpdateDTO;
 import org.example.matcheat.domain.order.service.OrderRequestService;
+import org.example.matcheat.domain.order.service.OrderRequestAccessService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderRequestController {
     private final OrderRequestService orderRequestService;
+    private final OrderRequestAccessService orderRequestAccessService;
 
     /**
      * 새로운 주문 요청을 등록
@@ -49,9 +51,11 @@ public class OrderRequestController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<OrderRequestResponseDTO> findById(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id
     ) {
-        OrderRequestResponseDTO response = orderRequestService.findById(id);
+        OrderRequestResponseDTO response = orderRequestAccessService.findAccessibleById(
+                id, Long.parseLong(jwt.getSubject()));
 
         return ResponseEntity.ok(response);
     }

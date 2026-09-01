@@ -40,12 +40,30 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/products",
+                                "/api/v1/products/**",
+                                "/api/v1/requests/*/proposals",
+                                "/api/v1/quotes/to-buyer"
+                        ).hasRole("SELLER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/products/**").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/products/mine",
+                                "/api/v1/proposals/sent",
+                                "/api/v1/proposals/eligibility",
+                                "/api/v1/estimates/received",
+                                "/api/v1/requests",
+                                "/api/v1/requests/search",
+                                "/api/products/*/order-requests/recommendations"
+                        ).hasRole("SELLER")
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/v1/products",
-                                "/api/v1/products/**"
+                                "/api/v1/products/search",
+                                "/api/v1/products/{id}"
                         ).permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )

@@ -193,6 +193,11 @@
     // ---------- WebSocket 연결 ----------
 
     function connect() {
+		const accessToken = sessionStorage.getItem('matcheat.accessToken');
+		if (!accessToken) {
+			log('로그인 후 WebSocket에 연결할 수 있습니다.');
+			return;
+		}
         // [수정] 이전 연결이 살아있으면 새로 만들기 전에 먼저 정리한다.
         // "연결 종료" 없이 "연결"을 여러 번 누르면 예전 연결/구독이 남아있는 채로
         // 새 연결이 하나 더 생겨서, 메시지 하나에 여러 번 수신되는 문제의 원인이었다.
@@ -209,6 +214,7 @@
 
         stompClient = new StompJs.Client({
             webSocketFactory: () => socket,
+			connectHeaders: { Authorization: 'Bearer ' + accessToken },
             reconnectDelay: 0,
             debug: (str) => log('[STOMP] ' + str),
             onConnect: () => {

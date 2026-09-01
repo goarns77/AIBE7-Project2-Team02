@@ -1,7 +1,6 @@
 package org.example.matcheat.domain.matching.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.matcheat.domain.order.service.OrderRequestService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,8 +13,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RequiredArgsConstructor
 public class MatchingPageController {
 
-    private final OrderRequestService orderRequestService;
-
     /**
      * 특정 주문의 맞춤 상품 매칭 결과 화면을 반환한다.
      */
@@ -24,11 +21,6 @@ public class MatchingPageController {
             @PathVariable Long requestId,
             Model model
     ) {
-        model.addAttribute(
-                "orderRequest",
-                orderRequestService.findById(requestId)
-        );
-
         model.addAttribute(
                 "requestId",
                 requestId

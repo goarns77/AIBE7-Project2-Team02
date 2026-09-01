@@ -1,7 +1,6 @@
 package org.example.matcheat.domain.order.controller;
 
 import org.example.matcheat.domain.order.dto.OrderRequestCreateDTO;
-import org.example.matcheat.domain.order.dto.OrderRequestResponseDTO;
 import org.example.matcheat.domain.order.dto.OrderRequestUpdateDTO;
 import org.example.matcheat.domain.order.service.OrderRequestService;
 import org.springframework.stereotype.Controller;
@@ -54,7 +53,7 @@ public class OrderRequestPageController {
             @PathVariable Long id,
             Model model
     ) {
-        model.addAttribute("orderRequest", orderRequestService.findById(id));
+        model.addAttribute("requestId", id);
 
         return "orderrequest/detail";
     }
@@ -77,14 +76,8 @@ public class OrderRequestPageController {
             @PathVariable Long id,
             Model model
     ) {
-        OrderRequestResponseDTO orderRequest = orderRequestService.findById(id);
-
-        model.addAttribute(
-                "orderRequest",
-                OrderRequestUpdateDTO.from(orderRequest)
-        );
+        model.addAttribute("orderRequest", new OrderRequestUpdateDTO());
         model.addAttribute("requestId", id);
-        model.addAttribute("buyerId", orderRequest.getBuyerId());
 
         return "orderrequest/edit";
     }
