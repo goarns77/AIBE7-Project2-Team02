@@ -24,6 +24,10 @@ public class QuoteService {
 	private final ChatService chatService;
 	private final TradeAccountValidationService accounts;
 
+	@Transactional(readOnly = true)
+	public Quote getQuoteEntity(Long quoteId) {
+		return findQuoteOrThrow(quoteId);
+	}
 	// -----------------------------------------------------------
 	// 생성 - 채팅방 자동 생성 (기존 흐름: 구매자가 판매자를 지정해 견적 요청)
 	// -----------------------------------------------------------
