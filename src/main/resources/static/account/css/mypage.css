@@ -324,7 +324,7 @@ body {
     .content-heading { align-items: end; }
 }
 
-@media (max-width: 460px) {
+@media (max-width: 520px) {
     .mypage-shell { width: min(100% - 24px, 1180px); }
     .record-card { display: grid; }
     .record-card-actions { grid-template-columns: auto 1fr; justify-items: start; align-items: center; }

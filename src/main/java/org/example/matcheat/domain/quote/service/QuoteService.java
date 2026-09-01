@@ -80,7 +80,6 @@ public class QuoteService {
 	public QuoteResponse createStandaloneQuoteToBuyer(Long currentSellerId, QuoteDirectRequestToBuyer request) {
 		currentSellerId = accounts.approvedSellerIdForUser(currentSellerId);
 		accounts.requireActiveUser(request.getTargetBuyerId());
-		// TODO: 회원 도메인 합류 후 targetBuyerId 존재 여부 검증 추가
 		Quote quote = buildStandaloneQuote(
 				request.getTargetBuyerId(), currentSellerId, Quote.SenderRole.SELLER,
 				request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee()
@@ -95,7 +94,6 @@ public class QuoteService {
 	public QuoteResponse createStandaloneQuoteToSeller(Long currentBuyerId, QuoteDirectRequestToSeller request) {
 		accounts.requireActiveUser(currentBuyerId);
 		accounts.requireApprovedSeller(request.getTargetSellerId());
-		// TODO: seller_profiles 도메인 합류 후 targetSellerId 존재/승인 여부 검증 추가
 		Quote quote = buildStandaloneQuote(
 				currentBuyerId, request.getTargetSellerId(), Quote.SenderRole.BUYER,
 				request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee()

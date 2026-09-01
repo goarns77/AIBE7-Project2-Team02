@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
  * 신원(=현재 로그인한 판매자가 누구인지)은 항상 서버가 seller_profiles를
  * 통해 인증된 계정에서 결정한다.
  *
- * TODO: 회원 도메인 합류 후 targetBuyerId가 실제 존재하는 사용자인지 검증 추가.
+ * 대상 계정의 존재 여부와 ACTIVE 상태는 견적 생성 서비스에서 검증한다.
  */
 @Getter
 @NoArgsConstructor
