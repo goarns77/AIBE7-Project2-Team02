@@ -56,7 +56,7 @@ public class EstimateAccessService {
 
         GeocodingService.Coordinates coordinates = geocodingService.geocode(dto.getDeliveryAddress());
 
-        return estimateService.create(
+        EstimateResponseDTO created = estimateService.create(
                 requesterAccountId,
                 sellerProfileId,
                 dto.getProductId(),
@@ -71,6 +71,9 @@ public class EstimateAccessService {
                 coordinates.latitude(),
                 coordinates.longitude()
         );
+
+        // 견적을 요청한 사람은 항상 이 견적의 구매자 본인이다.
+        return created.withViewer(true, false);
     }
 
     /**
@@ -78,9 +81,8 @@ public class EstimateAccessService {
      */
     public EstimateResponseDTO findById(Long id, Long requesterAccountId) {
         EstimateResponseDTO estimate = estimateService.findById(id);
-        verifyAccess(estimate, requesterAccountId);
 
-        return estimate;
+        return applyViewerOrDeny(estimate, requesterAccountId);
     }
 
     /**
@@ -88,7 +90,7 @@ public class EstimateAccessService {
      */
     public List<EstimateResponseDTO> findAll(boolean requesterIsAdmin) {
         if (!requesterIsAdmin) {
-            throw new IllegalArgumentException("전체 견적 목록은 관리자만 조회할 수 있습니다.");
+            throw new AccessDeniedException("전체 견적 목록은 관리자만 조회할 수 있습니다.");
         }
 
         return estimateService.findAll();
@@ -100,10 +102,12 @@ public class EstimateAccessService {
      */
     public List<EstimateResponseDTO> findSentByMe(Long requesterAccountId) {
         if (requesterAccountId == null) {
-            throw new IllegalArgumentException("로그인이 필요합니다.");
+            throw new AccessDeniedException("로그인이 필요합니다.");
         }
 
-        return estimateService.findByRequestId(requesterAccountId);
+        return estimateService.findByRequestId(requesterAccountId).stream()
+                .map(estimate -> estimate.withViewer(true, false))
+                .toList();
     }
 
     /**
@@ -112,32 +116,38 @@ public class EstimateAccessService {
      */
     public List<EstimateResponseDTO> findReceivedByMe(Long requesterAccountId) {
         if (requesterAccountId == null) {
-            throw new IllegalArgumentException("로그인이 필요합니다.");
+            throw new AccessDeniedException("로그인이 필요합니다.");
         }
 
         return sellerApplicationRepository.findByUserId(requesterAccountId)
-                .map(seller -> estimateService.findBySellerId(seller.sellerId()))
+                .map(seller -> estimateService.findBySellerId(seller.sellerId()).stream()
+                        .map(estimate -> estimate.withViewer(false, true))
+                        .toList())
                 .orElseGet(List::of);
     }
 
     /**
-     * 요청자가 이 견적의 구매자(request_id) 또는 판매자(sellerId를 계정 ID로 환산한 값) 본인인지 검증한다.
+     * 요청자가 이 견적의 구매자(request_id) 또는 판매자(sellerId를 계정 ID로 환산한 값) 본인인지 검증하고,
+     * 통과하면 buyer/seller 여부를 채운 응답을 반환한다. 둘 다 아니면 예외를 던진다.
      */
-    private void verifyAccess(EstimateResponseDTO estimate, Long requesterAccountId) {
+    private EstimateResponseDTO applyViewerOrDeny(EstimateResponseDTO estimate, Long requesterAccountId) {
         if (requesterAccountId == null) {
-            throw new IllegalArgumentException("본인과 관련된 견적만 조회할 수 있습니다.");
+            throw new AccessDeniedException("본인과 관련된 견적만 조회할 수 있습니다.");
         }
 
-        if (requesterAccountId.equals(estimate.getRequestId())) {
-            return;
+        boolean isBuyer = requesterAccountId.equals(estimate.getRequestId());
+        if (isBuyer) {
+            return estimate.withViewer(true, false);
         }
 
         Long sellerAccountId = sellerApplicationRepository.findUserIdBySellerId(estimate.getSellerId())
                 .orElse(null);
-
-        if (!requesterAccountId.equals(sellerAccountId)) {
-            throw new IllegalArgumentException("본인과 관련된 견적만 조회할 수 있습니다.");
+        boolean isSeller = requesterAccountId.equals(sellerAccountId);
+        if (isSeller) {
+            return estimate.withViewer(false, true);
         }
+
+        throw new AccessDeniedException("본인과 관련된 견적만 조회할 수 있습니다.");
     }
 
     /**
@@ -152,7 +162,7 @@ public class EstimateAccessService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 판매자입니다. sellerId=" + accountId));
 
         if (seller.status() != SellerVerificationStatus.APPROVED) {
-            throw new IllegalArgumentException("승인된 판매자에게만 견적을 요청할 수 있습니다.");
+            throw new AccessDeniedException("승인된 판매자에게만 견적을 요청할 수 있습니다.");
         }
 
         return seller.sellerId();
