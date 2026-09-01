@@ -1,373 +1,59 @@
-<!-- Created by DINKIssTyle on 2026. Copyright (C) 2026 DINKI'ssTyle. All rights reserved. -->
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>판매 조건 전체 목록 테스트</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        h1 {
-            margin-bottom: 12px;
-        }
-
-        .nav {
-            margin-bottom: 20px;
-        }
-
-        .nav a {
-            margin-right: 15px;
-            text-decoration: none;
-            color: #28a745;
-            font-weight: bold;
-        }
-
-        .search-panel {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 12px;
-            align-items: end;
-            padding: 16px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background: #fafafa;
-            margin-bottom: 16px;
-        }
-
-        .field {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .field label {
-            font-size: 14px;
-            font-weight: 700;
-            color: #333;
-        }
-
-        .field input {
-            padding: 10px 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 10px 14px;
-            text-decoration: none;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background-color: #545b62;
-        }
-
-        .btn-danger {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: #b02a37;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-            vertical-align: top;
-        }
-
-        td.wrap {
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        th {
-            background-color: #f4f4f4;
-        }
-
-        tr:hover {
-            background-color: #f9f9f9;
-        }
-
-        .empty-state {
-            text-align: center;
-        }
-
-        .hint {
-            margin-top: 4px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        @media (max-width: 960px) {
-            .search-panel {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 640px) {
-            .search-panel {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <title>판매 조건 목록 | MatchEAT</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/product.css}">
 </head>
 <body>
 
-<h1>판매 조건 전체 목록 테스트</h1>
+<header th:replace="~{fragments/header :: header}"></header>
 
-<div class="nav">
-    <a href="/product/new">➕ 새 판매 조건 등록 테스트 페이지로 이동</a>
-    <a href="/product/update">✏️ 판매 조건 수정 테스트 페이지로 이동</a>
-    <a href="/product/recommendations">📊 추천 응답 JSON 샘플 페이지로 이동</a>
-</div>
+<main>
+    <section class="product-page-header">
+        <div>
+            <h1>판매 조건 목록</h1>
+            <p>등록된 판매 조건을 조건별로 검색하고 확인할 수 있습니다.</p>
+        </div>
 
-<form id="searchForm" class="search-panel">
-    <div class="field">
-        <label for="quantity">수량</label>
-        <input type="number" id="quantity" min="1" placeholder="예: 12">
-        <div class="hint">최소 수주 수량과 최대 수주 수량 사이에 들어가는 값만 조회됩니다.</div>
+        <a th:href="@{/product/new}" id="newProductButton" class="button" style="display:none;">
+            새 판매 조건 등록
+        </a>
+    </section>
+
+    <div class="product-toolbar">
+        <a th:href="@{/product/update}">✏️ 판매 조건 수정</a>
+        <a th:href="@{/product/recommendations}">📊 판매자 추천 미리보기</a>
     </div>
 
-    <div class="field">
-        <label for="category">카테고리</label>
-        <input type="text" id="category" placeholder="예: 한식">
-        <div class="hint">입력한 문자열이 포함된 카테고리를 조회합니다.</div>
+    <form id="searchForm" class="product-search-form">
+        <div class="product-search-field">
+            <label for="quantity">수량</label>
+            <input type="number" id="quantity" min="1" placeholder="예: 12">
+        </div>
+
+        <div class="product-search-field">
+            <label for="category">카테고리</label>
+            <input type="text" id="category" placeholder="예: 한식">
+        </div>
+
+        <div class="product-search-field">
+            <label for="servingPrice">1인분 가격</label>
+            <input type="number" id="servingPrice" min="1" placeholder="예: 10000">
+        </div>
+
+        <div class="product-search-actions">
+            <button type="submit" class="button">조회</button>
+            <button type="button" id="resetBtn" class="button-secondary">초기화</button>
+        </div>
+    </form>
+
+    <div id="productList" class="product-list">
+        <p>데이터를 불러오는 중입니다...</p>
     </div>
+</main>
 
-    <div class="field">
-        <label for="servingPrice">1인분 가격</label>
-        <input type="number" id="servingPrice" min="1" placeholder="예: 10000">
-        <div class="hint">입력한 금액 이하의 1인분 가격 데이터만 조회됩니다.</div>
-    </div>
-
-    <div class="actions">
-        <button type="submit" class="btn btn-primary">조회</button>
-        <button type="button" id="resetBtn" class="btn btn-secondary">초기화</button>
-    </div>
-</form>
-
-<table>
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>상품/메뉴명</th>
-        <th>최소 수주 수량</th>
-        <th>최대 수주 수량</th>
-        <th>1인분 가격</th>
-        <th>배송 반경 (km)</th>
-        <th>가게 주소</th>
-        <th>음식 카테고리</th>
-        <th>설명</th>
-        <th>정기 휴무 요일</th>
-        <th>특정 불가 날짜</th>
-        <th>이미지</th>
-        <th>평점</th>
-        <th>최종 수정일</th>
-        <th>관리</th>
-    </tr>
-    </thead>
-    <tbody id="productList">
-    <tr>
-        <td colspan="15" class="empty-state">데이터를 불러오는 중입니다...</td>
-    </tr>
-    </tbody>
-</table>
-
-<script>
-    const productList = document.getElementById("productList");
-    const searchForm = document.getElementById("searchForm");
-    const resetBtn = document.getElementById("resetBtn");
-    const quantityInput = document.getElementById("quantity");
-    const categoryInput = document.getElementById("category");
-    const servingPriceInput = document.getElementById("servingPrice");
-    const ACCESS_TOKEN_KEY = "matcheat.accessToken";
-
-    function readAccessToken() {
-        return sessionStorage.getItem(ACCESS_TOKEN_KEY);
-    }
-
-    async function authFetch(url, options = {}) {
-        const headers = new Headers(options.headers || {});
-        const token = readAccessToken();
-        if (token) {
-            headers.set("Authorization", `Bearer ${token}`);
-        }
-
-        return fetch(url, { ...options, headers });
-    }
-
-    function buildSearchParams() {
-        const params = new URLSearchParams();
-        const quantity = quantityInput.value.trim();
-        const category = categoryInput.value.trim();
-        const servingPrice = servingPriceInput.value.trim();
-
-        if (quantity) {
-            params.set("quantity", quantity);
-        }
-
-        if (category) {
-            params.set("category", category);
-        }
-
-        if (servingPrice) {
-            params.set("servingPrice", servingPrice);
-        }
-
-        return params;
-    }
-
-    function formatUnavailableDates(unavailableDates) {
-        if (!Array.isArray(unavailableDates) || unavailableDates.length === 0) {
-            return "-";
-        }
-
-        return unavailableDates.join(", ");
-    }
-
-    const dayOfWeekMap = {
-        MONDAY: '월요일',
-        TUESDAY: '화요일',
-        WEDNESDAY: '수요일',
-        THURSDAY: '목요일',
-        FRIDAY: '금요일',
-        SATURDAY: '토요일',
-        SUNDAY: '일요일'
-    };
-
-    function renderRows(data) {
-        if (!data.length) {
-            productList.innerHTML = '<tr><td colspan="15" class="empty-state">조건에 맞는 판매 조건이 없습니다.</td></tr>';
-            return;
-        }
-
-        productList.innerHTML = "";
-        data.forEach(product => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${product.id}</td>
-                <td>${product.productName ?? '-'}</td>
-                <td>${product.minHeadcount}</td>
-                <td>${product.maxHeadcount}</td>
-                <td>${product.servingPrice != null ? product.servingPrice.toLocaleString() + '원' : '-'}</td>
-                <td>${product.deliveryRadiusKm}km</td>
-                <td>${product.storeAddress}</td>
-                <td>${product.category}</td>
-                <td class="wrap">${product.description ?? '-'}</td>
-                <td>${dayOfWeekMap[product.dayOfWeek] ?? '-'}</td>
-                <td class="wrap">${formatUnavailableDates(product.unavailableDates)}</td>
-                <td>
-                    ${product.imageUrl ? `<img src="${encodeURI(product.imageUrl)}" alt="상품 이미지" style="width: 84px; height: 84px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">` : '-'}
-                </td>
-                <td>${product.ratingAvg !== null ? product.ratingAvg.toFixed(1) : '-'}</td>
-                <td>${new Date(product.updatedAt).toLocaleString()}</td>
-                <td>
-                    <a href="/product/detail?id=${product.id}" class="btn btn-primary">상세</a>
-                    <button type="button" class="btn btn-danger" data-product-id="${product.id}">삭제</button>
-                </td>
-            `;
-            productList.appendChild(tr);
-        });
-    }
-
-    async function fetchProducts() {
-        try {
-            productList.innerHTML = '<tr><td colspan="15" class="empty-state">데이터를 불러오는 중입니다...</td></tr>';
-
-            const params = buildSearchParams();
-            const query = params.toString();
-            const response = await authFetch(`/api/v1/products/search${query ? `?${query}` : ""}`);
-
-            if (!response.ok) {
-                throw new Error("판매 조건 목록을 불러오지 못했습니다.");
-            }
-
-            const data = await response.json();
-            renderRows(data);
-        } catch (error) {
-            productList.innerHTML = `<tr><td colspan="15" class="empty-state">${error.message}</td></tr>`;
-        }
-    }
-
-    searchForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        fetchProducts();
-    });
-
-    productList.addEventListener("click", async (event) => {
-        const deleteButton = event.target.closest("[data-product-id]");
-        if (!deleteButton) {
-            return;
-        }
-
-        const productId = deleteButton.dataset.productId;
-        const confirmed = window.confirm(`상품 ID ${productId}를 숨김 처리하시겠습니까?`);
-        if (!confirmed) {
-            return;
-        }
-
-        deleteButton.disabled = true;
-
-        try {
-            const response = await authFetch(`/api/v1/products/${productId}`, {
-                method: "DELETE"
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || "판매 조건을 숨김 처리하지 못했습니다.");
-            }
-
-            await fetchProducts();
-        } catch (error) {
-            alert(error.message);
-        } finally {
-            deleteButton.disabled = false;
-        }
-    });
-
-    resetBtn.addEventListener("click", () => {
-        searchForm.reset();
-        fetchProducts();
-    });
-
-    fetchProducts();
-</script>
+<script type="module" th:src="@{/product/js/product-list.js}"></script>
 </body>
 </html>

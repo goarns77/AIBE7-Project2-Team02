@@ -41,10 +41,6 @@ public class ProductCreateDTO {
     @NotBlank
     private String storeAddress;
 
-    private Double latitude;
-
-    private Double longitude;
-
     @NotBlank
     private String category;
 
