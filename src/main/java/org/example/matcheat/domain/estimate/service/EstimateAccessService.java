@@ -1,19 +1,15 @@
 package org.example.matcheat.domain.estimate.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.common.location.GeocodingService;
 import org.example.matcheat.domain.account.enums.SellerVerificationStatus;
 import org.example.matcheat.domain.account.repository.SellerApplicationRepository;
 import org.example.matcheat.domain.estimate.dto.EstimateCreateDTO;
 import org.example.matcheat.domain.estimate.dto.EstimateResponseDTO;
-import org.example.matcheat.domain.order.entity.OrderRequest;
-import org.example.matcheat.domain.order.enums.BudgetType;
-import org.example.matcheat.domain.order.repository.OrderRequestRepository;
 import org.example.matcheat.domain.product.service.ProductService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,38 +20,50 @@ import java.util.List;
  * <p>
  * 실제 Estimate 저장과 조회는 {@link EstimateService}가 담당하고,
  * 이 서비스는 요청자가 구매자/판매자 본인인지, sellerId가 승인된 판매자인지,
- * productId가 그 판매자 소유가 맞는지를 검증한 뒤 EstimateService에 위임한다.
+ * productId가 그 판매자 소유가 맞는지를 검증하고 주소를 지오코딩한 뒤 EstimateService에 위임한다.
  * ProposalAccessService와 같은 위치이다.
+ * <p>
+ * request_id는 더 이상 OrderRequest를 가리키는 FK가 아니라, 요청자(구매자) 본인의 계정 ID를
+ * 그대로 저장한다 — 구매자가 사전에 주문 요청을 등록하지 않았어도 견적을 요청할 수 있도록 하기 위함이다.
+ * 그래서 견적에 필요한 값(예산, 행사일자, 항목명, 주소 등)은 전부 이 화면에서 직접 입력받는다.
  */
 public class EstimateAccessService {
 
     private final EstimateService estimateService;
-    private final OrderRequestRepository orderRequestRepository;
     private final SellerApplicationRepository sellerApplicationRepository;
     private final ProductService productService;
+    private final GeocodingService geocodingService;
 
     /**
-     * 구매자가 자신의 주문 요청(requestId)을 근거로 특정 판매자에게 견적을 요청한다.
-     * requestId 소유자, sellerId의 승인 여부, productId의 소유권을 검증한 뒤
-     * DTO에 없는 값은 주문 요청 값으로 채워 저장한다.
+     * 구매자가 특정 판매자(sellerId)에게 견적을 요청한다. 로그인한 본인의 accountId가
+     * request_id로 그대로 저장된다. sellerId의 승인 여부, productId의 소유권을 검증하고
+     * 배송(행사) 주소를 지오코딩한 뒤 저장한다.
      */
     @Transactional
-    public EstimateResponseDTO create(Long requestId, EstimateCreateDTO dto, Long requesterAccountId) {
-        OrderRequest orderRequest = loadOrderRequest(requestId);
-        verifyBuyer(orderRequest, requesterAccountId);
+    public EstimateResponseDTO create(EstimateCreateDTO dto, Long requesterAccountId) {
+        if (requesterAccountId == null) {
+            throw new IllegalArgumentException("로그인이 필요합니다.");
+        }
+
         requireApprovedSeller(dto.getSellerId());
         verifyProductOwnedBySeller(dto.getProductId(), dto.getSellerId());
 
+        GeocodingService.Coordinates coordinates = geocodingService.geocode(dto.getDeliveryAddress());
+
         return estimateService.create(
-                requestId,
+                requesterAccountId,
                 dto.getSellerId(),
                 dto.getProductId(),
-                resolveDescription(dto, orderRequest),
-                resolveBudget(dto, orderRequest),
-                resolveBudgetType(dto, orderRequest),
-                resolveItemName(dto, orderRequest),
-                resolveEventDateTime(dto, orderRequest),
-                dto.getEstimateImage()
+                dto.getDescription(),
+                dto.getBudget(),
+                dto.getBudgetType(),
+                dto.getItemName(),
+                dto.getQuantity(),
+                dto.getEventDateTime(),
+                dto.getEstimateImage(),
+                dto.getDeliveryAddress(),
+                coordinates.latitude(),
+                coordinates.longitude()
         );
     }
 
@@ -81,30 +89,15 @@ public class EstimateAccessService {
     }
 
     /**
-     * 구매자 본인의 주문 요청(requestId)에 달린 견적 목록을 조회한다.
-     */
-    public List<EstimateResponseDTO> findByRequestId(Long requestId, Long requesterAccountId) {
-        OrderRequest orderRequest = loadOrderRequest(requestId);
-        verifyBuyer(orderRequest, requesterAccountId);
-
-        return estimateService.findByRequestId(requestId);
-    }
-
-    /**
-     * 내가 구매자로서 보낸 견적 요청 목록을 조회한다.
-     * 내 주문 요청들의 ID를 먼저 구한 뒤, 그 ID들에 달린 견적을 조회한다.
+     * 내가 구매자로서 보낸 견적 요청 목록을 조회한다. request_id가 곧 내 계정 ID이므로
+     * 그 값으로 바로 조회한다.
      */
     public List<EstimateResponseDTO> findSentByMe(Long requesterAccountId) {
         if (requesterAccountId == null) {
             throw new IllegalArgumentException("로그인이 필요합니다.");
         }
 
-        List<Long> myRequestIds = orderRequestRepository.findAll().stream()
-                .filter(orderRequest -> requesterAccountId.equals(orderRequest.getBuyerId()))
-                .map(OrderRequest::getId)
-                .toList();
-
-        return estimateService.findByRequestIdIn(myRequestIds);
+        return estimateService.findByRequestId(requesterAccountId);
     }
 
     /**
@@ -119,23 +112,13 @@ public class EstimateAccessService {
     }
 
     /**
-     * requestId로 주문 요청을 조회한다. 존재하지 않으면 예외를 던진다.
+     * 요청자가 이 견적의 구매자(request_id) 또는 판매자(sellerId) 본인인지 검증한다.
      */
-    private OrderRequest loadOrderRequest(Long requestId) {
-        if (requestId == null) {
-            throw new IllegalArgumentException("requestId는 필수입니다.");
-        }
-
-        return orderRequestRepository.findById(requestId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문 요청입니다. id=" + requestId));
-    }
-
-    /**
-     * 요청자가 이 주문 요청을 등록한 구매자 본인인지 검증한다.
-     */
-    private void verifyBuyer(OrderRequest orderRequest, Long requesterAccountId) {
-        if (requesterAccountId == null || !orderRequest.getBuyerId().equals(requesterAccountId)) {
-            throw new IllegalArgumentException("본인이 등록한 주문 요청에 대해서만 처리할 수 있습니다.");
+    private void verifyAccess(EstimateResponseDTO estimate, Long requesterAccountId) {
+        if (requesterAccountId == null
+                || (!requesterAccountId.equals(estimate.getSellerId())
+                    && !requesterAccountId.equals(estimate.getRequestId()))) {
+            throw new IllegalArgumentException("본인과 관련된 견적만 조회할 수 있습니다.");
         }
     }
 
@@ -165,45 +148,5 @@ public class EstimateAccessService {
         }
 
         productService.findOwnedById(productId, sellerId);
-    }
-
-    /**
-     * 요청자가 이 견적의 구매자(주문 요청 buyerId) 또는 판매자(sellerId)인지 검증한다.
-     */
-    private void verifyAccess(EstimateResponseDTO estimate, Long requesterAccountId) {
-        if (requesterAccountId != null && requesterAccountId.equals(estimate.getSellerId())) {
-            return;
-        }
-
-        OrderRequest orderRequest = loadOrderRequest(estimate.getRequestId());
-        verifyBuyer(orderRequest, requesterAccountId);
-    }
-
-    private String resolveDescription(EstimateCreateDTO dto, OrderRequest orderRequest) {
-        if (dto.getDescription() != null && !dto.getDescription().isBlank()) {
-            return dto.getDescription();
-        }
-
-        return orderRequest.getDescription();
-    }
-
-    private BigDecimal resolveBudget(EstimateCreateDTO dto, OrderRequest orderRequest) {
-        return dto.getBudget() != null ? dto.getBudget() : orderRequest.getBudget();
-    }
-
-    private BudgetType resolveBudgetType(EstimateCreateDTO dto, OrderRequest orderRequest) {
-        return dto.getBudgetType() != null ? dto.getBudgetType() : orderRequest.getBudgetType();
-    }
-
-    private String resolveItemName(EstimateCreateDTO dto, OrderRequest orderRequest) {
-        if (dto.getItemName() != null && !dto.getItemName().isBlank()) {
-            return dto.getItemName();
-        }
-
-        return orderRequest.getTitle();
-    }
-
-    private LocalDateTime resolveEventDateTime(EstimateCreateDTO dto, OrderRequest orderRequest) {
-        return dto.getEventDateTime() != null ? dto.getEventDateTime() : orderRequest.getEventDateTime();
     }
 }

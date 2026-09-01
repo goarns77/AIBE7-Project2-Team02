@@ -35,8 +35,12 @@ public class EstimateService {
             BigDecimal budget,
             BudgetType budgetType,
             String itemName,
+            Integer quantity,
             LocalDateTime eventDateTime,
-            String estimateImage
+            String estimateImage,
+            String deliveryAddress,
+            Double latitude,
+            Double longitude
     ) {
         EstimateEntity estimate = EstimateEntity.create(
                 description,
@@ -46,8 +50,12 @@ public class EstimateService {
                 budget,
                 budgetType,
                 itemName,
+                quantity,
                 eventDateTime,
-                estimateImage
+                estimateImage,
+                deliveryAddress,
+                latitude,
+                longitude
         );
 
         return EstimateResponseDTO.from(estimateRepository.save(estimate));
@@ -87,20 +95,6 @@ public class EstimateService {
     @Transactional(readOnly = true)
     public List<EstimateResponseDTO> findByRequestId(Long requestId) {
         return estimateRepository.findAllByRequestIdOrderByIdDesc(requestId).stream()
-                .map(EstimateResponseDTO::from)
-                .toList();
-    }
-
-    /**
-     * 여러 주문 요청 ID에 걸쳐 달린 견적 목록을 최신순으로 조회한다. (내가 보낸 견적 조회용)
-     */
-    @Transactional(readOnly = true)
-    public List<EstimateResponseDTO> findByRequestIdIn(List<Long> requestIds) {
-        if (requestIds.isEmpty()) {
-            return List.of();
-        }
-
-        return estimateRepository.findAllByRequestIdInOrderByIdDesc(requestIds).stream()
                 .map(EstimateResponseDTO::from)
                 .toList();
     }

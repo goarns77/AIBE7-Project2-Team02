@@ -16,12 +16,7 @@ public interface EstimateRepository extends JpaRepository<EstimateEntity, Long> 
     List<EstimateEntity> findAllBySellerIdOrderByIdDesc(Long sellerId);
 
     /**
-     * 특정 주문 요청(requestId)에 달린 견적 목록을 최신순으로 조회한다.
+     * 특정 주문 요청(requestId = 구매자 계정 ID)에 달린 견적 목록을 최신순으로 조회한다.
      */
     List<EstimateEntity> findAllByRequestIdOrderByIdDesc(Long requestId);
-
-    /**
-     * 여러 주문 요청 ID에 걸쳐 달린 견적 목록을 최신순으로 조회한다. (내가 보낸 견적 조회용)
-     */
-    List<EstimateEntity> findAllByRequestIdInOrderByIdDesc(List<Long> requestIds);
 }

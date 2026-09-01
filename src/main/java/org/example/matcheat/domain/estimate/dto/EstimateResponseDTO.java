@@ -22,8 +22,12 @@ public class EstimateResponseDTO {
     private BigDecimal budget;
     private BudgetType budgetType;
     private String itemName;
+    private Integer quantity;
     private LocalDateTime eventDateTime;
     private String estimateImage;
+    private String deliveryAddress;
+    private Double latitude;
+    private Double longitude;
     private EstimateStatus status;
 
     /**
@@ -40,8 +44,12 @@ public class EstimateResponseDTO {
                 .budget(entity.getBudget())
                 .budgetType(entity.getBudgetType())
                 .itemName(entity.getItemName())
+                .quantity(entity.getQuantity())
                 .eventDateTime(entity.getEventDateTime())
                 .estimateImage(entity.getEstimateImage())
+                .deliveryAddress(entity.getDeliveryAddress())
+                .latitude(entity.getLatitude())
+                .longitude(entity.getLongitude())
                 .status(entity.getStatus())
                 .build();
     }

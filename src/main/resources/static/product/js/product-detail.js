@@ -83,7 +83,17 @@ async function loadDetail() {
         document.getElementById('updatedAt').textContent = product.updatedAt ? new Date(product.updatedAt).toLocaleString() : '-';
 
         renderImage(product.imageUrl, product.productName);
-        estimateButton.href = `/estimates/new?itemName=${encodeURIComponent(product.productName ?? '')}`;
+
+        if (product.ownerAccountId != null) {
+            const params = new URLSearchParams({
+                itemName: product.productName ?? '',
+                productId: product.id,
+                sellerId: product.ownerAccountId
+            });
+            estimateButton.href = `/estimates/new?${params.toString()}`;
+        } else {
+            estimateButton.style.display = 'none';
+        }
 
         const currentUserId = readCurrentUserId();
         if (currentUserId !== null && product.ownerAccountId === currentUserId) {
