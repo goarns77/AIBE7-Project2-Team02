@@ -116,7 +116,7 @@ public class ProductController {
     }
 
     /**
-     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. 본인 소유의 판매 조건만 가능하다.
+     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. 본인 소유의 판매 조건이거나 관리자만 가능하다.
      */
     @PatchMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> update (
@@ -125,14 +125,15 @@ public class ProductController {
             @Valid @RequestBody ProductUpdateDTO dto
     ) {
        Long userId = Long.valueOf(jwt.getSubject());
+       boolean isAdmin = "ADMIN".equals(jwt.getClaimAsString("role"));
 
-       ProductResponseDTO response = productService.update(id, dto, userId);
+       ProductResponseDTO response = productService.update(id, dto, null, userId, isAdmin);
 
        return ResponseEntity.ok(response);
     }
 
     /**
-     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. (multipart) 본인 소유의 판매 조건만 가능하다.
+     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. (multipart) 본인 소유의 판매 조건이거나 관리자만 가능하다.
      */
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> updateMultipart(
@@ -142,8 +143,9 @@ public class ProductController {
             @RequestPart(value = "imageFile", required = false) MultipartFile imageFile
     ) {
         Long userId = Long.valueOf(jwt.getSubject());
+        boolean isAdmin = "ADMIN".equals(jwt.getClaimAsString("role"));
 
-        ProductResponseDTO response = productService.update(id, dto, imageFile, userId);
+        ProductResponseDTO response = productService.update(id, dto, imageFile, userId, isAdmin);
 
         return ResponseEntity.ok(response);
     }

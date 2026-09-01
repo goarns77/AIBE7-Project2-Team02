@@ -205,19 +205,33 @@ public class ProductService {
     }
 
     /**
-     * 기존 판매 조건을 전달받은 값으로 부분 수정한다.
+     * 기존 판매 조건을 전달받은 값으로 부분 수정한다. (일반 사용자용 하위호환 오버로드)
      */
     @Transactional
     public ProductResponseDTO update(Long id, @Valid ProductUpdateDTO dto, Long ownerAccountId) {
-        return update(id, dto, null, ownerAccountId);
+        return update(id, dto, null, ownerAccountId, false);
     }
 
     /**
-     * 이미지 변경이 포함된 수정 요청도 동일한 수정 로직으로 처리한다.
+     * 이미지 변경이 포함된 수정 요청도 동일한 수정 로직으로 처리한다. (일반 사용자용 하위호환 오버로드)
      * 요청자가 소유자인지 확인한 뒤에만 반영한다.
      */
     @Transactional
     public ProductResponseDTO update(Long id, @Valid ProductUpdateDTO dto, MultipartFile imageFile, Long ownerAccountId) {
+        return update(id, dto, imageFile, ownerAccountId, false);
+    }
+
+    /**
+     * 이미지 변경이 포함된 수정 요청을 처리한다. 관리자가 아니라면 요청자가 소유자인지 확인한 뒤에만 반영한다.
+     */
+    @Transactional
+    public ProductResponseDTO update(
+            Long id,
+            @Valid ProductUpdateDTO dto,
+            MultipartFile imageFile,
+            Long ownerAccountId,
+            boolean requesterIsAdmin
+    ) {
         ProductEntity product = productRepository.findByIdAndHiddenFalse(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
@@ -245,6 +259,7 @@ public class ProductService {
 
         product.update(
                 ownerAccountId,
+                requesterIsAdmin,
                 dto.getProductName(),
                 dto.getMinHeadcount(),
                 dto.getMaxHeadcount(),

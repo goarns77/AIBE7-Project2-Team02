@@ -162,6 +162,8 @@ public class ProductEntity {
             String imageUrl,
             Long ownerAccountId
     ) {
+        validateHeadcountRange(minHeadcount, maxHeadcount);
+
         this.minHeadcount = minHeadcount;
         this.maxHeadcount = maxHeadcount;
         this.servingPrice = servingPrice;
@@ -218,10 +220,11 @@ public class ProductEntity {
 
     /**
      * null 이 아닌 값만 반영해 판매 조건을 부분 수정한다.
-     * 요청자가 이 판매 조건의 소유자인지 먼저 검증한다.
+     * 관리자가 아니라면 요청자가 이 판매 조건의 소유자인지 먼저 검증한다.
      */
     public void update(
             Long requesterAccountId,
+            boolean requesterIsAdmin,
             String productName,
             Integer minHeadcount,
             Integer maxHeadcount,
@@ -236,7 +239,9 @@ public class ProductEntity {
             List<LocalDate> unavailableDates,
             String imageUrl
     ) {
-        verifyOwner(requesterAccountId);
+        if (!requesterIsAdmin) {
+            verifyOwner(requesterAccountId);
+        }
 
         if(minHeadcount != null) {
             this.minHeadcount = minHeadcount;
@@ -245,6 +250,8 @@ public class ProductEntity {
         if(maxHeadcount != null) {
             this.maxHeadcount = maxHeadcount;
         }
+
+        validateHeadcountRange(this.minHeadcount, this.maxHeadcount);
 
         if(servingPrice != null) {
             this.servingPrice = servingPrice;
@@ -305,13 +312,21 @@ public class ProductEntity {
 
     /**
      * 요청자가 이 판매 조건의 소유자인지 검증한다.
-     * ownerAccountId가 아직 없는(로그인 연동 이전) 데이터는 검증을 건너뛴다.
      */
     private void verifyOwner(Long requesterAccountId) {
-        if (this.ownerAccountId != null
-                && requesterAccountId != null
-                && !this.ownerAccountId.equals(requesterAccountId)) {
+        if (requesterAccountId == null || !requesterAccountId.equals(this.ownerAccountId)) {
             throw new IllegalArgumentException("본인이 등록한 판매 조건만 수정 또는 삭제할 수 있습니다.");
+        }
+    }
+
+    /**
+     * 최소 수주 수량이 최대 수주 수량보다 크지 않은지 검증한다.
+     */
+    private static void validateHeadcountRange(Integer minHeadcount, Integer maxHeadcount) {
+        if (minHeadcount != null && maxHeadcount != null && minHeadcount > maxHeadcount) {
+            throw new IllegalArgumentException(
+                    "최소 수주 수량(%d)은 최대 수주 수량(%d)보다 클 수 없습니다.".formatted(minHeadcount, maxHeadcount)
+            );
         }
     }
 

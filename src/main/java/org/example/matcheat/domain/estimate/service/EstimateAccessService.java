@@ -1,3 +1,4 @@
+/* Created by DINKIssTyle on 2026. Copyright (C) 2026 DINKI'ssTyle. All rights reserved. */
 package org.example.matcheat.domain.estimate.service;
 
 import lombok.RequiredArgsConstructor;
@@ -7,6 +8,7 @@ import org.example.matcheat.domain.account.repository.SellerApplicationRepositor
 import org.example.matcheat.domain.estimate.dto.EstimateCreateDTO;
 import org.example.matcheat.domain.estimate.dto.EstimateResponseDTO;
 import org.example.matcheat.domain.product.service.ProductService;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +48,7 @@ public class EstimateAccessService {
     @Transactional
     public EstimateResponseDTO create(EstimateCreateDTO dto, Long requesterAccountId) {
         if (requesterAccountId == null) {
-            throw new IllegalArgumentException("로그인이 필요합니다.");
+            throw new AccessDeniedException("로그인이 필요합니다.");
         }
 
         Long sellerAccountId = productService.findOwnerAccountId(dto.getProductId());
