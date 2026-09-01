@@ -9,44 +9,74 @@ const adapters = {
   chats: adaptChatRoom,
 };
 
+const sourceLabels = {
+  requests: '구매 요청',
+  purchases: '구매',
+  sales: '판매',
+  receivedOffers: '받은 제안',
+  sentOffers: '보낸 제안',
+  receivedEstimates: '받은 견적',
+  sentEstimates: '보낸 견적',
+  chats: '채팅',
+};
+
 export const mypageViews = Object.freeze({
   profile: { title: '계정 개요', kicker: 'ACCOUNT', sources: [] },
   requests: {
     title: '내 구매 요청',
     kicker: 'REQUESTS',
-    sources: [{ key: 'requests', endpoint: '/api/v1/requests/me' }],
+    empty: ['등록한 구매 요청이 없습니다.', '새 주문 요청을 등록하면 진행 상태를 이곳에서 확인할 수 있습니다.'],
+    sources: [{ key: 'requests', label: '구매 요청', endpoint: '/api/v1/requests/me' }],
   },
   purchases: {
     title: '구매 내역',
     kicker: 'PURCHASES',
-    sources: [{ key: 'purchases', endpoint: '/api/v1/orders/purchases' }],
+    pending: ['구매 내역 연결을 준비하고 있습니다.', '확정 거래 API가 제공되면 이 화면에서 구매 내역을 확인할 수 있습니다.'],
+    sources: [{ key: 'purchases', label: '구매', endpoint: '/api/v1/orders/purchases' }],
   },
   sales: {
     title: '판매 내역',
     kicker: 'SALES',
-    sources: [{ key: 'sales', endpoint: '/api/v1/orders/sales' }],
+    pending: ['판매 내역 연결을 준비하고 있습니다.', '확정 거래 API가 제공되면 이 화면에서 판매 내역을 확인할 수 있습니다.'],
+    sources: [{ key: 'sales', label: '판매', endpoint: '/api/v1/orders/sales', sellerOnly: true }],
   },
   offers: {
     title: '주고받은 오퍼',
     kicker: 'OFFERS',
+    empty: ['주고받은 오퍼가 없습니다.', '제안이나 견적 요청이 생성되면 이곳에 함께 표시됩니다.'],
     sources: [
-      { key: 'receivedOffers', endpoint: '/api/v1/proposals/received' },
-      { key: 'sentOffers', endpoint: '/api/v1/proposals/sent', sellerOnly: true },
-      { key: 'receivedEstimates', endpoint: '/api/v1/estimates/received', sellerOnly: true },
-      { key: 'sentEstimates', endpoint: '/api/v1/estimates/sent' },
+      { key: 'receivedOffers', label: '받은 제안', endpoint: '/api/v1/proposals/received' },
+      { key: 'sentOffers', label: '보낸 제안', endpoint: '/api/v1/proposals/sent', sellerOnly: true },
+      { key: 'receivedEstimates', label: '받은 견적', endpoint: '/api/v1/estimates/received', sellerOnly: true },
+      { key: 'sentEstimates', label: '보낸 견적', endpoint: '/api/v1/estimates/sent' },
     ],
   },
   chats: {
     title: '채팅',
     kicker: 'CHATS',
-    sources: [{ key: 'chats', endpoint: '/api/v1/chat-rooms' }],
+    empty: ['참여 중인 채팅방이 없습니다.', '거래 대화가 시작되면 채팅방 요약이 이곳에 표시됩니다.'],
+    sources: [{ key: 'chats', label: '채팅', endpoint: '/api/v1/chat-rooms' }],
   },
 });
 
 export function adaptMypagePayload(sourceKey, payload) {
   const adapter = adapters[sourceKey];
   if (!adapter) throw new Error(`Unknown mypage source: ${sourceKey}`);
-  return extractRecords(payload).map(adapter);
+  return extractRecords(payload).map((record) => ({
+    ...adapter(record),
+    sourceKey,
+    sourceLabel: sourceLabels[sourceKey] || sourceKey,
+  }));
+}
+
+export function filterMypageRecords(records, query = '', statusCode = '') {
+  const normalizedQuery = query.trim().toLocaleLowerCase('ko-KR');
+  return records.filter((record) => {
+    const matchesStatus = !statusCode || record.statusCode === statusCode;
+    if (!matchesStatus || !normalizedQuery) return matchesStatus;
+    return [record.title, record.detail, record.meta, record.sourceLabel, record.status]
+      .some((candidate) => candidate?.toLocaleLowerCase('ko-KR').includes(normalizedQuery));
+  });
 }
 
 export function extractPage(payload) {
@@ -183,10 +213,12 @@ function adaptChatRoom(record) {
 }
 
 function viewRecord(key, title, status, detail, meta, href = '', actionLabel = '', sortValue = '') {
+  const statusCode = status || 'ACTIVE';
   return {
     key,
     title,
-    status: statusLabel(status),
+    status: statusLabel(statusCode),
+    statusCode,
     detail: detail || '',
     meta: meta || '',
     href,

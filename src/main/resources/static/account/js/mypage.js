@@ -7,7 +7,13 @@ import {
   showFieldErrors,
   validateRequiredFields,
 } from './auth-client.js';
-import { adaptMypagePayload, extractPage, mypageViews } from './mypage-api-adapters.js';
+import { adaptMypagePayload, filterMypageRecords, mypageViews } from './mypage-api-adapters.js';
+
+const RECORD_PAGE_SIZE = 6;
+const recordsBySource = new Map();
+const failuresBySource = new Map();
+let authorizedSources = [];
+let visibleRecordCount = RECORD_PAGE_SIZE;
 
 const currentView = location.pathname.split('/').filter(Boolean).at(-1);
 const viewKey = currentView === 'mypage' ? 'profile' : currentView;
@@ -18,8 +24,16 @@ if (!readAccessToken()) redirectToLogin();
 document.querySelector('[data-view-title]').textContent = view.title;
 document.querySelector('[data-view-kicker]').textContent = view.kicker;
 document.querySelector(`[data-view="${viewKey}"]`)?.setAttribute('aria-current', 'page');
+configureViewStates();
+configureRecordControls();
 
-const profileResponse = await authFetch('/api/v1/account/me');
+let profileResponse;
+try {
+  profileResponse = await authFetch('/api/v1/account/me');
+} catch (error) {
+  showFailure('계정 정보를 불러오지 못했습니다. 네트워크 연결을 확인해 주세요.');
+  throw error;
+}
 if (profileResponse.status === 401) redirectToLogin();
 if (!profileResponse.ok) {
   showFailure('계정 정보를 불러오지 못했습니다.');
@@ -35,7 +49,7 @@ if (viewKey === 'profile') {
   document.querySelector('[data-loading-state]').hidden = true;
   configureAccountActions(profile);
 } else {
-  const authorizedSources = view.sources.filter((source) => !source.sellerOnly || profile.role === 'SELLER');
+  authorizedSources = view.sources.filter((source) => !source.sellerOnly || profile.role === 'SELLER');
   await loadRecords(authorizedSources);
 }
 
@@ -45,38 +59,81 @@ async function loadRecords(sources) {
     return;
   }
 
-  const results = await Promise.all(sources.map(async (source) => ({
-    source,
-    response: await authFetch(source.endpoint),
-  })));
-  if (results.some(({ response }) => response.status === 401)) redirectToLogin();
+  setRetryButtonsDisabled(true);
+  if (recordsBySource.size === 0) showState('loading');
+  try {
+    const results = await Promise.all(sources.map(fetchSource));
+    if (results.some(({ response }) => response?.status === 401)) redirectToLogin();
 
-  const successful = results.filter(({ response }) => response.ok);
-  if (successful.length === 0) {
-    if (results.some(({ response }) => [404, 405].includes(response.status))) {
+    for (const result of results) {
+      if (!result.response?.ok) {
+        failuresBySource.set(result.source.key, result);
+        continue;
+      }
+      try {
+        const payload = await readApiBody(result.response);
+        recordsBySource.set(result.source.key, adaptMypagePayload(result.source.key, payload));
+        failuresBySource.delete(result.source.key);
+      } catch (error) {
+        failuresBySource.set(result.source.key, {...result, error});
+      }
+    }
+    renderRecordView();
+  } finally {
+    setRetryButtonsDisabled(false);
+  }
+}
+
+async function fetchSource(source) {
+  try {
+    return {source, response: await authFetch(source.endpoint)};
+  } catch (error) {
+    return {source, response: null, error};
+  }
+}
+
+function renderRecordView() {
+  hideDataStates();
+  const records = [...recordsBySource.values()]
+    .flat()
+    .sort((left, right) => right.sortAt - left.sortAt);
+  const hasSuccessfulSource = authorizedSources.some(({key}) => recordsBySource.has(key));
+
+  if (records.length === 0) {
+    document.querySelector('[data-record-tools]').hidden = true;
+    renderRecords([]);
+    if (hasSuccessfulSource) {
+      showState('empty');
+      showPartialState();
+    } else if ([...failuresBySource.values()].every(({response}) => [404, 405].includes(response?.status))) {
       showState('pending');
     } else {
-      showFailure('목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      showFailure(recordFailureMessage());
     }
     return;
   }
 
-  const payloads = await Promise.all(successful.map(async ({ source, response }) => ({
-    source,
-    payload: await readApiBody(response),
-  })));
-  const records = payloads
-    .flatMap(({ source, payload }) => adaptMypagePayload(source.key, payload))
-    .sort((left, right) => right.sortAt - left.sortAt);
-  const pages = payloads.map(({ payload }) => extractPage(payload));
-  if (successful.length !== results.length) {
-    document.querySelector('[data-partial-state]').hidden = false;
-  }
-  if (records.length === 0) {
-    showState('empty');
-    return;
-  }
-  renderRecords(records, pages);
+  document.querySelector('[data-record-tools]').hidden = false;
+  syncStatusOptions(records);
+  showPartialState();
+  renderFilteredRecords(records);
+}
+
+function renderFilteredRecords(records) {
+  const query = document.querySelector('[data-record-search]').value;
+  const statusCode = document.querySelector('[data-record-status]').value;
+  const filtered = filterMypageRecords(records, query, statusCode);
+  const visible = filtered.slice(0, visibleRecordCount);
+  renderRecords(visible);
+
+  const summary = document.querySelector('[data-record-summary]');
+  summary.textContent = filtered.length === records.length
+    ? `전체 ${records.length}건`
+    : `전체 ${records.length}건 중 ${filtered.length}건`;
+  document.querySelector('[data-filter-empty]').hidden = filtered.length !== 0;
+  const loadMore = document.querySelector('[data-load-more]');
+  loadMore.hidden = visible.length >= filtered.length;
+  loadMore.textContent = `${Math.min(RECORD_PAGE_SIZE, filtered.length - visible.length)}건 더 보기`;
 }
 
 function renderProfileSummary(profile) {
@@ -90,6 +147,9 @@ function renderProfileSummary(profile) {
   document.querySelectorAll('[data-profile-field]').forEach((element) => {
     const value = profile[element.dataset.profileField];
     element.textContent = profileLabel(element.dataset.profileField, value);
+  });
+  document.querySelectorAll('[data-seller-navigation]').forEach((element) => {
+    element.hidden = profile.role !== 'SELLER';
   });
 }
 
@@ -169,6 +229,7 @@ function configureSellerAction(profile) {
     state.hidden = false;
     state.querySelector('[data-seller-state-title]').textContent = title;
     state.querySelector('[data-seller-state-description]').textContent = description;
+    state.querySelector('[data-seller-products]').hidden = status !== 'APPROVED';
   }
 }
 
@@ -218,24 +279,118 @@ function profileLabel(field, value) {
   return labels[field]?.[value] || value || '신청 전';
 }
 
-function renderRecords(records, pages) {
+function configureViewStates() {
+  if (view.empty) {
+    const empty = document.querySelector('[data-empty-state]');
+    empty.querySelector('strong').textContent = view.empty[0];
+    empty.querySelector('p').textContent = view.empty[1];
+  }
+  if (view.pending) {
+    const pending = document.querySelector('[data-pending-state]');
+    pending.querySelector('strong').textContent = view.pending[0];
+    pending.querySelector('p').textContent = view.pending[1];
+  }
+}
+
+function configureRecordControls() {
+  const search = document.querySelector('[data-record-search]');
+  const status = document.querySelector('[data-record-status]');
+  const refresh = () => {
+    visibleRecordCount = RECORD_PAGE_SIZE;
+    renderRecordView();
+  };
+  search.addEventListener('input', refresh);
+  status.addEventListener('change', refresh);
+  document.querySelector('[data-reset-filters]').addEventListener('click', () => {
+    search.value = '';
+    status.value = '';
+    refresh();
+    search.focus();
+  });
+  document.querySelector('[data-load-more]').addEventListener('click', () => {
+    visibleRecordCount += RECORD_PAGE_SIZE;
+    renderRecordView();
+  });
+  document.querySelector('[data-retry-all]').addEventListener('click', () => {
+    if (authorizedSources.length === 0) {
+      window.location.reload();
+      return;
+    }
+    loadRecords(authorizedSources);
+  });
+  document.querySelector('[data-retry-partial]').addEventListener('click', () => {
+    loadRecords([...failuresBySource.values()].map(({source}) => source));
+  });
+}
+
+function syncStatusOptions(records) {
+  const select = document.querySelector('[data-record-status]');
+  const selected = select.value;
+  const statuses = new Map(records.map(({statusCode, status}) => [statusCode, status]));
+  select.replaceChildren(new Option('전체 상태', ''));
+  [...statuses.entries()]
+    .sort((left, right) => left[1].localeCompare(right[1], 'ko-KR'))
+    .forEach(([code, label]) => select.add(new Option(label, code)));
+  if (statuses.has(selected)) select.value = selected;
+}
+
+function showPartialState() {
+  const partial = document.querySelector('[data-partial-state]');
+  if (failuresBySource.size === 0) {
+    partial.hidden = true;
+    return;
+  }
+  const labels = [...failuresBySource.values()].map(({source}) => source.label).filter(Boolean);
+  partial.querySelector('[data-partial-message]').textContent = labels.length > 0
+    ? `${labels.join(', ')} 내역을 불러오지 못해 나머지 항목만 표시합니다.`
+    : '일부 내역을 불러오지 못해 조회 가능한 항목만 표시합니다.';
+  partial.hidden = false;
+}
+
+function setRetryButtonsDisabled(disabled) {
+  document.querySelectorAll('[data-retry-all], [data-retry-partial]').forEach((button) => {
+    button.disabled = disabled;
+  });
+}
+
+function recordFailureMessage() {
+  const failures = [...failuresBySource.values()];
+  if (failures.some(({response}) => response === null)) {
+    return '네트워크 연결을 확인한 뒤 다시 시도해 주세요.';
+  }
+  if (failures.every(({response}) => response?.status === 403)) {
+    return '이 내역을 조회할 권한이 없습니다. 계정 역할을 다시 확인해 주세요.';
+  }
+  return '내역 조회 중 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+}
+
+function renderRecords(records) {
   const list = document.querySelector('[data-record-list]');
-  document.querySelector('[data-loading-state]').hidden = true;
   list.replaceChildren();
   records.forEach((record) => {
     const article = document.createElement('article');
     article.className = 'record-card';
     article.dataset.recordKey = record.key;
     article.innerHTML = `
-      <div class="record-card-content"><h2></h2><p></p><small></small></div>
+      <div class="record-card-content">
+        <span class="record-source"></span>
+        <h2></h2><p></p><small></small>
+      </div>
       <div class="record-card-actions">
         <span class="status-chip"></span>
         <a class="record-link" hidden></a>
       </div>`;
+    article.querySelector('.record-source').textContent = record.sourceLabel;
     article.querySelector('h2').textContent = record.title;
-    article.querySelector('p').textContent = record.detail;
-    article.querySelector('small').textContent = record.meta;
-    article.querySelector('.status-chip').textContent = record.status;
+    const detail = article.querySelector('p');
+    detail.textContent = record.detail;
+    detail.hidden = !record.detail;
+    const meta = article.querySelector('small');
+    meta.textContent = record.meta;
+    meta.hidden = !record.meta;
+    const status = article.querySelector('.status-chip');
+    status.textContent = record.status;
+    status.dataset.status = record.statusCode;
     if (record.href) {
       const link = article.querySelector('.record-link');
       link.href = record.href;
@@ -244,18 +399,24 @@ function renderRecords(records, pages) {
     }
     list.append(article);
   });
-
-  // Paging controls can consume this metadata once each domain fixes its paging contract.
-  list.dataset.pages = JSON.stringify(pages);
 }
 
 function showState(state) {
-  document.querySelector('[data-loading-state]').hidden = true;
+  hideDataStates();
+  document.querySelector('[data-partial-state]').hidden = true;
+  document.querySelector('[data-filter-empty]').hidden = true;
+  document.querySelector('[data-load-more]').hidden = true;
   document.querySelector(`[data-${state}-state]`).hidden = false;
 }
 
 function showFailure(message) {
-  document.querySelector('[data-loading-state] p').textContent = message;
+  showState('error');
+  document.querySelector('[data-error-state] p').textContent = message;
+}
+
+function hideDataStates() {
+  document.querySelectorAll('[data-loading-state], [data-empty-state], [data-pending-state], [data-error-state]')
+    .forEach((element) => { element.hidden = true; });
 }
 
 function redirectToLogin() {
