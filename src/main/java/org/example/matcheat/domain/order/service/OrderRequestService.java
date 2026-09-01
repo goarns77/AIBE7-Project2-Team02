@@ -1,6 +1,7 @@
 package org.example.matcheat.domain.order.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.common.location.GeocodingService;
 import org.example.matcheat.domain.order.dto.OrderRequestCreateDTO;
 import org.example.matcheat.domain.order.dto.OrderRequestResponseDTO;
 import org.example.matcheat.domain.order.dto.OrderRequestUpdateDTO;
@@ -19,29 +20,48 @@ import java.util.List;
 @RequiredArgsConstructor // final 필드인 Repository를 생성자로 주입
 public class OrderRequestService {
     private final OrderRequestRepository orderRequestRepository;
+    private final GeocodingService geocodingService;
 
     /**
      * {@code @Transactional}: 이 메서드의 DB 작업을 하나의 트랜잭션으로 처리
      * = 이 메서드 안의 DB 작업은 모두 성공하거나, 문제가 생기면 모두 되돌린다.
      */
+    /**
+     * 주문 요청을 등록한다.
+     */
     @Transactional
-    public OrderRequestResponseDTO create(OrderRequestCreateDTO dto) {
-        OrderRequest orderRequest = OrderRequest.create(
-                dto.getTitle(),
-                dto.getDescription(),
-                dto.getEventDateTime(),
-                dto.getQuantity(),
-                dto.getBudgetType(),
-                dto.getBudget(),
-                dto.getCategory(),
-                dto.getDeliveryAddress(),
-                dto.getLatitude(),
-                dto.getLongitude()
+    public OrderRequestResponseDTO create(
+            Long buyerId,
+            OrderRequestCreateDTO dto
+    ) {
+        GeocodingService.Coordinates coordinates =
+                geocodingService.geocode(
+                        dto.getDeliveryAddress()
+                );
+
+        OrderRequest orderRequest =
+                OrderRequest.create(
+                        buyerId,
+                        dto.getTitle(),
+                        dto.getDescription(),
+                        dto.getEventDateTime(),
+                        dto.getQuantity(),
+                        dto.getBudgetType(),
+                        dto.getBudget(),
+                        dto.getCategory(),
+                        dto.getDeliveryAddress(),
+                        coordinates.latitude(),
+                        coordinates.longitude()
+                );
+
+        OrderRequest savedOrderRequest =
+                orderRequestRepository.save(
+                        orderRequest
+                );
+
+        return OrderRequestResponseDTO.from(
+                savedOrderRequest
         );
-
-        OrderRequest savedOrderRequest = orderRequestRepository.save(orderRequest); // 실제 DB 저장
-
-        return OrderRequestResponseDTO.from(savedOrderRequest); // 저장된 Entity를 응답용 DTO로 변환
     }
 
     /**
@@ -55,6 +75,18 @@ public class OrderRequestService {
                         "존재하지 않는 주문 요청입니다. id=%s".formatted(id)
                 ));
         return OrderRequestResponseDTO.from(orderRequest);
+    }
+
+    /**
+     * 현재 구매자가 등록한 주문 목록을 조회
+     */
+    @Transactional(readOnly = true)
+    public List<OrderRequestResponseDTO> findByBuyerId(Long buyerId) {
+        return orderRequestRepository
+                .findAllByBuyerIdOrderByIdDesc(buyerId)
+                .stream()
+                .map(OrderRequestResponseDTO::from)
+                .toList();
     }
 
     /**
@@ -72,16 +104,37 @@ public class OrderRequestService {
      * MATCHING 상태의 주문 요청 정보를 수정
      */
     @Transactional
-    public OrderRequestResponseDTO update(Long id, OrderRequestUpdateDTO dto) {
+    public OrderRequestResponseDTO update(Long id, Long buyerId, OrderRequestUpdateDTO dto) {
         OrderRequest orderRequest = orderRequestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 주문 요청입니다. id=%s".formatted(id)
                 ));
 
+        if (!orderRequest.getBuyerId().equals(buyerId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "본인이 등록한 주문만 수정할 수 있습니다."
+            );
+        }
+
         if (orderRequest.getStatus() != RequestStatus.MATCHING) {
             throw new IllegalStateException(
                     "MATCHING 상태의 주문 요청만 수정할 수 있습니다."
             );
+        }
+
+        Double latitude = null;
+        Double longitude = null;
+
+        if (dto.getDeliveryAddress() != null
+                && !dto.getDeliveryAddress().isBlank()) {
+
+            GeocodingService.Coordinates coordinates =
+                    geocodingService.geocode(
+                            dto.getDeliveryAddress()
+                    );
+
+            latitude = coordinates.latitude();
+            longitude = coordinates.longitude();
         }
 
         orderRequest.update(
@@ -93,8 +146,8 @@ public class OrderRequestService {
                 dto.getBudget(),
                 dto.getCategory(),
                 dto.getDeliveryAddress(),
-                dto.getLatitude(),
-                dto.getLongitude()
+                latitude,
+                longitude
         );
 
         return OrderRequestResponseDTO.from(orderRequest);
@@ -104,11 +157,17 @@ public class OrderRequestService {
      * MATCHING 상태의 주문 요청을 취소
      */
     @Transactional
-    public OrderRequestResponseDTO cancel(Long id) {
+    public OrderRequestResponseDTO cancel(Long id, Long buyerId) {
         OrderRequest orderRequest = orderRequestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 주문 요청입니다. id=%s".formatted(id)
                 ));
+
+        if (!orderRequest.getBuyerId().equals(buyerId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "본인이 등록한 주문만 취소할 수 있습니다."
+            );
+        }
 
         orderRequest.cancel();
 

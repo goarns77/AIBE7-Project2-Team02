@@ -22,6 +22,12 @@ public class OrderRequest {
     private Long id;
 
     /**
+     * 주문 요청을 등록한 구매자의 사용자 ID
+     */
+    @Column(name = "buyer_id", nullable = false)
+    private Long buyerId;
+
+    /**
      * 판매자가 주문 요청을 빠르게 구분할 수 있는 제목
      */
     @Column(length = 100)
@@ -74,6 +80,7 @@ public class OrderRequest {
     /// Setter를 쓰지 않는 이유는 Setter는 객체 상태를 아무 곳에서나 변경 가능하기 때문
     /// 생성자는 생성 규칙을 강제하고 상태를 보호하기 쉬움
     private OrderRequest(
+            Long buyerId,
             String title,
             String description,
             LocalDateTime eventDateTime,
@@ -85,6 +92,7 @@ public class OrderRequest {
             Double latitude,
             Double longitude
     ) {
+        this.buyerId = buyerId;
         this.title = title;
         this.description = description;
         this.eventDateTime = eventDateTime;
@@ -102,6 +110,7 @@ public class OrderRequest {
      * 새로운 주문 요청 Entity를 생성
      */
     public static OrderRequest create(
+            Long buyerId,
             String title,
             String description,
             LocalDateTime eventDateTime,
@@ -114,6 +123,7 @@ public class OrderRequest {
             Double longitude
     ) {
         return new OrderRequest(
+                buyerId,
                 title,
                 description,
                 eventDateTime,

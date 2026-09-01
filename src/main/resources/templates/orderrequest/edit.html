@@ -22,10 +22,14 @@
     </section>
 
     <!-- 기존 주문 정보를 수정하는 폼 영역 -->
-    <form class="order-form-card"
-          th:action="@{/requests/{id}/edit(id=${requestId})}"
+    <form id="orderRequestForm"
+          class="order-form-card"
           th:object="${orderRequest}"
-          method="post">
+          data-mode="edit"
+          th:attr="
+          data-request-id=${requestId},
+          data-buyer-id=${buyerId}"
+          hidden>
 
         <!-- 주문 제목과 행사/배송 일시 수정 영역 -->
         <div class="order-form-row">
@@ -134,13 +138,6 @@
                       placeholder="메뉴 구성, 포장 방식, 알레르기 등 필요한 요청사항을 입력해주세요"></textarea>
         </div>
 
-        <!-- 주소 검색 API 연동 전 기존 좌표값 유지 -->
-        <input type="hidden"
-               th:field="*{latitude}">
-
-        <input type="hidden"
-               th:field="*{longitude}">
-
         <!-- 주문 수정 취소 및 저장 액션 영역 -->
         <div class="order-form-actions">
 
@@ -157,67 +154,8 @@
         </div>
     </form>
 </main>
-<script>
-    const categorySelect = document.getElementById('category');
-    const customCategoryArea = document.getElementById('customCategoryArea');
-    const customCategoryInput = document.getElementById('customCategory');
-    const orderForm = categorySelect.closest('form');
-
-    const standardCategories = [
-        '한식',
-        '중식',
-        '일식',
-        '양식',
-        '도시락/간편식',
-        '디저트/다과',
-        '카페/음료',
-        '비건'
-    ];
-
-    // 기존 주문의 카테고리를 수정 화면에 표시
-    const originalCategory = categorySelect.dataset.originalCategory;
-
-    if (standardCategories.includes(originalCategory)) {
-        categorySelect.value = originalCategory;
-        customCategoryArea.hidden = true;
-    } else if (originalCategory) {
-        categorySelect.value = '기타';
-        customCategoryInput.value = originalCategory;
-        customCategoryInput.required = true;
-        customCategoryArea.hidden = false;
-    }
-
-    // 카테고리 선택 변경
-    categorySelect.addEventListener('change', function () {
-        const isOther = categorySelect.value === '기타';
-
-        customCategoryArea.hidden = !isOther;
-        customCategoryInput.required = isOther;
-
-        if (!isOther) {
-            customCategoryInput.value = '';
-        }
-    });
-
-    // 기타 카테고리는 직접 입력한 값을 category로 전송
-    orderForm.addEventListener('submit', function () {
-        if (categorySelect.value !== '기타') {
-            return;
-        }
-
-        const customCategory = customCategoryInput.value.trim();
-
-        if (customCategory === '') {
-            return;
-        }
-
-        const option = document.createElement('option');
-        option.value = customCategory;
-        option.textContent = customCategory;
-        option.selected = true;
-
-        categorySelect.appendChild(option);
-    });
+<script type="module"
+        th:src="@{/order/js/order-request-form.js}">
 </script>
 </body>
 </html>

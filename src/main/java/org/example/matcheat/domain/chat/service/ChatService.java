@@ -14,11 +14,12 @@ public class ChatService {
 
 	private final ChatRoomRepository chatRoomRepository;
 
-	/**
-	 * 외부 컨트롤러 요청을 통한 채팅방 생성 (단순 문의 및 제안 기반 문의 모두 대응)
-	 */
 	@Transactional
 	public ChatRoomResponse createChatRoom(ChatRoomCreateRequest request, Long currentUserId) {
+		if (request.getProposalId() == null && request.getOriginType() == ChatRoom.OriginType.PROPOSAL) {
+			throw new IllegalArgumentException("proposalId 없이 PROPOSAL 타입의 채팅방을 생성할 수 없습니다.");
+		}
+
 		ChatRoom chatRoom = getOrCreateChatRoomEntity(
 				request.getProposalId(),
 				request.getOriginType(),
@@ -28,53 +29,51 @@ public class ChatService {
 		return ChatRoomResponse.from(chatRoom);
 	}
 
-	/**
-	 * [P0-1] 타 서비스(QuoteService 등) 내부 전용: 채팅방을 생성하거나 기존 방을 조회하여 엔티티로 반환
-	 */
 	@Transactional
 	public ChatRoom getOrCreateChatRoomForQuote(Long proposalId, ChatRoom.OriginType originType, Long buyerId, Long sellerId) {
 		return getOrCreateChatRoomEntity(proposalId, originType, buyerId, sellerId);
 	}
 
 	/**
-	 * 공통 채팅방 생성/조회 핵심 도메인 로직 (P0-2, P1-6 구현)
+	 * [추가] 외부 도메인(QuoteService 등) 전용 ChatRoom 엔티티 조회 메서드
+	 */
+	@Transactional(readOnly = true)
+	public ChatRoom getChatRoomEntity(Long chatRoomId) {
+		return chatRoomRepository.findById(chatRoomId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다. ID: " + chatRoomId));
+	}
+
+	/**
+	 * [버그 수정] 기존 코드는 proposalId가 null인 경우(=Proposal 도메인이 아직 없어
+	 * /quotes/direct처럼 proposalId 없이 PROPOSAL 타입 방을 만드는 모든 경로)
+	 * 중복 방지 조회를 전혀 타지 않아, 같은 buyer-seller 조합으로 호출할 때마다
+	 * ChatRoom이 무한히 새로 생성됐다.
+	 *
+	 * 수정 후 규칙:
+	 * - proposalId가 있으면: 그 proposalId 기준으로만 기존 방 재사용 (오퍼 1개당 방 1개).
+	 * - proposalId가 없으면: PROPOSAL/INQUIRY 상관없이 buyerId+sellerId+originType+status
+	 *   기준으로 활성 상태인 기존 방을 재사용한다.
 	 */
 	private ChatRoom getOrCreateChatRoomEntity(Long proposalId, ChatRoom.OriginType requestedOriginType, Long buyerId, Long sellerId) {
-		// [P0-2] originType 검증 및 자동 세팅 규칙
-		ChatRoom.OriginType resolvedOriginType;
+		ChatRoom.OriginType resolvedOriginType = (proposalId != null)
+				? ChatRoom.OriginType.PROPOSAL
+				: (requestedOriginType != null ? requestedOriginType : ChatRoom.OriginType.INQUIRY);
+
 		if (proposalId != null) {
-			resolvedOriginType = ChatRoom.OriginType.PROPOSAL;
-		} else {
-			if (requestedOriginType == ChatRoom.OriginType.PROPOSAL) {
-				throw new IllegalArgumentException("proposalId 없이 PROPOSAL 타입의 채팅방을 생성할 수 없습니다.");
-			}
-			resolvedOriginType = ChatRoom.OriginType.INQUIRY;
+			return chatRoomRepository.findByProposalId(proposalId)
+					.orElseGet(() -> createNewChatRoom(proposalId, resolvedOriginType, buyerId, sellerId));
 		}
 
-		// 1. Proposal 기반 진입인 경우 중복 방지 (기존 방 재사용)
-		if (resolvedOriginType == ChatRoom.OriginType.PROPOSAL && proposalId != null) {
-			ChatRoom existingRoom = chatRoomRepository.findByProposalId(proposalId).orElse(null);
-			if (existingRoom != null) {
-				return existingRoom;
-			}
-		}
+		return chatRoomRepository.findByBuyerIdAndSellerIdAndOriginTypeAndStatus(
+						buyerId, sellerId, resolvedOriginType, ChatRoom.Status.ACTIVE)
+				.orElseGet(() -> createNewChatRoom(null, resolvedOriginType, buyerId, sellerId));
+	}
 
-		// 2. [P1-6] INQUIRY 기반 진입인 경우 기존 ACTIVE 방 중복 방지 (재사용)
-		if (resolvedOriginType == ChatRoom.OriginType.INQUIRY) {
-			ChatRoom existingInquiryRoom = chatRoomRepository.findByBuyerIdAndSellerIdAndOriginTypeAndStatus(
-					buyerId, sellerId, ChatRoom.OriginType.INQUIRY, ChatRoom.Status.ACTIVE
-			).orElse(null);
-
-			if (existingInquiryRoom != null) {
-				return existingInquiryRoom;
-			}
-		}
-
-		// 3. 신규 채팅방 생성
+	private ChatRoom createNewChatRoom(Long proposalId, ChatRoom.OriginType originType, Long buyerId, Long sellerId) {
 		ChatRoom chatRoom = ChatRoom.builder()
 				.proposalId(proposalId)
 				.quoteId(null)
-				.originType(resolvedOriginType)
+				.originType(originType)
 				.buyerId(buyerId)
 				.sellerId(sellerId)
 				.build();
@@ -82,35 +81,23 @@ public class ChatService {
 		return chatRoomRepository.save(chatRoom);
 	}
 
-	/**
-	 * [P0-1] 타 서비스 전용: 채팅방 상태 닫기 (Close)
-	 */
 	@Transactional
 	public void closeChatRoom(Long chatRoomId) {
-		ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-				.orElseThrow(() -> new IllegalArgumentException("연결된 채팅방을 찾을 수 없습니다. ID: " + chatRoomId));
+		ChatRoom chatRoom = getChatRoomEntity(chatRoomId);
 		chatRoom.close();
 	}
 
-	/**
-	 * [P0-1] 타 서비스 전용: 채팅방 최신 Quote ID 업데이트
-	 */
 	@Transactional
 	public ChatRoom updateChatRoomQuoteId(Long chatRoomId, Long quoteId) {
-		ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-				.orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + chatRoomId));
+		ChatRoom chatRoom = getChatRoomEntity(chatRoomId);
 		chatRoom.updateQuoteId(quoteId);
 		return chatRoom;
 	}
 
-	/**
-	 * 단건 채팅방 조회
-	 */
 	@Transactional(readOnly = true)
-	public ChatRoomResponse getChatRoom(Long chatRoomId) {
-		ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
-				.orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + chatRoomId));
-
+	public ChatRoomResponse getChatRoom(Long chatRoomId, Long currentUserId) {
+		ChatRoom chatRoom = getChatRoomEntity(chatRoomId);
+		chatRoom.validateParticipant(currentUserId);
 		return ChatRoomResponse.from(chatRoom);
 	}
 }

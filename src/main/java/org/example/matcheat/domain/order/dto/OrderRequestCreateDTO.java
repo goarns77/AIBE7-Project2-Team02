@@ -46,10 +46,4 @@ public class OrderRequestCreateDTO {
 
     @NotBlank
     private String deliveryAddress;
-
-    @NotNull
-    private Double latitude;
-
-    @NotNull
-    private Double longitude;
 }

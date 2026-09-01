@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>판매 조건 상세 | MatchEAT</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/product.css}">
+</head>
+<body>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <section class="product-detail-header">
+        <div>
+            <h1>판매 조건 상세</h1>
+            <p>선택한 판매 조건의 상세 정보를 확인합니다.</p>
+        </div>
+    </section>
+
+    <div class="product-toolbar">
+        <a th:href="@{/product}">📋 목록으로</a>
+        <a th:href="@{/product/new}">➕ 새 등록</a>
+    </div>
+
+    <div id="statusBox" class="product-detail-status">상세 정보를 불러오는 중입니다...</div>
+
+    <section id="detailContent" class="product-detail-layout" style="display:none;">
+        <div class="product-detail-image-card">
+            <div id="imageHolder"></div>
+        </div>
+
+        <div class="product-detail-card">
+            <div class="product-detail-info">
+                <div class="product-detail-row">
+                    <span class="product-detail-label">판매 조건 ID</span>
+                    <span class="product-detail-value" id="productId"></span>
+                </div>
+                <div class="product-detail-row">
+                    <span class="product-detail-label">상품/메뉴명</span>
+                    <span class="product-detail-value" id="productName"></span>
+                </div>
+                <div class="product-detail-row">
+                    <span class="product-detail-label">최소 수주 수량</span>
+                    <span class="product-detail-value" id="minHeadcount"></span>
+                </div>
+                <div class="product-detail-row">
+                    <span class="product-detail-label">최대 수주 수량</span>
+                    <span class="product-detail-value" id="maxHeadcount"></span>
+                </div>
+                <div class="product-detail-row">
+                    <span class="product-detail-label">1인분 가격</span>
+                    <span class="product-detail-value" id="servingPrice"></span>
+                </div>
+                <div class="product-detail-row">
+                    <span class="product-detail-label">배송 반경</span>
+                    <span class="product-detail-value" id="deliveryRadiusKm"></span>
+                </div>
+                <div class="product-detail-row">
+                    <span class="product-detail-label">음식 카테고리</span>
+                    <span class="product-detail-value" id="category"></span>
+                </div>
+                <div class="product-detail-row">
+                    <span class="product-detail-label">정기 휴무 요일</span>
+                    <span class="product-detail-value" id="dayOfWeek"></span>
+                </div>
+                <div class="product-detail-row">
+                    <span class="product-detail-label">평점</span>
+                    <span class="product-detail-value" id="ratingAvg"></span>
+                </div>
+                <div class="product-detail-row">
+                    <span class="product-detail-label">최종 수정일</span>
+                    <span class="product-detail-value" id="updatedAt"></span>
+                </div>
+                <div class="product-detail-row wide">
+                    <span class="product-detail-label">가게 주소</span>
+                    <span class="product-detail-value" id="storeAddress"></span>
+                </div>
+                <div class="product-detail-row wide">
+                    <span class="product-detail-label">설명</span>
+                    <p class="product-detail-description" id="description"></p>
+                </div>
+                <div class="product-detail-row wide">
+                    <span class="product-detail-label">특정 불가 날짜</span>
+                    <span class="product-detail-value" id="unavailableDates"></span>
+                </div>
+            </div>
+
+            <div class="product-detail-actions">
+                <a id="estimateButton" class="product-detail-button" href="#">견적 요청하기</a>
+                <a id="editButton" class="product-detail-button product-detail-primary" href="#" style="display:none;">수정하기</a>
+                <a class="product-detail-button" th:href="@{/product}">목록으로 돌아가기</a>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script type="module" th:src="@{/product/js/product-detail.js}"></script>
+</body>
+</html>

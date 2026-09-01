@@ -9,6 +9,8 @@ import org.example.matcheat.domain.product.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,15 +26,16 @@ public class ProductController {
     private final ProductService productService;
 
     /**
-     * 새로운 판매 조건을 등록한다.
+     * 새로운 판매 조건을 등록한다. 승인된 판매자만 가능하다.
      */
     @PostMapping
     public ResponseEntity<ProductResponseDTO> create(
+            @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody ProductCreateDTO dto
     ) {
-        // TODO: 로그인 담당 개발이 끝나면 현재 로그인한 사용자의 accountId를 전달해서
-        //       본인 상품으로 저장되도록 바꾼다.
-        ProductResponseDTO response = productService.create(dto);
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        ProductResponseDTO response = productService.create(dto, userId);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -40,21 +43,23 @@ public class ProductController {
     }
 
     /**
-     * 새로운 판매 조건을 등록한다. (multipart)
+     * 새로운 판매 조건을 등록한다. (multipart) 승인된 판매자만 가능하다.
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> createMultipart(
+            @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestPart("product") ProductCreateDTO dto,
             @RequestPart(value = "imageFile", required = false) MultipartFile imageFile
     ) {
-        // TODO: 로그인 담당 개발이 끝나면 현재 로그인한 사용자의 accountId를 전달해서
-        //       본인 상품으로 저장되도록 바꾼다.
-        ProductResponseDTO response = productService.create(dto, imageFile);
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        ProductResponseDTO response = productService.create(dto, imageFile, userId);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
+
 
     /**
      * 판매 조건 ID로 단건 조회한다.
@@ -66,6 +71,20 @@ public class ProductController {
         ProductResponseDTO response = productService.findById(id);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 현재 로그인 사용자가 등록한 판매 조건을 조회한다.
+     */
+    @GetMapping("/mine")
+    public ResponseEntity<List<ProductResponseDTO>> findMine(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        return ResponseEntity.ok(
+                productService.findMine(userId)
+        );
     }
 
     /**
@@ -93,42 +112,50 @@ public class ProductController {
     }
 
     /**
-     * 판매 조건 ID에 해당하는 항목을 부분 수정한다.
+     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. 본인 소유의 판매 조건만 가능하다.
      */
     @PatchMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> update (
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
             @Valid @RequestBody ProductUpdateDTO dto
     ) {
-       ProductResponseDTO response = productService.update(id, dto);
+       Long userId = Long.valueOf(jwt.getSubject());
+
+       ProductResponseDTO response = productService.update(id, dto, userId);
 
        return ResponseEntity.ok(response);
     }
 
     /**
-     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. (multipart)
+     * 판매 조건 ID에 해당하는 항목을 부분 수정한다. (multipart) 본인 소유의 판매 조건만 가능하다.
      */
     @PatchMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDTO> updateMultipart(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
             @Valid @RequestPart("product") ProductUpdateDTO dto,
             @RequestPart(value = "imageFile", required = false) MultipartFile imageFile
     ) {
-        ProductResponseDTO response = productService.update(id, dto, imageFile);
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        ProductResponseDTO response = productService.update(id, dto, imageFile, userId);
 
         return ResponseEntity.ok(response);
     }
 
     /**
-     * 판매 조건을 소프트 삭제한다.
+     * 판매 조건을 소프트 삭제한다. 본인 소유의 판매 조건이거나 관리자만 가능하다.
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> softDelete(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id
     ) {
-        // TODO: 로그인 담당 개발이 끝나면 현재 로그인한 사용자의 accountId를 주입받아
-        //       본인 상품만 삭제하도록 바꾼다.
-        ProductResponseDTO response = productService.softDelete(id);
+        Long userId = Long.valueOf(jwt.getSubject());
+        boolean isAdmin = "ADMIN".equals(jwt.getClaimAsString("role"));
+
+        ProductResponseDTO response = productService.softDelete(id, userId, isAdmin);
 
         return ResponseEntity.ok(response);
     }

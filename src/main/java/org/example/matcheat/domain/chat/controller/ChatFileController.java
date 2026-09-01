@@ -1,7 +1,6 @@
 package org.example.matcheat.domain.chat.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.example.matcheat.domain.chat.dto.ChatFileResponse;
@@ -28,34 +27,39 @@ public class ChatFileController {
 
 	private final ChatFileService chatFileService;
 
-	@Operation(summary = "파일 업로드 (이미지/PDF)", description = "채팅방에 이미지 또는 PDF 파일을 업로드합니다.")
-
+	/**
+	 * [수정] senderId를 @RequestParam으로 받지 않는다 — 업로더는 클라이언트가
+	 * 주장하는 값이 아니라 서버(resolveCurrentUserId())가 결정한다.
+	 */
+	@Operation(summary = "파일 업로드 (이미지/PDF)", description = "채팅방에 이미지 또는 PDF 파일을 업로드합니다. 해당 채팅방의 참여자만 업로드할 수 있습니다.")
 	@PostMapping(value = "/chat-rooms/{chatRoomId}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ChatFileResponse> uploadFile(
 			@PathVariable Long chatRoomId,
-			@Parameter(description = "업로더 유저 ID (기본값: 1)", example = "1")
-			@RequestParam("senderId") Long senderId,
 			@RequestPart("file") MultipartFile file) throws IOException {
 
-		// 전달받은 uploaderId를 서비스에 그대로 넘깁니다.
-		ChatFileResponse response = chatFileService.uploadFile(chatRoomId, senderId, file);
+		Long currentUserId = resolveCurrentUserId();
+		ChatFileResponse response = chatFileService.uploadFile(chatRoomId, currentUserId, file);
 		return ResponseEntity.ok(response);
 	}
 
-	@Operation(summary = "채팅방 파일 목록 조회", description = "특정 채팅방의 모든 파일 목록을 조회합니다.")
+	@Operation(summary = "채팅방 파일 목록 조회", description = "특정 채팅방의 모든 파일 목록을 조회합니다. 참여자만 조회할 수 있습니다.")
 	@GetMapping("/chat-rooms/{chatRoomId}/files")
 	public ResponseEntity<List<ChatFileResponse>> getFilesByChatRoom(@PathVariable Long chatRoomId) {
-		List<ChatFileResponse> files = chatFileService.getFilesByChatRoom(chatRoomId);
+		Long currentUserId = resolveCurrentUserId();
+		List<ChatFileResponse> files = chatFileService.getFilesByChatRoom(chatRoomId, currentUserId);
 		return ResponseEntity.ok(files);
 	}
 
-	@Operation(summary = "파일 다운로드", description = "fileId를 사용하여 업로드된 이미지 또는 PDF를 다운로드합니다.")
+	/**
+	 * [수정] fileId만 알면 누구나 다운로드 가능하던 문제를 참여자 검증으로 막는다.
+	 */
+	@Operation(summary = "파일 다운로드", description = "fileId를 사용하여 업로드된 이미지 또는 PDF를 다운로드합니다. 해당 채팅방 참여자만 다운로드할 수 있습니다.")
 	@GetMapping("/chat-files/{fileId}/download")
 	public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId) throws IOException {
-		ChatFile chatFile = chatFileService.getChatFileEntity(fileId);
+		Long currentUserId = resolveCurrentUserId();
+		ChatFile chatFile = chatFileService.getChatFileForDownload(fileId, currentUserId);
 		Resource resource = chatFileService.loadFileAsResource(chatFile.getFilePath());
 
-		// 한글 파일명 깨짐 방지 인코딩
 		String encodedFileName = URLEncoder.encode(chatFile.getOriginalFileName(), StandardCharsets.UTF_8)
 				.replaceAll("\\+", "%20");
 
@@ -63,5 +67,13 @@ public class ChatFileController {
 				.contentType(MediaType.APPLICATION_OCTET_STREAM)
 				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFileName + "\"")
 				.body(resource);
+	}
+
+	// -----------------------------------------------------------
+	// 인증 붙기 전 임시 처리 — 교체 지점을 한 곳으로 모아둔다.
+	// -----------------------------------------------------------
+	private Long resolveCurrentUserId() {
+		// TODO: SecurityContext/JWT 적용 시 인증된 사용자의 userId로 교체
+		return 1L;
 	}
 }
