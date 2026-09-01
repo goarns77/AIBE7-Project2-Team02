@@ -12,7 +12,8 @@ import java.util.Map;
         "org.example.matcheat.domain.order.controller",
         "org.example.matcheat.domain.chat.controller",
         "org.example.matcheat.domain.quote.controller",
-        "org.example.matcheat.domain.estimate.controller"
+        "org.example.matcheat.domain.estimate.controller",
+        "org.example.matcheat.domain.payment.controller"
 })
 public class TradeApiExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)

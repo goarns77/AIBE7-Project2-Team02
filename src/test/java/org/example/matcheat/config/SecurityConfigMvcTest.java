@@ -66,6 +66,26 @@ class SecurityConfigMvcTest {
     }
 
     @Test
+    void protectsChatAndPaymentApis() throws Exception {
+        mockMvc.perform(get("/api/v1/chat-rooms"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/chat-files/1"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/quotes/1/payments"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/v1/chat-rooms")
+                        .with(jwt().authorities(() -> "ROLE_USER")))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/chat-files/1")
+                        .with(jwt().authorities(() -> "ROLE_USER")))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/quotes/1/payments")
+                        .with(jwt().authorities(() -> "ROLE_USER")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void permitsAuthenticatedMemberApi() throws Exception {
         mockMvc.perform(get("/api/v1/account/ping")
                         .with(jwt().authorities(() -> "ROLE_USER")))
@@ -149,6 +169,15 @@ class SecurityConfigMvcTest {
 
         @GetMapping({"/api/v1/requests", "/api/v1/requests/search"})
         String readRequests() {
+            return "ok";
+        }
+
+        @GetMapping({
+                "/api/v1/chat-rooms",
+                "/api/v1/chat-files/{fileId}",
+                "/api/v1/quotes/{quoteId}/payments"
+        })
+        String readProtectedTradeResource() {
             return "ok";
         }
     }

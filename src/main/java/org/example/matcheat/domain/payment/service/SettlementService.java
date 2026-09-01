@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SettlementService {
 
 	private final SettlementRepository settlementRepository;
+	private final PaymentAccessService paymentAccess;
 
 	@Transactional
 	public Settlement issueSettlement(Payment payment, Quote quote) {
@@ -35,7 +36,7 @@ public class SettlementService {
 	public Settlement getByPaymentId(Long paymentId, Long currentUserId) {
 		Settlement settlement = settlementRepository.findByPaymentId(paymentId)
 				.orElseThrow(() -> new IllegalArgumentException("정산서를 찾을 수 없습니다. paymentId: " + paymentId));
-		settlement.validateParticipant(currentUserId);
+		paymentAccess.requireSettlementSeller(settlement, currentUserId);
 		return settlement;
 	}
 }
