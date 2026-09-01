@@ -32,6 +32,8 @@ class OpenApiIntegrationTest {
                 .andExpect(jsonPath("$.paths['/api/v1/products'].get.security").doesNotExist())
                 .andExpect(jsonPath("$.paths['/api/v1/products'].post.security[0].bearerAuth").isArray())
                 .andExpect(jsonPath("$.paths['/api/v1/products/mine'].get.security[0].bearerAuth").isArray())
-                .andExpect(jsonPath("$.paths['/api/v1/account/me'].get.security[0].bearerAuth").isArray());
+                .andExpect(jsonPath("$.paths['/api/v1/account/me'].get.security[0].bearerAuth").isArray())
+                .andExpect(jsonPath("$.paths['/api/v1/chat-rooms'].get.security[0].bearerAuth").isArray())
+                .andExpect(jsonPath("$.paths['/api/v1/quotes/{quoteId}/payments'].get.security[0].bearerAuth").isArray());
     }
 }

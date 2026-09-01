@@ -9,6 +9,8 @@ import org.example.matcheat.domain.payment.entity.Payment;
 import org.example.matcheat.domain.payment.service.PaymentService;
 import org.example.matcheat.domain.payment.service.SettlementService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Payment Document API", description = "영수증 / 정산서 조회")
@@ -22,20 +24,23 @@ public class PaymentDocumentController {
 
 	@Operation(summary = "결제 영수증 조회", description = "구매자 화면용. 결제 완료 건만 조회 가능.")
 	@GetMapping("/receipt")
-	public ResponseEntity<ReceiptResponse> getReceipt(@PathVariable Long paymentId) {
-		Payment payment = paymentService.getPaymentEntity(paymentId, resolveCurrentUserId());
+	public ResponseEntity<ReceiptResponse> getReceipt(
+			@AuthenticationPrincipal Jwt jwt,
+			@PathVariable Long paymentId) {
+		Payment payment = paymentService.getPaymentEntity(paymentId, currentUserId(jwt));
 		return ResponseEntity.ok(ReceiptResponse.from(payment));
 	}
 
 	@Operation(summary = "정산서 조회", description = "판매자 화면용. 결제 완료 시 자동 발행된 정산서를 조회한다.")
 	@GetMapping("/settlement")
-	public ResponseEntity<SettlementResponse> getSettlement(@PathVariable Long paymentId) {
+	public ResponseEntity<SettlementResponse> getSettlement(
+			@AuthenticationPrincipal Jwt jwt,
+			@PathVariable Long paymentId) {
 		return ResponseEntity.ok(SettlementResponse.from(
-				settlementService.getByPaymentId(paymentId, resolveCurrentUserId())));
+				settlementService.getByPaymentId(paymentId, currentUserId(jwt))));
 	}
 
-	private Long resolveCurrentUserId() {
-		// TODO: SecurityContext 적용 시 교체
-		return 1L;
+	private static long currentUserId(Jwt jwt) {
+		return Long.parseLong(jwt.getSubject());
 	}
 }

@@ -7,6 +7,7 @@ import org.example.matcheat.domain.payment.mock.MockPaymentGatewayClient;
 import org.example.matcheat.domain.payment.repository.PaymentRepository;
 import org.example.matcheat.domain.quote.entity.Quote;
 import org.example.matcheat.domain.quote.service.QuoteService;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,13 +21,14 @@ public class PaymentService {
 	private final QuoteService quoteService;
 	private final MockPaymentGatewayClient mockPaymentGatewayClient;
 	private final SettlementService settlementService;
+	private final PaymentAccessService paymentAccess;
 
 	@Transactional
 	public PaymentResponse pay(Long quoteId, Long currentUserId) {
 		Quote quote = quoteService.getQuoteEntity(quoteId);
 
 		if (!currentUserId.equals(quote.getBuyerId())) {
-			throw new IllegalArgumentException("결제는 구매자 본인만 할 수 있습니다.");
+			throw new AccessDeniedException("결제는 구매자 본인만 할 수 있습니다.");
 		}
 		if (quote.getStatus() != Quote.QuoteStatus.ACCEPTED) {
 			throw new IllegalStateException("확정(ACCEPTED)된 견적서만 결제할 수 있습니다. 현재 상태: " + quote.getStatus());
@@ -65,7 +67,7 @@ public class PaymentService {
 	public PaymentResponse getByQuoteId(Long quoteId, Long currentUserId) {
 		Payment payment = paymentRepository.findByQuoteId(quoteId)
 				.orElseThrow(() -> new IllegalArgumentException("해당 견적서의 결제 기록이 없습니다. quoteId: " + quoteId));
-		payment.validateParticipant(currentUserId);
+		paymentAccess.requirePaymentParticipant(payment, currentUserId);
 		return PaymentResponse.from(payment);
 	}
 
@@ -73,7 +75,7 @@ public class PaymentService {
 	public Payment getPaymentEntity(Long paymentId, Long currentUserId) {
 		Payment payment = paymentRepository.findById(paymentId)
 				.orElseThrow(() -> new IllegalArgumentException("결제 기록을 찾을 수 없습니다. ID: " + paymentId));
-		payment.validateParticipant(currentUserId);
+		paymentAccess.requirePaymentBuyer(payment, currentUserId);
 		return payment;
 	}
 }

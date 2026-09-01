@@ -401,9 +401,11 @@ AUTH-01부터 AUTH-04까지는 보안 및 데이터 무결성 작업이므로 �
 
 ### PRODUCT-SEC-01 공개 응답의 계정 ID 제거
 
-- 공개 상품 목록·상세 응답의 `ownerAccountId`가 내부 계정 식별자를 노출한다.
-- 공개 DTO에서는 제거하고, UI의 소유자 판별은 보호된 `mine` API 또는 `ownedByCurrentUser` 같은 서버 계산 값으로 대체한다.
-- 비로그인 상품 목록·상세 응답에 내부 계정 ID가 없는지 테스트한다.
+현재 상태: 후속 브랜치에서 구현 및 테스트 완료, 반영 대기
+
+- 공개 상품 목록·상세 및 보호된 상품 응답 DTO에서 `ownerAccountId`를 제거했다.
+- 상품 목록·상세 UI의 소유자 판별은 인증된 판매자 전용 `products/mine` 응답의 상품 ID 집합으로 대체했다.
+- DTO 직렬화 테스트로 내부 계정 ID가 응답에 포함되지 않는지 검증한다.
 
 ### PRODUCT-SEC-02 레거시 상품 소유자 보정
 
@@ -426,3 +428,31 @@ AUTH-01부터 AUTH-04까지는 보안 및 데이터 무결성 작업이므로 �
 
 - 위·경도 직접 입력 제거 후 `KAKAO_REST_API_KEY` 미설정 및 주소 변환 실패 응답을 검증한다.
 - `KakaoRouteDistanceService`의 deprecated API 경고를 후속 라이브러리 업그레이드에서 제거한다.
+
+### PAYMENT-SEC-01 결제 인증 및 문서 접근 보정
+
+현재 상태: 후속 브랜치에서 구현 및 테스트 완료, 반영 대기
+
+- 결제·영수증·정산 컨트롤러의 고정 사용자 ID를 제거하고 JWT subject를 사용한다.
+- 결제의 구매자 계정 ID와 판매자 프로필 ID를 구분해 계정→판매자 프로필 매핑 후 참여 권한을 판정한다.
+- 결제 조회는 거래 참여자, 영수증은 구매자, 정산서는 판매자만 접근하도록 분리한다.
+- 결제 권한 오류는 공통 거래 API 예외 처리에서 `403`으로 반환한다.
+- 채팅 REST API에 병합 과정에서 추가된 `permitAll`을 제거하고 채팅·결제 보호 경로를 Security/OpenAPI 테스트로 검증한다.
+
+### PAYMENT-DATA-01 결제 멱등성 및 동시성 보강
+
+- `payments.quote_id`에 DB 고유 제약이 없어 같은 견적에 대한 동시 결제 요청이 중복 레코드와 중복 PG 호출을 만들 수 있다.
+- 고유 제약, 비관적 잠금 또는 PG idempotency key를 조합해 애플리케이션 조회만이 아닌 DB·PG 경계에서 중복 결제를 차단한다.
+- 두 개 이상의 동시 요청을 사용한 통합 테스트로 결제 및 정산 레코드가 각각 한 건만 생성되는지 검증한다.
+
+### SECURITY-OPS-01 CORS 운영 설정 외부화
+
+- 현재 HTTP CORS 허용 Origin은 로컬 개발 주소 세 개로 하드코딩되어 있어 운영 배포 주소를 수용하지 못한다.
+- WebSocket Origin 정책과 동일하게 환경 변수 기반 allowlist로 외부화하고, 운영 환경에서 와일드카드를 허용하지 않는다.
+- 허용·비허용 Origin 및 preflight 요청 테스트를 추가한다.
+
+### OPENAPI-MAINT-01 보안 정책 단일화
+
+- `OpenApiConfig.isProtectedApi`와 `SecurityConfig`가 공개 API allowlist를 별도로 유지해 신규 API 병합 시 문서와 실제 정책이 어긋날 수 있다.
+- 공개 경로 메타데이터를 공유하거나 명시적 OpenAPI security annotation 정책으로 전환한다.
+- 최소한 인증·상품 공개·채팅·결제 API의 OpenAPI security와 실제 HTTP 응답을 함께 검증하는 계약 테스트를 유지한다.
