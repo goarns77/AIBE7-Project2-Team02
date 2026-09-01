@@ -12,6 +12,8 @@ public interface SellerApplicationRepository {
 
     Optional<SellerVerificationStatus> findStatusByUserId(long userId);
 
+    Optional<Long> findUserIdBySellerId(long sellerId);
+
     boolean existsByUserId(long userId);
 
     boolean existsByBusinessNumber(String businessNumber);

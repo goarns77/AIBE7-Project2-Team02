@@ -51,7 +51,7 @@ public class ProductEntity {
     /**
      *  1인분 가격
      */
-    @Column(name = "servingPrice", nullable = false)
+    @Column(name = "serving_price", nullable = false)
     private Integer servingPrice;
 
     /**
@@ -123,8 +123,9 @@ public class ProductEntity {
     @Column(name = "image_url", nullable = true, columnDefinition = "TEXT")
     private String imageUrl;
 
+
     /**
-     * 추후 로그인 구현 시 삭제 예정인 컬럼
+     * 이 판매 조건을 등록한 사용자(판매자)의 계정 ID
      */
     @Column(name = "owner_account_id")
     private Long ownerAccountId;
@@ -217,8 +218,10 @@ public class ProductEntity {
 
     /**
      * null 이 아닌 값만 반영해 판매 조건을 부분 수정한다.
+     * 요청자가 이 판매 조건의 소유자인지 먼저 검증한다.
      */
     public void update(
+            Long requesterAccountId,
             String productName,
             Integer minHeadcount,
             Integer maxHeadcount,
@@ -233,6 +236,8 @@ public class ProductEntity {
             List<LocalDate> unavailableDates,
             String imageUrl
     ) {
+        verifyOwner(requesterAccountId);
+
         if(minHeadcount != null) {
             this.minHeadcount = minHeadcount;
         }
@@ -288,17 +293,26 @@ public class ProductEntity {
 
     /**
      * 판매 조건을 소프트 삭제 상태로 바꾼다.
+     * 관리자가 아니라면 요청자가 이 판매 조건의 소유자인지 먼저 검증한다.
      */
-    public void softDelete(Long requesterAccountId) {
-        // TODO: 로그인 담당 개발이 끝나면 여기서 현재 로그인 사용자의 accountId를 전달받아
-        //       ownerAccountId와 일치하는 경우에만 숨김 처리하도록 검증을 강화한다.
-        if (this.ownerAccountId != null
-                && requesterAccountId != null
-                && !this.ownerAccountId.equals(requesterAccountId)) {
-            throw new IllegalArgumentException("본인이 등록한 판매 조건만 삭제할 수 있습니다.");
+    public void softDelete(Long requesterAccountId, boolean requesterIsAdmin) {
+        if (!requesterIsAdmin) {
+            verifyOwner(requesterAccountId);
         }
 
         this.hidden = true;
+    }
+
+    /**
+     * 요청자가 이 판매 조건의 소유자인지 검증한다.
+     * ownerAccountId가 아직 없는(로그인 연동 이전) 데이터는 검증을 건너뛴다.
+     */
+    private void verifyOwner(Long requesterAccountId) {
+        if (this.ownerAccountId != null
+                && requesterAccountId != null
+                && !this.ownerAccountId.equals(requesterAccountId)) {
+            throw new IllegalArgumentException("본인이 등록한 판매 조건만 수정 또는 삭제할 수 있습니다.");
+        }
     }
 
     /**
@@ -318,6 +332,10 @@ public class ProductEntity {
         this.updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * 특정 불가 날짜 목록을 null-safe한 불변 리스트로 정규화한다.
+     * null 또는 빈 값이면 빈 리스트를, 그렇지 않으면 새 ArrayList로 복사해 반환한다.
+     */
     private List<LocalDate> normalizeUnavailableDates(List<LocalDate> unavailableDates) {
         if (unavailableDates == null || unavailableDates.isEmpty()) {
             return List.of();

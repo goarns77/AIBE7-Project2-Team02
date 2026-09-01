@@ -3,6 +3,11 @@ spring:
     name: MatchEAT
   profiles:
     include: db, ai, account
+app:
+  kakao:
+    rest-api-key: ${KAKAO_REST_API_KEY:}
+  websocket:
+    allowed-origin-patterns: ${WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:http://localhost:*}
 ---
 spring:
   config:

@@ -1,407 +1,140 @@
-<!-- Created by DINKIssTyle on 2026. Copyright (C) 2026 DINKI'ssTyle. All rights reserved. -->
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>판매 조건 수정 테스트</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: inline-block;
-            width: 150px;
-            font-weight: bold;
-        }
-        input {
-            padding: 5px;
-            width: 250px;
-        }
-        textarea {
-            padding: 5px;
-            width: 250px;
-            height: 110px;
-            resize: vertical;
-        }
-        button {
-            padding: 8px 15px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .btn-search {
-            background-color: #17a2b8;
-            color: white;
-            border: none;
-            border-radius: 3px;
-        }
-        .btn-submit {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 3px;
-        }
-        .btn-search:hover {
-            background-color: #138496;
-        }
-        .btn-submit:hover {
-            background-color: #0056b3;
-        }
-        .nav {
-            margin-bottom: 20px;
-        }
-        .nav a {
-            margin-right: 15px;
-            text-decoration: none;
-            color: #28a745;
-            font-weight: bold;
-        }
-        .message {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 3px;
-            display: none;
-        }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        pre {
-            background-color: #f4f4f4;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            overflow-x: auto;
-        }
-    </style>
+    <title>판매 조건 수정 | MatchEAT</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/product.css}">
 </head>
 <body>
 
-<h1>판매 조건 수정 테스트</h1>
+<header th:replace="~{fragments/header :: header}"></header>
 
-<div class="nav">
-    <a href="/product/new">➕ 새 판매 조건 등록 테스트 페이지로 이동</a>
-    <a href="/product/list">📋 판매 조건 전체 목록 테스트 페이지로 이동</a>
-</div>
+<main>
+    <section class="product-form-header">
+        <h1>판매 조건 수정</h1>
+        <p>본인이 등록한 판매 조건만 수정할 수 있습니다.</p>
+    </section>
 
-    <div class="form-group" style="background-color: #f8f9fa; padding: 15px; border: 1px solid #e9ecef; border-radius: 5px; margin-bottom: 25px;">
-        <label for="searchId" style="width: auto; margin-right: 10px;">수정할 판매 조건 ID:</label>
-        <input type="number" id="searchId" placeholder="예: 1" style="width: 120px; margin-right: 10px;">
-        <button type="button" id="searchBtn" class="btn-search">🔍 데이터 불러오기</button>
+    <div class="product-toolbar">
+        <a th:href="@{/product}">📋 판매 조건 목록</a>
+        <a th:href="@{/product/new}">➕ 판매 조건 등록</a>
+        <a id="detailBackLink" href="#" style="display:none;">🔎 상세 페이지로 돌아가기</a>
     </div>
 
-    <form id="productUpdateForm">
-    <div class="form-group">
-        <label for="productName">상품/메뉴명</label>
-        <input type="text" id="productName" required disabled>
+    <div class="product-form-lookup">
+        <label for="searchId">수정할 판매 조건 ID</label>
+        <input type="number" id="searchId" placeholder="예: 1">
+        <button type="button" id="searchBtn" class="button">데이터 불러오기</button>
     </div>
 
-    <div class="form-group">
-        <label for="productId">판매 조건 ID</label>
-        <input type="text" id="productId" readonly style="background-color: #e9ecef; border: 1px solid #ced4da;">
-        <small style="display: block; margin-left: 150px; color: #6c757d;">ID는 수정할 수 없습니다.</small>
-    </div>
+    <form id="productUpdateForm" class="product-form-card">
 
-    <div class="form-group">
-        <label for="minHeadcount">최소 수주 수량</label>
-        <input type="number" id="minHeadcount" min="1" required disabled>
-    </div>
+        <div class="product-form-row">
+            <div class="product-form-field">
+                <label for="productName">상품/메뉴명</label>
+                <input type="text" id="productName" required disabled>
+            </div>
 
-    <div class="form-group">
-        <label for="maxHeadcount">최대 수주 수량</label>
-        <input type="number" id="maxHeadcount" min="1" required disabled>
-    </div>
-
-    <div class="form-group">
-        <label for="servingPrice">1인분 가격</label>
-        <input type="number" id="servingPrice" min="1" required disabled>
-    </div>
-
-    <div class="form-group">
-        <label for="deliveryRadiusKm">배송 가능 반경(km)</label>
-        <input type="number" step="any" id="deliveryRadiusKm" min="0" required disabled>
-    </div>
-
-    <div class="form-group">
-        <label for="storeAddress">가게 주소</label>
-        <input type="text" id="storeAddress" required disabled>
-    </div>
-
-    <div class="form-group">
-        <label for="category">음식 카테고리</label>
-        <input type="text" id="category" required disabled>
-    </div>
-
-    <div class="form-group">
-        <label for="description">설명</label>
-        <textarea id="description" rows="4" disabled placeholder="상품 설명을 입력하세요."></textarea>
-    </div>
-
-    <div class="form-group">
-        <label for="dayOfWeek">정기 휴무 요일</label>
-        <select id="dayOfWeek" disabled>
-            <option value="">없음</option>
-            <option value="MONDAY">월요일</option>
-            <option value="TUESDAY">화요일</option>
-            <option value="WEDNESDAY">수요일</option>
-            <option value="THURSDAY">목요일</option>
-            <option value="FRIDAY">금요일</option>
-            <option value="SATURDAY">토요일</option>
-            <option value="SUNDAY">일요일</option>
-        </select>
-    </div>
-
-    <div class="form-group">
-        <label for="unavailableDates">특정 불가 날짜</label>
-        <textarea id="unavailableDates" placeholder="비우면 값이 삭제됩니다." disabled></textarea>
-        <small style="display: block; margin-left: 150px; color: #6c757d;">예: 2026-08-29, 2026-09-02 또는 줄바꿈 구분</small>
-    </div>
-
-    <div class="form-group">
-        <label for="imageFile">상품 이미지</label>
-        <input type="file" id="imageFile" accept="image/*" disabled>
-        <div style="margin-top: 10px;">
-            <img id="imagePreview" alt="이미지 미리보기" style="display:none; width:160px; height:160px; object-fit:cover; border:1px solid #ddd; border-radius:8px;">
+            <div class="product-form-field">
+                <label for="productId">판매 조건 ID</label>
+                <input type="text" id="productId" readonly>
+            </div>
         </div>
-        <small style="display: block; margin-left: 150px; color: #6c757d;">새 이미지를 올리면 기존 이미지가 교체됩니다.</small>
-    </div>
 
-    <button type="submit" id="submitBtn" class="btn-submit" disabled>✏️ 수정 내용 저장</button>
-</form>
+        <div class="product-form-row">
+            <div class="product-form-field">
+                <label for="minHeadcount">최소 수주 수량</label>
+                <input type="number" id="minHeadcount" min="1" required disabled>
+            </div>
 
-<div id="messageBox" class="message"></div>
+            <div class="product-form-field">
+                <label for="maxHeadcount">최대 수주 수량</label>
+                <input type="number" id="maxHeadcount" min="1" required disabled>
+            </div>
+        </div>
 
-<h2>응답 결과</h2>
-<pre id="result">수정할 판매 조건을 먼저 조회해주세요.</pre>
+        <div class="product-form-row">
+            <div class="product-form-field">
+                <label for="servingPrice">1인분 가격</label>
+                <input type="number" id="servingPrice" min="1" required disabled>
+            </div>
 
-<script>
-    const searchIdInput = document.getElementById("searchId");
-    const searchBtn = document.getElementById("searchBtn");
-    
-    const updateForm = document.getElementById("productUpdateForm");
-    const productNameInput = document.getElementById("productName");
-    const productIdInput = document.getElementById("productId");
-    const minHeadcountInput = document.getElementById("minHeadcount");
-    const maxHeadcountInput = document.getElementById("maxHeadcount");
-    const servingPriceInput = document.getElementById("servingPrice");
-    const deliveryRadiusKmInput = document.getElementById("deliveryRadiusKm");
-    const storeAddressInput = document.getElementById("storeAddress");
-    const categoryInput = document.getElementById("category");
-    const descriptionInput = document.getElementById("description");
-    const dayOfWeekInput = document.getElementById("dayOfWeek");
-    const unavailableDatesInput = document.getElementById("unavailableDates");
-    const imageFileInput = document.getElementById("imageFile");
-    const imagePreview = document.getElementById("imagePreview");
-    const submitBtn = document.getElementById("submitBtn");
+            <div class="product-form-field">
+                <label for="deliveryRadiusKm">배송 가능 반경(km)</label>
+                <input type="number" step="any" id="deliveryRadiusKm" min="0" required disabled>
+            </div>
+        </div>
 
-    const messageBox = document.getElementById("messageBox");
-    const resultElement = document.getElementById("result");
+        <div class="product-form-full">
+            <label for="storeAddress">가게 주소</label>
+            <input type="text" id="storeAddress" required disabled>
+            <div class="product-form-hint">주소를 바꾸면 위경도가 다시 계산됩니다.</div>
+        </div>
 
-    // 메시지 출력 유틸리티
-    function showMessage(text, isSuccess) {
-        messageBox.textContent = text;
-        messageBox.className = "message " + (isSuccess ? "success" : "error");
-        messageBox.style.display = "block";
-    }
+        <div class="product-form-row">
+            <div class="product-form-field">
+                <label for="category">음식 카테고리</label>
+                <select id="category" required disabled>
+                    <option value="" disabled>선택하세요</option>
+                    <option value="한식">한식</option>
+                    <option value="중식">중식</option>
+                    <option value="일식">일식</option>
+                    <option value="양식">양식</option>
+                    <option value="도시락/간편식">도시락/간편식</option>
+                    <option value="디저트/다과">디저트/다과</option>
+                    <option value="카페/음료">카페/음료</option>
+                    <option value="비건">비건</option>
+                    <option value="기타">기타</option>
+                </select>
+            </div>
 
-    function hideMessage() {
-        messageBox.style.display = "none";
-    }
+            <div class="product-form-field">
+                <label for="dayOfWeek">정기 휴무 요일</label>
+                <select id="dayOfWeek" disabled>
+                    <option value="">없음</option>
+                    <option value="MONDAY">월요일</option>
+                    <option value="TUESDAY">화요일</option>
+                    <option value="WEDNESDAY">수요일</option>
+                    <option value="THURSDAY">목요일</option>
+                    <option value="FRIDAY">금요일</option>
+                    <option value="SATURDAY">토요일</option>
+                    <option value="SUNDAY">일요일</option>
+                </select>
+            </div>
+        </div>
 
-    function parseUnavailableDates(value) {
-        return value
-            .split(/[\n,]/)
-            .map(date => date.trim())
-            .filter(Boolean);
-    }
+        <div class="product-form-full">
+            <label for="description">설명</label>
+            <textarea id="description" rows="4" disabled placeholder="상품 설명을 입력하세요."></textarea>
+        </div>
 
-    function updatePreview(url) {
-        if (!url) {
-            imagePreview.src = "";
-            imagePreview.style.display = "none";
-            return;
-        }
+        <div class="product-form-full">
+            <label for="unavailableDates">특정 불가 날짜</label>
+            <textarea id="unavailableDates" rows="3" disabled placeholder="비우면 값이 삭제됩니다."></textarea>
+            <div class="product-form-hint">예: 2026-08-29, 2026-09-02 또는 줄바꿈 구분</div>
+        </div>
 
-        imagePreview.src = url;
-        imagePreview.style.display = "block";
-    }
+        <div class="product-form-field" style="margin-bottom: 24px;">
+            <label for="imageFile">상품 이미지</label>
+            <div class="product-image-upload">
+                <input type="file" id="imageFile" accept="image/*" disabled>
+                <img id="imagePreview" class="product-image-preview" alt="이미지 미리보기">
+            </div>
+            <div class="product-form-hint">새 이미지를 올리면 기존 이미지가 교체됩니다.</div>
+        </div>
 
-    imageFileInput.addEventListener("change", () => {
-        const file = imageFileInput.files?.[0];
-        if (!file) {
-            return;
-        }
+        <div class="product-form-actions">
+            <button type="submit" id="submitBtn" class="product-form-submit" disabled>수정 내용 저장</button>
+        </div>
 
-        updatePreview(URL.createObjectURL(file));
-    });
+        <div id="messageBox" class="product-form-message"></div>
+    </form>
 
-    // 데이터 조회 함수
-    async function loadProductData(id) {
-        if (!id) {
-            showMessage("ID를 입력해 주세요.", false);
-            return;
-        }
+    <h2 style="margin-top: 24px;">응답 결과</h2>
+    <pre id="result">수정할 판매 조건을 먼저 조회해주세요.</pre>
+</main>
 
-        hideMessage();
-        resultElement.textContent = "조회 중...";
-
-        try {
-            const response = await fetch(`/api/v1/products/${id}`);
-            if (!response.ok) {
-                if (response.status === 404) {
-                    throw new Error("존재하지 않는 판매 조건 ID입니다.");
-                }
-                throw new Error("데이터를 가져오는 중 오류가 발생했습니다.");
-            }
-
-            const product = await response.json();
-
-            // 폼 필드 바인딩 및 비활성화 해제
-            productNameInput.value = product.productName ?? "";
-            productIdInput.value = product.id;
-            minHeadcountInput.value = product.minHeadcount;
-            maxHeadcountInput.value = product.maxHeadcount;
-            servingPriceInput.value = product.servingPrice ?? "";
-            deliveryRadiusKmInput.value = product.deliveryRadiusKm;
-            storeAddressInput.value = product.storeAddress;
-            categoryInput.value = product.category;
-            descriptionInput.value = product.description ?? "";
-            dayOfWeekInput.value = product.dayOfWeek ?? "";
-            unavailableDatesInput.value = Array.isArray(product.unavailableDates)
-                ? product.unavailableDates.join("\n")
-                : "";
-            imageFileInput.value = "";
-            updatePreview(product.imageUrl ? encodeURI(product.imageUrl) : null);
-
-            // 입력 필드 및 전송 버튼 활성화
-            productNameInput.disabled = false;
-            minHeadcountInput.disabled = false;
-            maxHeadcountInput.disabled = false;
-            servingPriceInput.disabled = false;
-            deliveryRadiusKmInput.disabled = false;
-            storeAddressInput.disabled = false;
-            categoryInput.disabled = false;
-            descriptionInput.disabled = false;
-            dayOfWeekInput.disabled = false;
-            unavailableDatesInput.disabled = false;
-            imageFileInput.disabled = false;
-            submitBtn.disabled = false;
-
-            resultElement.textContent = JSON.stringify(product, null, 2);
-            showMessage("성공적으로 데이터를 불러왔습니다.", true);
-
-            // 검색창 값 동기화
-            searchIdInput.value = id;
-        } catch (error) {
-            resultElement.textContent = error.message;
-            showMessage(error.message, false);
-
-            // 데이터 로드 실패 시 폼 리셋 및 비활성화
-            updateForm.reset();
-            productNameInput.value = "";
-            productIdInput.value = "";
-            productNameInput.disabled = true;
-            minHeadcountInput.disabled = true;
-            maxHeadcountInput.disabled = true;
-            servingPriceInput.disabled = true;
-            deliveryRadiusKmInput.disabled = true;
-            storeAddressInput.disabled = true;
-            categoryInput.disabled = true;
-            descriptionInput.disabled = true;
-            dayOfWeekInput.disabled = true;
-            unavailableDatesInput.disabled = true;
-            imageFileInput.disabled = true;
-            imageFileInput.value = "";
-            updatePreview(null);
-            submitBtn.disabled = true;
-        }
-    }
-
-    // '데이터 불러오기' 버튼 클릭 이벤트
-    searchBtn.addEventListener("click", () => {
-        const id = searchIdInput.value.trim();
-        loadProductData(id);
-    });
-
-    // 엔터키 조회 지원
-    searchIdInput.addEventListener("keypress", (event) => {
-        if (event.key === "Enter") {
-            const id = searchIdInput.value.trim();
-            loadProductData(id);
-        }
-    });
-
-    // 수정 폼 제출(PATCH) 이벤트
-    updateForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        hideMessage();
-
-        const id = productIdInput.value;
-        if (!id) {
-            showMessage("수정할 제품 정보가 로드되지 않았습니다.", false);
-            return;
-        }
-
-        const requestData = {
-            productName: productNameInput.value,
-            minHeadcount: Number(minHeadcountInput.value),
-            maxHeadcount: Number(maxHeadcountInput.value),
-            servingPrice: Number(servingPriceInput.value),
-            deliveryRadiusKm: Number(deliveryRadiusKmInput.value),
-            storeAddress: storeAddressInput.value,
-            category: categoryInput.value,
-            description: descriptionInput.value,
-            dayOfWeek: dayOfWeekInput.value || null,
-            unavailableDates: parseUnavailableDates(unavailableDatesInput.value)
-        };
-
-        try {
-            resultElement.textContent = "수정 요청 전송 중...";
-            const formData = new FormData();
-            formData.append("product", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
-
-            const imageFile = imageFileInput.files?.[0];
-            if (imageFile) {
-                formData.append("imageFile", imageFile);
-            }
-
-            const response = await fetch(`/api/v1/products/${id}`, {
-                method: "PATCH",
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errData = await response.json().catch(() => ({ message: "수정에 실패했습니다." }));
-                throw new Error(errData.message || "서버 통신 오류가 발생했습니다.");
-            }
-
-            const updatedProduct = await response.json();
-            resultElement.textContent = JSON.stringify(updatedProduct, null, 2);
-            showMessage("판매 조건이 성공적으로 수정되었습니다!", true);
-        } catch (error) {
-            resultElement.textContent = error.message;
-            showMessage(`수정 실패: ${error.message}`, false);
-        }
-    });
-
-    // 페이지 로드 시 쿼리 스트링 파라미터 체크 (예: ?id=1)
-    window.addEventListener("DOMContentLoaded", () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const idParam = urlParams.get("id");
-        if (idParam) {
-            loadProductData(idParam);
-        }
-    });
-</script>
-
+<script type="module" th:src="@{/product/js/product-update.js}"></script>
 </body>
 </html>

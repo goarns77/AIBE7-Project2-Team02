@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -145,7 +146,7 @@ public class QuoteNegotiation {
 
 	public void validateParticipant(Long userId) {
 		if (!isParticipant(userId)) {
-			throw new IllegalArgumentException("해당 견적 협상에 접근 권한이 없습니다.");
+			throw new AccessDeniedException("해당 견적 협상에 접근 권한이 없습니다.");
 		}
 	}
 
@@ -192,7 +193,7 @@ public class QuoteNegotiation {
 		this.status = NegotiationStatus.LOCKED;
 		this.lockedAt = LocalDateTime.now();
 	}
-
+  
 	/** lock() 직후, 확정 Quote가 발행되면 그 ID를 기록해둔다. */
 	public void markQuoteCreated(Long quoteId) {
 		this.resultingQuoteId = quoteId;

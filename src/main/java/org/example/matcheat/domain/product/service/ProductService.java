@@ -2,6 +2,9 @@ package org.example.matcheat.domain.product.service;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.common.location.GeocodingService;
+import org.example.matcheat.domain.account.enums.SellerVerificationStatus;
+import org.example.matcheat.domain.account.repository.SellerApplicationRepository;
 import org.example.matcheat.domain.product.dto.ProductCreateDTO;
 import org.example.matcheat.domain.product.dto.ProductResponseDTO;
 import org.example.matcheat.domain.product.dto.ProductUpdateDTO;
@@ -24,29 +27,30 @@ import java.util.Locale;
 public class ProductService {
     private final ProductRepository productRepository;
     private final ProductImageStorageService productImageStorageService;
+    private final GeocodingService geocodingService;
+    private final SellerApplicationRepository sellerApplicationRepository;
 
     /**
      * 판매 조건을 새로 생성하고 저장한 뒤 응답 DTO로 변환한다.
      */
     @Transactional
-    public ProductResponseDTO create(ProductCreateDTO dto) {
-        return create(dto, null, null);
+    public ProductResponseDTO create(ProductCreateDTO dto, Long ownerAccountId) {
+        return create(dto, null, ownerAccountId);
     }
 
     /**
-     * 이미지 파일이 포함된 생성 요청도 동일한 생성 로직으로 처리한다.
-     */
-    @Transactional
-    public ProductResponseDTO create(ProductCreateDTO dto, MultipartFile imageFile) {
-        return create(dto, imageFile, null);
-    }
-
-    /**
-     * 로그인 연동 전 임시로 판매자 식별값까지 받을 수 있도록 열어둔 생성 경로이다.
+     * 승인된 판매자만 판매 조건을 등록할 수 있도록 검증한 뒤 생성한다.
      */
     @Transactional
     public ProductResponseDTO create(ProductCreateDTO dto, MultipartFile imageFile, Long ownerAccountId) {
+        requireApprovedSeller(ownerAccountId);
+
         String imageUrl = storeImageOrNull(imageFile);
+
+        GeocodingService.Coordinates coordinates =
+                geocodingService.geocode(
+                        dto.getStoreAddress()
+                );
 
         ProductEntity product = ProductEntity.create(
                 dto.getProductName(),
@@ -55,8 +59,8 @@ public class ProductService {
                 dto.getServingPrice(),
                 dto.getDeliveryRadiusKm(),
                 dto.getStoreAddress(),
-                dto.getLatitude(),
-                dto.getLongitude(),
+                coordinates.latitude(),
+                coordinates.longitude(),
                 dto.getCategory(),
                 dto.getDescription(),
                 dto.getDayOfWeek(),
@@ -69,6 +73,23 @@ public class ProductService {
 
         return ProductResponseDTO.from(savedProduct);
     }
+
+    /**
+     * 요청자가 승인(APPROVED)된 판매자인지 검증한다.
+     */
+    private void requireApprovedSeller(Long ownerAccountId) {
+        if (ownerAccountId == null) {
+            throw new IllegalArgumentException("로그인이 필요합니다.");
+        }
+
+        SellerVerificationStatus status = sellerApplicationRepository.findStatusByUserId(ownerAccountId)
+                .orElseThrow(() -> new IllegalArgumentException("판매자 신청 정보가 없습니다."));
+
+        if (status != SellerVerificationStatus.APPROVED) {
+            throw new IllegalArgumentException("승인된 판매자만 판매 조건을 등록할 수 있습니다.");
+        }
+    }
+
 
     /**
      * 판매 조건 ID로 단건을 조회한다.
@@ -164,15 +185,16 @@ public class ProductService {
      * 기존 판매 조건을 전달받은 값으로 부분 수정한다.
      */
     @Transactional
-    public ProductResponseDTO update(Long id, @Valid ProductUpdateDTO dto) {
-        return update(id, dto, null);
+    public ProductResponseDTO update(Long id, @Valid ProductUpdateDTO dto, Long ownerAccountId) {
+        return update(id, dto, null, ownerAccountId);
     }
 
     /**
      * 이미지 변경이 포함된 수정 요청도 동일한 수정 로직으로 처리한다.
+     * 요청자가 소유자인지 확인한 뒤에만 반영한다.
      */
     @Transactional
-    public ProductResponseDTO update(Long id, @Valid ProductUpdateDTO dto, MultipartFile imageFile) {
+    public ProductResponseDTO update(Long id, @Valid ProductUpdateDTO dto, MultipartFile imageFile, Long ownerAccountId) {
         ProductEntity product = productRepository.findByIdAndHiddenFalse(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
@@ -183,15 +205,31 @@ public class ProductService {
             imageUrl = storeImageOrNull(imageFile);
         }
 
+        Double latitude = null;
+        Double longitude = null;
+
+        if (dto.getStoreAddress() != null
+                && !dto.getStoreAddress().isBlank()) {
+
+            GeocodingService.Coordinates coordinates =
+                    geocodingService.geocode(
+                            dto.getStoreAddress()
+                    );
+
+            latitude = coordinates.latitude();
+            longitude = coordinates.longitude();
+        }
+
         product.update(
+                ownerAccountId,
                 dto.getProductName(),
                 dto.getMinHeadcount(),
                 dto.getMaxHeadcount(),
                 dto.getServingPrice(),
                 dto.getDeliveryRadiusKm(),
                 dto.getStoreAddress(),
-                dto.getLatitude(),
-                dto.getLongitude(),
+                latitude,
+                longitude,
                 dto.getCategory(),
                 dto.getDescription(),
                 dto.getDayOfWeek(),
@@ -203,28 +241,23 @@ public class ProductService {
     }
 
     /**
-     * 판매 조건을 소프트 삭제한다.
+     * 판매 조건을 소프트 삭제한다. 관리자가 아니라면 요청자가 소유자인지 확인한 뒤에만 반영한다.
      */
     @Transactional
-    public ProductResponseDTO softDelete(Long id) {
-        return softDelete(id, null);
-    }
-
-    /**
-     * 로그인 연동 전에는 현재는 null 허용, 이후에는 소유자 검증용 식별자를 전달받는다.
-     */
-    @Transactional
-    public ProductResponseDTO softDelete(Long id, Long ownerAccountId) {
+    public ProductResponseDTO softDelete(Long id, Long ownerAccountId, boolean requesterIsAdmin) {
         ProductEntity product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
                 ));
 
-        product.softDelete(ownerAccountId);
+        product.softDelete(ownerAccountId, requesterIsAdmin);
 
         return ProductResponseDTO.from(product);
     }
 
+    /**
+     * 문자열 파라미터를 정수로 파싱한다. 비어있으면 null, 숫자가 아니면 예외를 던진다.
+     */
     private Integer parseNullableInteger(String value) {
         String normalized = normalizeText(value);
         if (normalized == null) {
@@ -238,6 +271,9 @@ public class ProductService {
         }
     }
 
+    /**
+     * 문자열의 앞뒤 공백을 제거하고, 비어있으면 null로 정규화한다.
+     */
     private String normalizeText(String value) {
         if (value == null) {
             return null;
@@ -247,6 +283,9 @@ public class ProductService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    /**
+     * 주문 수량이 판매 조건의 min~maxHeadcount 범위 안에 있는지 확인한다. quantity가 null이면 통과시킨다.
+     */
     private boolean matchesQuantity(ProductEntity product, Integer quantity) {
         if (quantity == null) {
             return true;
@@ -255,6 +294,9 @@ public class ProductService {
         return product.getMinHeadcount() <= quantity && product.getMaxHeadcount() >= quantity;
     }
 
+    /**
+     * 판매 조건의 카테고리에 검색어가 포함되는지 대소문자 구분 없이 확인한다. category가 null이면 통과시킨다.
+     */
     private boolean matchesCategory(ProductEntity product, String category) {
         if (category == null) {
             return true;
@@ -264,6 +306,9 @@ public class ProductService {
                 && product.getCategory().toLowerCase(Locale.ROOT).contains(category.toLowerCase(Locale.ROOT));
     }
 
+    /**
+     * 판매 조건의 1인분 가격이 검색 상한선 이하인지 확인한다. servingPrice가 null이면 통과시킨다.
+     */
     private boolean matchesServingPrice(ProductEntity product, Integer servingPrice) {
         if (servingPrice == null) {
             return true;
@@ -272,6 +317,9 @@ public class ProductService {
         return product.getServingPrice() <= servingPrice;
     }
 
+    /**
+     * 이미지 파일이 있으면 저장소에 저장해 URL을 반환하고, 없으면 null을 반환한다.
+     */
     private String storeImageOrNull(MultipartFile imageFile) {
         if (imageFile == null || imageFile.isEmpty()) {
             return null;

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>맞춤 상품 매칭 | MatchEAT</title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/common.css}">
+
+    <link rel="stylesheet"
+          th:href="@{/css/matching.css}">
+</head>
+
+<body>
+
+<header th:replace="~{fragments/header :: header}">
+</header>
+
+<main id="matchingPage"
+      class="matching-page"
+      th:attr="data-request-id=${requestId}">
+
+    <!-- 매칭 결과 페이지 제목 -->
+    <section class="matching-header">
+
+        <div>
+            <h1>맞춤 상품 매칭</h1>
+
+            <p>
+                등록한 주문 조건을 기준으로
+                거래 가능한 상품을 비교했습니다.
+            </p>
+        </div>
+
+        <a th:href="@{/requests/{id}(id=${requestId})}"
+           class="matching-back-link">
+            주문 상세 보기
+        </a>
+
+    </section>
+
+    <!-- 주문 상세는 인증된 API 응답으로만 조회하며 HTML에는 포함하지 않는다. -->
+
+    <!-- API 조회 상태 -->
+    <section id="matchingLoading"
+             class="matching-message">
+        매칭 가능한 상품을 확인하고 있습니다.
+    </section>
+
+    <section id="matchingError"
+             class="matching-message matching-error"
+             hidden>
+    </section>
+
+    <!-- 실제 매칭 결과 카드가 들어가는 영역 -->
+    <section id="matchingResults"
+             class="matching-results"
+             hidden>
+    </section>
+
+</main>
+
+<script type="module"
+        th:src="@{/matching/js/matching-result.js}">
+</script>
+
+</body>
+</html>

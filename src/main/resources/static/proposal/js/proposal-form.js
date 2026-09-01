@@ -9,8 +9,8 @@ const form = document.getElementById('proposalForm');
 
 if (form) {
     const requestId = form.dataset.requestId;
-    const buyerId = Number(form.dataset.buyerId);
-    const orderQuantity = Number(form.dataset.orderQuantity);
+    let buyerId;
+    let orderQuantity;
 
     const currentUserId = readCurrentUserId();
 
@@ -58,8 +58,6 @@ if (form) {
 
     let mode = 'product';
     let products = [];
-
-    quantityInput.value = orderQuantity;
 
     /**
      * 현재 수량과 단가를 이용해 기본 총액을 계산한다.
@@ -233,6 +231,25 @@ if (form) {
             return;
         }
 
+        const orderResponse = await authFetch(`/api/v1/requests/${requestId}`);
+        if (!orderResponse.ok) {
+            const body = await readApiBody(orderResponse);
+            alert(body?.message ?? '주문 정보를 불러올 수 없습니다.');
+            window.location.href = '/requests';
+            return;
+        }
+        const order = await orderResponse.json();
+        buyerId = Number(order.buyerId);
+        orderQuantity = Number(order.quantity);
+        quantityInput.value = orderQuantity;
+        document.querySelector('[data-order-summary="title"]').textContent = order.title || '제목 없음';
+        document.querySelector('[data-order-summary="quantity"]').textContent = orderQuantity;
+        document.querySelector('[data-order-summary="budgetType"]').textContent =
+            order.budgetType === 'PER_PERSON' ? '1인당' : '총 예산';
+        document.querySelector('[data-order-summary="budget"]').textContent =
+            Number(order.budget || 0).toLocaleString('ko-KR');
+        document.querySelector('[data-order-summary="category"]').textContent = order.category || '-';
+
         if (currentUserId === buyerId) {
             alert(
                 '본인이 등록한 주문에는 제안할 수 없습니다.'
@@ -263,6 +280,7 @@ if (form) {
         }
 
         await loadProducts();
+        form.hidden = false;
     }
 
     modeButtons.forEach(button => {

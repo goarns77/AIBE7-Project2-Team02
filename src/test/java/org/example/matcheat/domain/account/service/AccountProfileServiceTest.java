@@ -21,6 +21,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +34,8 @@ class AccountProfileServiceTest {
     private SellerApplicationRepository sellerApplications;
     @Mock
     private PasswordHasher passwordHasher;
+    @Mock
+    private AccountTradeActivityPort tradeActivity;
 
     private AccountProfileService service;
 
@@ -42,6 +45,7 @@ class AccountProfileServiceTest {
                 users,
                 sellerApplications,
                 passwordHasher,
+                tradeActivity,
                 Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
@@ -101,6 +105,21 @@ class AccountProfileServiceTest {
                 .isInstanceOf(AccountApplicationException.class)
                 .extracting(exception -> ((AccountApplicationException) exception).code())
                 .isEqualTo(AccountErrorCode.CURRENT_PASSWORD_MISMATCH);
+    }
+
+    @Test
+    void rejectsWithdrawalWhenAccountHasActiveTrade() {
+        UserAccount account = activeAccount("홍길동");
+        when(users.findById(7L)).thenReturn(Optional.of(account));
+        when(passwordHasher.matches("password1234", account.passwordHash())).thenReturn(true);
+        when(tradeActivity.hasActiveTrade(7L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.withdraw(7L, "password1234"))
+                .isInstanceOf(AccountApplicationException.class)
+                .extracting(exception -> ((AccountApplicationException) exception).code())
+                .isEqualTo(AccountErrorCode.ACTIVE_TRANSACTION_EXISTS);
+
+        verify(users, never()).withdraw(7L, NOW);
     }
 
     private static UserAccount activeAccount(String name) {

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko"
-      xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>주문 상세 | MatchEAT</title>
@@ -8,210 +7,42 @@
     <link rel="stylesheet" th:href="@{/css/order.css}">
 </head>
 <body>
-
-<!-- 선택한 주문 요청의 상세 정보를 보여주는 Thymeleaf 페이지 -->
-
 <header th:replace="~{fragments/header :: header}"></header>
-
-<main>
-    <!-- 주문 상세 페이지의 제목과 현재 진행 상태 -->
+<main id="orderDetailPage" th:attr="data-request-id=${requestId}">
     <section class="order-detail-header">
-        <div>
-            <h1>주문 상세</h1>
-            <p>등록된 주문의 상세 조건과 진행 상태를 확인할 수 있습니다.</p>
-        </div>
-
-        <span class="order-status"
-              th:text="${orderRequest.status.displayName}">
-        매칭 중
-    </span>
+        <div><h1>주문 상세</h1><p>등록된 주문의 상세 조건과 진행 상태를 확인할 수 있습니다.</p></div>
+        <span id="orderStatus" class="order-status">조회 중</span>
     </section>
 
-    <!-- 주문의 현재 진행 단계를 보여주는 영역 -->
-    <section class="order-progress"
-             th:if="${orderRequest.status.name() != 'CANCELLED'}">
+    <section id="orderLoading" class="order-detail-card"><p>주문 정보를 불러오고 있습니다.</p></section>
+    <section id="orderError" class="order-detail-card" hidden><p></p></section>
 
-        <div class="order-progress-step"
-             th:classappend="${orderRequest.status.name() == 'MATCHING'}
-                         ? 'is-active'
-                         : (${orderRequest.status.name() == 'IN_TALK'
-                             or orderRequest.status.name() == 'CONFIRMED'
-                             or orderRequest.status.name() == 'CLOSED'}
-                            ? 'is-complete'
-                            : '')">
-
-            <span class="order-progress-number">1</span>
-            <span>요청 및 매칭 중</span>
-        </div>
-
-        <div class="order-progress-line"
-             th:classappend="${orderRequest.status.name() == 'IN_TALK'
-                          or orderRequest.status.name() == 'CONFIRMED'
-                          or orderRequest.status.name() == 'CLOSED'}
-                         ? 'is-complete'
-                         : ''">
-        </div>
-
-        <div class="order-progress-step"
-             th:classappend="${orderRequest.status.name() == 'IN_TALK'}
-                         ? 'is-active'
-                         : (${orderRequest.status.name() == 'CONFIRMED'
-                             or orderRequest.status.name() == 'CLOSED'}
-                            ? 'is-complete'
-                            : '')">
-
-            <span class="order-progress-number">2</span>
-            <span>제안 협의 중</span>
-        </div>
-
-        <div class="order-progress-line"
-             th:classappend="${orderRequest.status.name() == 'CONFIRMED'
-                          or orderRequest.status.name() == 'CLOSED'}
-                         ? 'is-complete'
-                         : ''">
-        </div>
-
-        <div class="order-progress-step"
-             th:classappend="${orderRequest.status.name() == 'CONFIRMED'
-                          or orderRequest.status.name() == 'CLOSED'}
-                         ? 'is-active'
-                         : ''">
-
-            <span class="order-progress-number">3</span>
-            <span>최종 확정</span>
-        </div>
-
-    </section>
-
-    <!-- 주문의 기본 조건을 보여주는 상세 정보 카드 -->
-    <section class="order-detail-card">
-
-        <h2>주문 기본 정보</h2>
-
-        <div class="order-detail-info">
-
-            <div class="order-detail-row">
-                <span class="order-detail-label">주문 제목</span>
-                <span th:text="${orderRequest.title}">
-                사내 워크숍 점심 도시락 및 음료 주문
-            </span>
+    <div id="orderContent" hidden>
+        <section class="order-detail-card">
+            <h2>주문 기본 정보</h2>
+            <div class="order-detail-info">
+                <div class="order-detail-row"><span class="order-detail-label">주문 제목</span><span data-order-field="title"></span></div>
+                <div class="order-detail-row"><span class="order-detail-label">행사/배송 일시</span><span data-order-field="eventDateTime"></span></div>
+                <div class="order-detail-row"><span class="order-detail-label">수량</span><span><strong data-order-field="quantity"></strong>명</span></div>
+                <div class="order-detail-row"><span class="order-detail-label">예산</span><span data-order-field="budget"></span></div>
+                <div class="order-detail-row"><span class="order-detail-label">음식 카테고리</span><span data-order-field="category"></span></div>
+                <div class="order-detail-row"><span class="order-detail-label">배송지</span><span data-order-field="deliveryAddress"></span></div>
             </div>
-
-            <div class="order-detail-row">
-                <span class="order-detail-label">행사/배송 일시</span>
-                <span th:text="${#temporals.format(
-                                orderRequest.eventDateTime,
-                                'yyyy.MM.dd HH:mm')}">
-                2026.10.02 12:00
-            </span>
+        </section>
+        <section class="order-detail-card"><h2>상세 요청사항</h2><p class="order-detail-description" data-order-field="description"></p></section>
+        <section class="order-detail-actions">
+            <a th:href="@{/requests}" class="order-detail-back">목록으로</a>
+            <div id="orderOwnerActions" class="order-detail-action-group" hidden>
+                <a id="matchingLink" class="order-detail-button order-detail-match">매칭 결과 보기</a>
+                <a id="editLink" class="order-detail-button order-detail-edit">주문 수정</a>
+                <button type="button" id="cancelOrderButton" class="order-detail-button order-detail-cancel">주문 취소</button>
             </div>
-
-            <div class="order-detail-row">
-                <span class="order-detail-label">수량</span>
-                <span>
-                <strong th:text="${orderRequest.quantity}">
-                    30
-                </strong>명
-            </span>
+            <div id="orderSellerActions" class="order-detail-action-group" hidden>
+                <a id="proposalLink" class="order-detail-button order-detail-proposal">제안하기</a>
             </div>
-
-            <div class="order-detail-row">
-                <span class="order-detail-label">예산</span>
-                <span>
-                <span th:text="${orderRequest.budgetType.name() == 'PER_PERSON'
-                               ? '1인당'
-                               : '총'}">
-                    1인당
-                </span>
-
-                <strong th:text="${#numbers.formatDecimal(
-                                    orderRequest.budget,
-                                    1,
-                                    'COMMA',
-                                    0,
-                                    'POINT')}">
-                    18,000
-                </strong>원
-            </span>
-            </div>
-
-            <div class="order-detail-row">
-                <span class="order-detail-label">음식 카테고리</span>
-                <span th:text="${orderRequest.category}">
-                한식 도시락
-            </span>
-            </div>
-
-            <div class="order-detail-row">
-                <span class="order-detail-label">배송지</span>
-                <span th:text="${orderRequest.deliveryAddress}">
-                서울특별시 강남구 테헤란로 152
-            </span>
-            </div>
-
-        </div>
-
-    </section>
-    <!-- 주문 작성 시 입력한 상세 요청사항을 보여주는 영역 -->
-    <section class="order-detail-card">
-
-        <h2>상세 요청사항</h2>
-
-        <p class="order-detail-description"
-           th:text="${#strings.isEmpty(orderRequest.description)
-                ? '등록된 상세 요청사항이 없습니다.'
-                : orderRequest.description}">
-            직원 30명이 참석하는 사내 워크숍입니다.
-        </p>
-
-    </section>
-
-    <!-- 주문 상세 페이지의 하단 액션 영역 -->
-    <section class="order-detail-actions">
-
-        <a th:href="@{/requests}"
-           class="order-detail-back">
-            목록으로
-        </a>
-
-        <div id="orderOwnerActions"
-             class="order-detail-action-group"
-             th:if="${orderRequest.status.name() == 'MATCHING'}"
-             th:attr="data-buyer-id=${orderRequest.buyerId}"
-             hidden>
-
-            <a th:href="@{/requests/{id}/edit(id=${orderRequest.id})}"
-               class="order-detail-button order-detail-edit">
-                주문 수정
-            </a>
-
-            <button type="button"
-                    id="cancelOrderButton"
-                    class="order-detail-button order-detail-cancel"
-                    th:attr="data-request-id=${orderRequest.id}">
-                주문 취소
-            </button>
-
-        </div>
-        <div id="orderSellerActions"
-             class="order-detail-action-group"
-             th:if="${orderRequest.status.name() == 'MATCHING'}"
-             th:attr="
-        data-buyer-id=${orderRequest.buyerId},
-        data-request-id=${orderRequest.id}"
-             hidden>
-
-            <a th:href="@{/requests/{id}/proposals/new(id=${orderRequest.id})}"
-               class="order-detail-button order-detail-proposal">
-                제안하기
-            </a>
-
-        </div>
-
-    </section>
+        </section>
+    </div>
 </main>
-<script type="module"
-        th:src="@{/order/js/order-request-detail.js}">
-</script>
+<script type="module" th:src="@{/order/js/order-request-detail.js}"></script>
 </body>
 </html>

@@ -1,0 +1,698 @@
+/* 판매 조건(상품) 등록, 목록, 상세, 추천 화면에서 사용하는 스타일 */
+
+
+/* 페이지 상단 제목 및 주요 액션 영역 (목록/상세/등록 공통) */
+.product-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    margin-bottom: 24px;
+}
+
+.product-page-header h1 {
+    margin: 0 0 8px;
+}
+
+.product-page-header p {
+    margin: 0;
+}
+
+
+/* 페이지 보조 링크 모음 (등록/수정/추천 화면 이동) */
+.product-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    margin-bottom: 24px;
+}
+
+.product-toolbar a {
+    display: inline-block;
+
+    padding: 8px 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    font-size: 14px;
+}
+
+.product-toolbar a:hover {
+    background-color: #f5f5f5;
+}
+
+
+/* 판매 조건 검색 영역 */
+.product-search-form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    gap: 12px;
+    align-items: end;
+
+    margin-bottom: 24px;
+    padding: 16px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+}
+
+.product-search-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.product-search-field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+}
+
+.product-search-field input {
+    padding: 10px 12px;
+}
+
+.product-search-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.product-search-actions .button-secondary {
+    display: inline-block;
+
+    padding: 12px 20px;
+    margin-top: 12px;
+
+    border: 1px solid #ccc;
+    border-radius: 8px;
+
+    background-color: #fff;
+    color: #222;
+    cursor: pointer;
+}
+
+.product-search-actions .button-secondary:hover {
+    background-color: #f5f5f5;
+}
+
+
+/* 판매 조건 목록 영역 */
+.product-list {
+    margin-top: 8px;
+    border-top: 1px solid #ddd;
+}
+
+/* 판매 조건 한 건을 게시판형 카드로 표시 */
+.product-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+
+    padding: 20px 16px;
+    border-bottom: 1px solid #ddd;
+}
+
+.product-item-thumb {
+    flex-shrink: 0;
+    width: 84px;
+    height: 84px;
+}
+
+.product-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.product-item-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.product-item-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-item-title h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.product-item-title a {
+    color: inherit;
+}
+
+/* 판매 조건의 평점 배지 */
+.product-rating {
+    display: inline-block;
+
+    padding: 4px 10px;
+    border-radius: 12px;
+
+    background-color: #eee;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* 카테고리, 수량, 가격, 배송 반경, 휴무일을 표시하는 정보 Grid */
+.product-item-summary {
+    display: grid;
+    grid-template-columns: 140px 140px 140px 140px 140px;
+    column-gap: 16px;
+    row-gap: 12px;
+
+    margin-top: 12px;
+}
+
+.product-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.product-meta-label {
+    display: block;
+    height: 16px;
+    line-height: 16px;
+
+    font-size: 13px;
+    color: #777;
+}
+
+.product-meta-value {
+    display: block;
+    line-height: 24px;
+}
+
+/* 가게 주소, 설명은 Grid의 전체 너비를 사용 */
+.product-meta-full {
+    grid-column: 1 / -1;
+
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.product-item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    flex-shrink: 0;
+    margin-left: 24px;
+}
+
+.product-item-actions a,
+.product-item-actions button {
+    display: inline-block;
+
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    background-color: #fff;
+    color: #222;
+    font-size: 14px;
+    font-family: inherit;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.product-item-actions a:hover,
+.product-item-actions button:hover {
+    background-color: #f5f5f5;
+}
+
+.product-item-actions .product-item-danger {
+    border-color: #e5b4b4;
+    color: #b02a37;
+}
+
+@media (max-width: 900px) {
+    .product-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .product-item-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .product-item-actions {
+        flex-direction: row;
+        margin-left: 0;
+        margin-top: 16px;
+    }
+}
+
+
+/* 판매 조건 상세 페이지 상단 제목 영역 */
+.product-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    margin-bottom: 24px;
+}
+
+.product-detail-header h1 {
+    margin: 0 0 8px;
+}
+
+.product-detail-header p {
+    margin: 0;
+}
+
+/* 판매 조건 상세 정보 카드 */
+.product-detail-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+}
+
+.product-detail-image-card,
+.product-detail-card {
+    padding: 24px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    background-color: #fff;
+}
+
+.product-detail-image-card img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 6px;
+    background-color: #f4f4f4;
+    display: block;
+}
+
+.product-detail-image-placeholder {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: grid;
+    place-items: center;
+
+    border-radius: 6px;
+    background-color: #f4f4f4;
+
+    color: #999;
+    font-weight: 600;
+}
+
+.product-detail-info {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.product-detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.product-detail-row.wide {
+    grid-column: 1 / -1;
+}
+
+.product-detail-label {
+    color: #777;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.product-detail-value {
+    line-height: 1.6;
+    word-break: break-word;
+}
+
+.product-detail-description {
+    margin: 0;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+.product-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    margin-top: 24px;
+}
+
+.product-detail-button {
+    display: inline-block;
+
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+
+    background-color: #fff;
+    color: #222;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.product-detail-primary {
+    border: 1px solid #222;
+    background-color: #222;
+    color: #fff;
+}
+
+.product-detail-status {
+    padding: 20px 24px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    color: #777;
+}
+
+.product-detail-status.is-error {
+    border-color: #e5b4b4;
+    color: #b02a37;
+    background-color: #fff7f7;
+}
+
+@media (max-width: 820px) {
+    .product-detail-layout,
+    .product-detail-info {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* 판매 조건 등록/수정 폼 상단 안내 영역 */
+.product-form-header {
+    margin-bottom: 24px;
+}
+
+.product-form-header h1 {
+    margin: 0 0 8px;
+}
+
+.product-form-header p {
+    margin: 0;
+}
+
+/* 판매 조건 등록/수정 폼 카드 */
+.product-form-card {
+    padding: 32px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    background-color: #fff;
+}
+
+.product-form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+
+    margin-bottom: 24px;
+}
+
+.product-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.product-form-field label {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.product-form-field input,
+.product-form-field select,
+.product-form-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 10px 12px;
+}
+
+.product-form-full {
+    margin-bottom: 24px;
+}
+
+.product-form-full > label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.product-form-full > input,
+.product-form-full > select,
+.product-form-full > textarea {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 10px 12px;
+}
+
+.product-form-full textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.product-form-hint {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #777;
+}
+
+/* 상품 이미지 업로드 영역 */
+.product-image-upload {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.product-image-preview {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    display: none;
+}
+
+.product-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+
+    margin-top: 8px;
+}
+
+.product-form-cancel,
+.product-form-submit {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    box-sizing: border-box;
+    height: 42px;
+    padding: 0 16px;
+
+    border-radius: 6px;
+
+    font: inherit;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.product-form-cancel {
+    border: 1px solid #ccc;
+
+    background-color: #fff;
+    color: #222;
+
+    text-decoration: none;
+}
+
+.product-form-submit {
+    border: 1px solid #222;
+
+    background-color: #222;
+    color: #fff;
+}
+
+.product-form-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 수정 화면에서 조회 전까지 폼을 숨기는 안내 카드 */
+.product-form-lookup {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+
+    margin-bottom: 24px;
+    padding: 16px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+}
+
+.product-form-lookup input {
+    flex: 1;
+    padding: 10px 12px;
+}
+
+.product-form-message {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: none;
+}
+
+.product-form-message.is-success {
+    display: block;
+    background-color: #eafaf1;
+    color: #087a55;
+    border: 1px solid #b7ebd0;
+}
+
+.product-form-message.is-error {
+    display: block;
+    background-color: #fff5f5;
+    color: #b02a37;
+    border: 1px solid #f1b7b7;
+}
+
+
+/* 판매자 추천 결과 카드 */
+.product-rec-list {
+    display: grid;
+    gap: 16px;
+}
+
+.product-rec-card {
+    padding: 20px 24px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+.product-rec-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.product-rec-title {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.product-rec-sub {
+    margin: 0;
+    font-size: 13px;
+    color: #777;
+    line-height: 1.6;
+}
+
+.product-rec-score {
+    flex-shrink: 0;
+    min-width: 84px;
+    padding: 10px 14px;
+
+    text-align: center;
+    border-radius: 8px;
+    background-color: #f4f4f4;
+}
+
+.product-rec-score .num {
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.product-rec-score .label {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #777;
+}
+
+.product-rec-score-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.product-rec-score-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 48px;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-rec-score-label {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.product-rec-score-reason {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #777;
+}
+
+.product-rec-score-bar {
+    height: 8px;
+    border-radius: 999px;
+    background-color: #eee;
+    overflow: hidden;
+}
+
+.product-rec-score-bar-fill {
+    height: 100%;
+    background-color: #222;
+}
+
+.product-rec-score-value {
+    font-size: 13px;
+    font-weight: 700;
+    text-align: right;
+}
+
+.product-rec-empty {
+    padding: 30px;
+    text-align: center;
+    color: #777;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+@media (max-width: 900px) {
+    .product-rec-score-row {
+        grid-template-columns: 90px 1fr 40px;
+    }
+}

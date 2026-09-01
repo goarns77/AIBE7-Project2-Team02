@@ -94,6 +94,17 @@ public class UserAccountEntity {
         status = targetStatus;
     }
 
+    public void promoteToSeller() {
+        if (role == UserRole.SELLER) {
+            return;
+        }
+        if (role != UserRole.USER) {
+            throw new IllegalStateException("일반 회원만 판매자로 승격할 수 있습니다.");
+        }
+        role = UserRole.SELLER;
+        tokenVersion++;
+    }
+
     public Long id() {
         return id;
     }

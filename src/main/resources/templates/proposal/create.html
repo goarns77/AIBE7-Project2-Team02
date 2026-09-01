@@ -33,15 +33,13 @@
 
             <div>
                 <span class="proposal-summary-label">주문 제목</span>
-                <strong th:text="${orderRequest.title}">
-                    개발팀 워크숍 점심 도시락
-                </strong>
+                <strong data-order-summary="title">조회 중</strong>
             </div>
 
             <div>
                 <span class="proposal-summary-label">수량</span>
                 <strong>
-                    <span th:text="${orderRequest.quantity}">40</span>명
+                    <span data-order-summary="quantity">-</span>명
                 </strong>
             </div>
 
@@ -49,28 +47,14 @@
                 <span class="proposal-summary-label">예산</span>
 
                 <strong>
-                    <span th:text="${orderRequest.budgetType.name() == 'PER_PERSON'
-                                     ? '1인당'
-                                     : '총 예산'}">
-                        1인당
-                    </span>
-
-                    <span th:text="${#numbers.formatDecimal(
-                                      orderRequest.budget,
-                                      1,
-                                      'COMMA',
-                                      0,
-                                      'POINT')}">
-                        20,000
-                    </span>원
+                    <span data-order-summary="budgetType">-</span>
+                    <span data-order-summary="budget">-</span>원
                 </strong>
             </div>
 
             <div>
                 <span class="proposal-summary-label">카테고리</span>
-                <strong th:text="${orderRequest.category}">
-                    도시락/간편식
-                </strong>
+                <strong data-order-summary="category">-</strong>
             </div>
 
         </div>
@@ -79,10 +63,8 @@
 
     <form id="proposalForm"
           class="proposal-form-card"
-          th:attr="
-            data-request-id=${orderRequest.id},
-            data-buyer-id=${orderRequest.buyerId},
-            data-order-quantity=${orderRequest.quantity}">
+          th:attr="data-request-id=${requestId}"
+          hidden>
 
         <h2>제안 방식</h2>
 
@@ -216,7 +198,7 @@
 
         <div class="proposal-form-actions">
 
-            <a th:href="@{/requests/{id}(id=${orderRequest.id})}"
+            <a th:href="@{/requests/{id}(id=${requestId})}"
                class="proposal-cancel-button">
                 취소
             </a>

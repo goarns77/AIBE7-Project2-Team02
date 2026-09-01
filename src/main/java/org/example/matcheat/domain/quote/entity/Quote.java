@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -110,7 +111,7 @@ public class Quote {
 
 	public void validateParticipant(Long userId) {
 		if (!isParticipant(userId)) {
-			throw new IllegalArgumentException("해당 견적서에 접근 권한이 없습니다.");
+			throw new AccessDeniedException("해당 견적서에 접근 권한이 없습니다.");
 		}
 	}
 
@@ -123,7 +124,7 @@ public class Quote {
 
 	public void validateSenderOnly(Long userId) {
 		if (!isSender(userId)) {
-			throw new IllegalArgumentException("견적서를 보낸 당사자만 수행할 수 있습니다.");
+			throw new AccessDeniedException("견적서를 보낸 당사자만 수행할 수 있습니다.");
 		}
 	}
 
@@ -136,7 +137,7 @@ public class Quote {
 
 	public void validateCounterpartyOnly(Long userId) {
 		if (!isCounterparty(userId)) {
-			throw new IllegalArgumentException("견적서를 받은 상대방만 수행할 수 있습니다.");
+			throw new AccessDeniedException("견적서를 받은 상대방만 수행할 수 있습니다.");
 		}
 	}
 

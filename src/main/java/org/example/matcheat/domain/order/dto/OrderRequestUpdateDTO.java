@@ -39,10 +39,6 @@ public class OrderRequestUpdateDTO {
 
     private String deliveryAddress;
 
-    private Double latitude;
-
-    private Double longitude;
-
     /**
      * 조회된 주문 요청 정보를 수정용 DTO로 변환
      */
@@ -57,8 +53,6 @@ public class OrderRequestUpdateDTO {
         dto.budget = response.getBudget();
         dto.category = response.getCategory();
         dto.deliveryAddress = response.getDeliveryAddress();
-        dto.latitude = response.getLatitude();
-        dto.longitude = response.getLongitude();
 
         return dto;
     }

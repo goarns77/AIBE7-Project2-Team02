@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -50,6 +52,29 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/products",
+                                "/api/v1/products/**",
+                                "/api/v1/requests/*/proposals",
+                                "/api/v1/quotes/to-buyer"
+                        ).hasRole("SELLER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/products/**").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**").hasRole("SELLER")
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/products/mine",
+                                "/api/v1/proposals/sent",
+                                "/api/v1/proposals/eligibility",
+                                "/api/v1/estimates/received",
+                                "/api/v1/requests",
+                                "/api/v1/requests/search",
+                                "/api/products/*/order-requests/recommendations"
+                        ).hasRole("SELLER")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/products",
+                                "/api/v1/products/search",
+                                "/api/v1/products/{id}"
+                        ).permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
