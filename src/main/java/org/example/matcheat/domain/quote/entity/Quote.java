@@ -37,6 +37,12 @@ public class Quote {
 	private Long deliveryFee;
 	private Long totalAmount;
 
+	// [추가] QuoteNegotiation(협상형) 결과를 확정할 때, 수량/단가/배송비로
+	// 표현 안 되는 조건(배송시간대, 알레르기 등)을 잃지 않기 위해 추가.
+	// 기존 "제안형" 생성 경로(direct/to-buyer/to-seller 등)는 이 필드를 안 채워도 됨.
+	@Column(columnDefinition = "TEXT")
+	private String additionalNotes;
+
 	@Enumerated(EnumType.STRING)
 	private QuoteStatus status;
 
@@ -58,7 +64,8 @@ public class Quote {
 
 	@Builder
 	public Quote(Long chatRoomId, Long buyerId, Long sellerId, SenderRole senderRole,
-	             Integer quantity, Long unitPrice, Long deliveryFee, Long totalAmount, QuoteStatus status) {
+	             Integer quantity, Long unitPrice, Long deliveryFee, Long totalAmount,
+	             String additionalNotes, QuoteStatus status) {
 		if (buyerId == null || sellerId == null) {
 			throw new IllegalArgumentException("buyerId와 sellerId는 필수입니다.");
 		}
@@ -73,6 +80,7 @@ public class Quote {
 		this.unitPrice = unitPrice;
 		this.deliveryFee = deliveryFee;
 		this.totalAmount = totalAmount;
+		this.additionalNotes = additionalNotes;
 		this.status = status != null ? status : QuoteStatus.SENT;
 	}
 

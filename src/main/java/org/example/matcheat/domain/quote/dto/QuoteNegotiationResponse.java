@@ -20,6 +20,7 @@ public class QuoteNegotiationResponse {
 	private String additionalNotes;
 	private QuoteNegotiation.NegotiationStatus status;
 	private boolean aiSummaryUsed;
+	private Long resultingQuoteId; // [추가] LOCKED 이전에는 null, 잠긴 뒤에는 확정 Quote의 ID
 	private LocalDateTime createdAt;
 	private LocalDateTime lockedAt;
 
@@ -36,6 +37,7 @@ public class QuoteNegotiationResponse {
 				.additionalNotes(n.getAdditionalNotes())
 				.status(n.getStatus())
 				.aiSummaryUsed(n.isAiSummaryUsed())
+				.resultingQuoteId(n.getResultingQuoteId())
 				.createdAt(n.getCreatedAt())
 				.lockedAt(n.getLockedAt())
 				.build();
