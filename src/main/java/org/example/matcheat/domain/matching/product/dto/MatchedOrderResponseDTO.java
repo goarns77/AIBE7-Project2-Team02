@@ -1,9 +1,12 @@
 package org.example.matcheat.domain.matching.product.dto;
 
 import lombok.Getter;
-import org.example.matcheat.domain.order.dto.OrderRequestResponseDTO;
 import org.example.matcheat.domain.order.entity.OrderRequest;
+import org.example.matcheat.domain.order.enums.BudgetType;
+import org.example.matcheat.domain.order.enums.RequestStatus;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 
@@ -13,12 +16,12 @@ import java.util.Locale;
  */
 public class MatchedOrderResponseDTO {
 
-    private final OrderRequestResponseDTO orderRequest;
+    private final RecommendedOrderRequestDTO orderRequest;
     private final double totalScore;
     private final List<RecommendationScoreItemDTO> scoreItems;
 
     private MatchedOrderResponseDTO(OrderRequest orderRequest, MatchScoreResult matchScoreResult) {
-        this.orderRequest = OrderRequestResponseDTO.from(orderRequest);
+        this.orderRequest = RecommendedOrderRequestDTO.from(orderRequest);
         this.totalScore = matchScoreResult.getTotalScore();
         this.scoreItems = matchScoreResult.getBreakdown().stream()
                 .map(RecommendationScoreItemDTO::from)
@@ -30,6 +33,46 @@ public class MatchedOrderResponseDTO {
      */
     public static MatchedOrderResponseDTO of(OrderRequest orderRequest, MatchScoreResult matchScoreResult) {
         return new MatchedOrderResponseDTO(orderRequest, matchScoreResult);
+    }
+
+    /**
+     * 추천 결과에 담기는 주문 요청 정보이다. domain/order의 OrderRequestResponseDTO는
+     * 구매자 계정 ID(buyerId)를 그대로 노출하는데, 이 값이 판매자에게 그대로 보이면 안 되므로
+     * 여기서는 buyerId를 뺀 값만 담는 전용 DTO를 별도로 둔다.
+     */
+    @Getter
+    public static class RecommendedOrderRequestDTO {
+        private final Long id;
+        private final String title;
+        private final String description;
+        private final LocalDateTime eventDateTime;
+        private final Integer quantity;
+        private final BudgetType budgetType;
+        private final BigDecimal budget;
+        private final String category;
+        private final String deliveryAddress;
+        private final Double latitude;
+        private final Double longitude;
+        private final RequestStatus status;
+
+        private RecommendedOrderRequestDTO(OrderRequest orderRequest) {
+            this.id = orderRequest.getId();
+            this.title = orderRequest.getTitle();
+            this.description = orderRequest.getDescription();
+            this.eventDateTime = orderRequest.getEventDateTime();
+            this.quantity = orderRequest.getQuantity();
+            this.budgetType = orderRequest.getBudgetType();
+            this.budget = orderRequest.getBudget();
+            this.category = orderRequest.getCategory();
+            this.deliveryAddress = orderRequest.getDeliveryAddress();
+            this.latitude = orderRequest.getLatitude();
+            this.longitude = orderRequest.getLongitude();
+            this.status = orderRequest.getStatus();
+        }
+
+        public static RecommendedOrderRequestDTO from(OrderRequest orderRequest) {
+            return new RecommendedOrderRequestDTO(orderRequest);
+        }
     }
 
     @Getter
