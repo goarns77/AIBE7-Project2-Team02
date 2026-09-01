@@ -11,6 +11,7 @@ import org.example.matcheat.domain.quote.dto.QuoteDirectRequestToSeller;
 import org.example.matcheat.domain.quote.dto.QuoteResponse;
 import org.example.matcheat.domain.quote.dto.QuoteUpdateRequest;
 import org.example.matcheat.domain.quote.entity.Quote;
+import org.example.matcheat.domain.quote.entity.QuoteNegotiation;
 import org.example.matcheat.domain.quote.repository.QuoteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,6 +97,46 @@ public class QuoteService {
 				request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee()
 		);
 		return QuoteResponse.from(quoteRepository.save(quote));
+	}
+
+	// -----------------------------------------------------------
+	// 생성 - QuoteNegotiation(협상형) 잠금 시점에 확정 Quote로 "발행"
+	// -----------------------------------------------------------
+	/**
+	 * QuoteNegotiation이 잠긴(LOCKED) 직후 호출된다. 협상 결과를 별도의
+	 * 확정 Quote(status=ACCEPTED)로 만들어서, 제안형/협상형 어느 경로로
+	 * 끝난 거래든 이후 Order 생성·마이페이지 조회는 항상 Quote 하나만
+	 * 기준으로 삼을 수 있게 한다 (합의안 4장: orders.quote_id 필수).
+	 *
+	 * 참여자 검증은 이미 QuoteNegotiation.lock()에서 끝난 상태이므로
+	 * 여기서 다시 하지 않는다. senderRole은 이미 ACCEPTED로 확정된
+	 * Quote라 의미가 없다(모든 수정/상태변경 메서드가 SENT 상태만 허용하므로
+	 * 이 Quote에는 애초에 적용되지 않는다) — 값은 고정으로 SELLER를 둔다.
+	 */
+	@Transactional
+	public Quote createFromLockedNegotiation(QuoteNegotiation negotiation) {
+		ChatRoom chatRoom = chatService.getChatRoomEntity(negotiation.getChatRoomId());
+
+		long totalAmount = Quote.calculateTotalAmount(
+				negotiation.getQuantity(), negotiation.getUnitPrice(), negotiation.getDeliveryFee());
+
+		Quote quote = Quote.builder()
+				.chatRoomId(negotiation.getChatRoomId())
+				.buyerId(negotiation.getBuyerId())
+				.sellerId(negotiation.getSellerId())
+				.senderRole(Quote.SenderRole.SELLER) // 협상 결과 확정 발행 — 실질적 의미 없음 (위 설명 참고)
+				.quantity(negotiation.getQuantity())
+				.unitPrice(negotiation.getUnitPrice())
+				.deliveryFee(negotiation.getDeliveryFee())
+				.totalAmount(totalAmount)
+				.additionalNotes(negotiation.getAdditionalNotes())
+				.status(Quote.QuoteStatus.ACCEPTED)
+				.build();
+
+		Quote savedQuote = quoteRepository.save(quote);
+		chatRoom.updateQuoteId(savedQuote.getId());
+
+		return savedQuote;
 	}
 
 	// -----------------------------------------------------------
