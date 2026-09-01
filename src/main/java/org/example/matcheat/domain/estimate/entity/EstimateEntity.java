@@ -25,22 +25,32 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+/**
+ * 견적(Estimate) 정보를 DB에 저장하는 JPA 엔티티이다.
+ * request_id는 OrderRequest를 가리키는 FK가 아니라 요청자(구매자) 본인의 계정 ID이고,
+ * seller_id는 계정 ID가 아니라 seller_profiles 테이블의 PK이다.
+ */
 public class EstimateEntity {
 
+    /** 견적 PK */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** 견적 생성 일시 */
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    /** 구매자가 직접 작성한 상세 설명 */
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    /** 요청자(구매자) 본인의 계정 ID. OrderRequest를 가리키는 FK가 아니다 */
     @Column(name = "request_id", nullable = false)
     private Long requestId;
 
+    /** 견적을 받는 판매자의 seller_profiles PK (계정 ID가 아니다) */
     @Column(name = "seller_id", nullable = false)
     private Long sellerId;
 
@@ -50,13 +60,16 @@ public class EstimateEntity {
     @Column(name = "product_id")
     private Long productId;
 
+    /** 예산 금액 */
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal budget;
 
+    /** 예산 유형(1인당/총액) */
     @Enumerated(EnumType.STRING)
     @Column(name = "budget_type", nullable = false)
     private BudgetType budgetType;
 
+    /** 상품/항목명 */
     @Column(name = "item_name", nullable = false)
     private String itemName;
 
@@ -66,9 +79,11 @@ public class EstimateEntity {
     @Column(nullable = false)
     private Integer quantity;
 
+    /** 행사/이용 일시 */
     @Column(name = "event_date_time", nullable = false)
     private LocalDateTime eventDateTime;
 
+    /** 견적 이미지 URL */
     @Column(name = "estimate_image", columnDefinition = "TEXT")
     private String estimateImage;
 
@@ -78,12 +93,15 @@ public class EstimateEntity {
     @Column(name = "delivery_address", nullable = false)
     private String deliveryAddress;
 
+    /** 배송(행사) 주소를 지오코딩한 위도 */
     @Column(nullable = true)
     private Double latitude;
 
+    /** 배송(행사) 주소를 지오코딩한 경도 */
     @Column(nullable = true)
     private Double longitude;
 
+    /** 견적 진행 상태 */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstimateStatus status;
