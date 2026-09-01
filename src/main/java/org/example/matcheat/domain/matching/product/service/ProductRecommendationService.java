@@ -5,6 +5,7 @@ import org.example.matcheat.domain.matching.product.dto.MatchedOrderResponseDTO;
 import org.example.matcheat.domain.order.entity.OrderRequest;
 import org.example.matcheat.domain.product.entity.ProductEntity;
 import org.example.matcheat.domain.product.repository.ProductRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,13 +25,20 @@ public class ProductRecommendationService {
 
     /**
      * 판매 조건에 대한 추천 주문 요청 목록을 반환한다.
+     * 요청자가 이 판매 조건의 소유자인 경우에만 허용한다.
      */
     @Transactional(readOnly = true)
-    public List<MatchedOrderResponseDTO> recommend(Long productId) {
+    public List<MatchedOrderResponseDTO> recommend(Long productId, Long requesterAccountId) {
         ProductEntity product = productRepository.findByIdAndHiddenFalse(productId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 판매 조건입니다. id=%s".formatted(productId)
                 ));
+
+        if (product.getOwnerAccountId() == null
+                || requesterAccountId == null
+                || !product.getOwnerAccountId().equals(requesterAccountId)) {
+            throw new AccessDeniedException("본인이 등록한 판매 조건의 추천 결과만 조회할 수 있습니다.");
+        }
 
         List<OrderRequest> candidates = hardFilterService.findCandidates(product.getId());
 
