@@ -140,7 +140,7 @@ public class MatchScoreCalculator {
 
         return switch (orderRequest.getBudgetType()) {
             case PER_PERSON -> servingPrice;
-            case TOTAL -> servingPrice * orderRequest.getQuantity();
+            case TOTAL -> servingPrice * (orderRequest.getQuantity() != null ? orderRequest.getQuantity() : 1);
         };
     }
 

@@ -79,14 +79,14 @@ public class ProductService {
      */
     private void requireApprovedSeller(Long ownerAccountId) {
         if (ownerAccountId == null) {
-            throw new IllegalArgumentException("로그인이 필요합니다.");
+            throw new AccessDeniedException("로그인이 필요합니다.");
         }
 
         SellerVerificationStatus status = sellerApplicationRepository.findStatusByUserId(ownerAccountId)
                 .orElseThrow(() -> new IllegalArgumentException("판매자 신청 정보가 없습니다."));
 
         if (status != SellerVerificationStatus.APPROVED) {
-            throw new IllegalArgumentException("승인된 판매자만 판매 조건을 등록할 수 있습니다.");
+            throw new AccessDeniedException("승인된 판매자만 판매 조건을 등록할 수 있습니다.");
         }
     }
 

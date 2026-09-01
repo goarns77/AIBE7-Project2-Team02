@@ -15,6 +15,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -315,7 +316,7 @@ public class ProductEntity {
      */
     private void verifyOwner(Long requesterAccountId) {
         if (requesterAccountId == null || !requesterAccountId.equals(this.ownerAccountId)) {
-            throw new IllegalArgumentException("본인이 등록한 판매 조건만 수정 또는 삭제할 수 있습니다.");
+            throw new AccessDeniedException("본인이 등록한 판매 조건만 수정 또는 삭제할 수 있습니다.");
         }
     }
 
