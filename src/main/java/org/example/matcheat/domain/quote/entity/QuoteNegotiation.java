@@ -113,8 +113,8 @@ public class QuoteNegotiation {
 	 * 안에만 있어서, 이미 AI_SUMMARIZED인 상태에서 다시 호출해도 예외가 나기
 	 * 전에 실제 AI 호출이 먼저 나가는 순서 버그가 있었다 (테스트로 확인됨).
 	 */
-	public void validateBeforeAiSummary(Long userId) {
-		validateParticipant(userId);
+	public void validateBeforeAiSummary(Long userId, Long sellerProfileId) {
+		validateParticipant(userId, sellerProfileId);
 		if (status != NegotiationStatus.NEGOTIATING) {
 			throw new IllegalStateException("AI 요약은 협상 중 상태에서만 실행할 수 있습니다. 현재 상태: " + status);
 		}
@@ -139,20 +139,21 @@ public class QuoteNegotiation {
 	// 자율 검증 (Quote와 동일한 패턴 유지)
 	// ---------------------------------------------------------------
 
-	public boolean isParticipant(Long userId) {
+	public boolean isParticipant(Long userId, Long sellerProfileId) {
 		if (userId == null) return false;
-		return userId.equals(buyerId) || userId.equals(sellerId);
+		if (userId.equals(buyerId)) return true;
+		return sellerProfileId != null && sellerProfileId.equals(sellerId);
 	}
 
-	public void validateParticipant(Long userId) {
-		if (!isParticipant(userId)) {
+	public void validateParticipant(Long userId, Long sellerProfileId) {
+		if (!isParticipant(userId, sellerProfileId)) {
 			throw new AccessDeniedException("해당 견적 협상에 접근 권한이 없습니다.");
 		}
 	}
 
 	/** 요구사항 3: 협상 중(NEGOTIATING)에는 양쪽 다 자유 수정 가능 */
-	public void validateFreeEdit(Long userId) {
-		validateParticipant(userId);
+	public void validateFreeEdit(Long userId, Long sellerProfileId) {
+		validateParticipant(userId, sellerProfileId);
 		if (status != NegotiationStatus.NEGOTIATING) {
 			throw new IllegalStateException("협상 중 상태에서만 자유롭게 수정할 수 있습니다. 현재 상태: " + status);
 		}
@@ -160,8 +161,8 @@ public class QuoteNegotiation {
 
 	/** 요구사항 5: AI 요약 이후 "마지막 한 번" 수정 — 테스트 결과에 따라 지금은
 	 *  상태 기반 자유수정(횟수 제한 없음)으로 유지하기로 결정됨. */
-	public void validateFinalEdit(Long userId) {
-		validateParticipant(userId);
+	public void validateFinalEdit(Long userId, Long sellerProfileId) {
+		validateParticipant(userId, sellerProfileId);
 		if (status != NegotiationStatus.AI_SUMMARIZED) {
 			throw new IllegalStateException("AI 요약 이후에만 마지막 수정이 가능합니다. 현재 상태: " + status);
 		}
@@ -185,8 +186,8 @@ public class QuoteNegotiation {
 	}
 
 	/** 요구사항 5: 최종 확인 → 잠금, 이후 수정 완전 불가 */
-	public void lock(Long userId) {
-		validateParticipant(userId);
+	public void lock(Long userId, Long sellerProfileId) {
+		validateParticipant(userId, sellerProfileId);
 		if (status != NegotiationStatus.AI_SUMMARIZED) {
 			throw new IllegalStateException("AI 요약 완료 상태에서만 잠글 수 있습니다. 현재 상태: " + status);
 		}

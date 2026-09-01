@@ -1,6 +1,7 @@
 package org.example.matcheat.domain.chat.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.domain.account.service.TradeAccountValidationService;
 import org.example.matcheat.domain.chat.dto.ChatFileResponse;
 import org.example.matcheat.domain.chat.entity.ChatFile;
 import org.example.matcheat.domain.chat.entity.ChatMessage;
@@ -27,6 +28,7 @@ public class ChatFileService {
 
 	private final ChatFileRepository chatFileRepository;
 	private final ChatService chatService; // [추가] 채팅방 존재/참여자 검증용
+	private final TradeAccountValidationService accounts;
 
 	private final String uploadDir = System.getProperty("user.dir") + "/uploads/chat-files/";
 
@@ -38,7 +40,7 @@ public class ChatFileService {
 	@Transactional
 	public ChatFileResponse uploadFile(Long chatRoomId, Long currentUserId, MultipartFile file) throws IOException {
 		ChatRoom chatRoom = chatService.getChatRoomEntity(chatRoomId);
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		if (file.isEmpty()) {
 			throw new IllegalArgumentException("빈 파일은 업로드할 수 없습니다.");
@@ -86,7 +88,7 @@ public class ChatFileService {
 	@Transactional(readOnly = true)
 	public List<ChatFileResponse> getFilesByChatRoom(Long chatRoomId, Long currentUserId) {
 		ChatRoom chatRoom = chatService.getChatRoomEntity(chatRoomId);
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		return chatFileRepository.findByChatRoomIdOrderByCreatedAtDesc(chatRoomId)
 				.stream()
@@ -108,7 +110,7 @@ public class ChatFileService {
 	public ChatFile getChatFileForDownload(Long fileId, Long currentUserId) {
 		ChatFile chatFile = getChatFileEntity(fileId);
 		ChatRoom chatRoom = chatService.getChatRoomEntity(chatFile.getChatRoomId());
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		return chatFile;
 	}
 

@@ -1,5 +1,6 @@
 package org.example.matcheat.domain.chat.interceptor;
 
+import org.example.matcheat.domain.account.service.TradeAccountValidationService;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.service.ChatService;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -26,15 +27,18 @@ public class ChatSubscriptionInterceptor implements ChannelInterceptor {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final ChatService chatService;
+    private final TradeAccountValidationService accounts;
     private final JwtDecoder jwtDecoder;
     private final Converter<Jwt, AbstractAuthenticationToken> authenticationConverter;
 
     public ChatSubscriptionInterceptor(
             ChatService chatService,
+            TradeAccountValidationService accounts,
             @Qualifier("accountJwtDecoder") JwtDecoder jwtDecoder,
             @Qualifier("accountJwtAuthenticationConverter")
             Converter<Jwt, AbstractAuthenticationToken> authenticationConverter) {
         this.chatService = chatService;
+        this.accounts = accounts;
         this.jwtDecoder = jwtDecoder;
         this.authenticationConverter = authenticationConverter;
     }
@@ -53,7 +57,8 @@ public class ChatSubscriptionInterceptor implements ChannelInterceptor {
             Long chatRoomId = extractChatRoomId(accessor.getDestination());
             if (chatRoomId != null) {
                 ChatRoom chatRoom = chatService.getChatRoomEntity(chatRoomId);
-                chatRoom.validateParticipant(currentUserId(accessor));
+                Long userId = currentUserId(accessor);
+                chatRoom.validateParticipant(userId, accounts.sellerIdForUserOrNull(userId));
             }
         }
         return message;

@@ -1,6 +1,7 @@
 package org.example.matcheat.domain.quote.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.domain.account.service.TradeAccountValidationService;
 import org.example.matcheat.domain.chat.dto.ChatMessageResponse;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.service.ChatMessageService;
@@ -29,13 +30,14 @@ public class QuoteNegotiationService {
 	private final ChatMessageService chatMessageService;
 	private final QuoteAiSummaryClient quoteAiSummaryClient;
 	private final QuoteService quoteService; // [추가] 잠금 시 확정 Quote 발행용
+	private final TradeAccountValidationService accounts;
 	private final TransactionTemplate requiresNewTransactionTemplate; // 추가
 
 	@Transactional
 	public QuoteNegotiationResponse createInitialNegotiation(Long chatRoomId, Long currentUserId,
 	                                                         QuoteNegotiationCreateRequest request) {
 		ChatRoom chatRoom = chatService.getChatRoomEntity(chatRoomId);
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		Optional<QuoteNegotiation> existing = quoteNegotiationRepository.findByChatRoomId(chatRoomId);
 		if (existing.isPresent()) {
@@ -75,7 +77,7 @@ public class QuoteNegotiationService {
 	@Transactional(readOnly = true)
 	public QuoteNegotiationResponse getNegotiation(Long chatRoomId, Long currentUserId) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-		negotiation.validateParticipant(currentUserId);
+		negotiation.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		return QuoteNegotiationResponse.from(negotiation);
 	}
 
@@ -83,7 +85,7 @@ public class QuoteNegotiationService {
 	public QuoteNegotiationResponse editDuringNegotiation(Long chatRoomId, Long currentUserId,
 	                                                      Integer quantity, Long unitPrice, Long deliveryFee) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-		negotiation.validateFreeEdit(currentUserId);
+		negotiation.validateFreeEdit(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		negotiation.applyEdit(quantity, unitPrice, deliveryFee);
 		return QuoteNegotiationResponse.from(negotiation);
 	}
@@ -91,11 +93,7 @@ public class QuoteNegotiationService {
 	@Transactional
 	public QuoteNegotiationResponse triggerAiSummary(Long chatRoomId, Long currentUserId) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-
-		// [수정] AI 호출(비용 발생) 이전에 참여자/상태/1회제한을 전부 먼저 검증한다.
-		// 예전에는 이 검증들이 AI 호출 뒤에 있어서, 이미 사용된 협상에 다시
-		// 호출해도 Gemini API가 한 번 더 나간 뒤에야 예외가 났다 (테스트로 확인된 버그).
-		negotiation.validateBeforeAiSummary(currentUserId);
+		negotiation.validateBeforeAiSummary(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		List<ChatMessageResponse> messages = chatMessageService.getChatHistory(chatRoomId, currentUserId);
 		AiQuoteSummaryResult result = quoteAiSummaryClient.summarize(negotiation, messages);
@@ -114,7 +112,7 @@ public class QuoteNegotiationService {
 	public QuoteNegotiationResponse editAfterAiSummary(Long chatRoomId, Long currentUserId,
 	                                                   Integer quantity, Long unitPrice, Long deliveryFee) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-		negotiation.validateFinalEdit(currentUserId);
+		negotiation.validateFinalEdit(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		negotiation.applyEdit(quantity, unitPrice, deliveryFee);
 		return QuoteNegotiationResponse.from(negotiation);
 	}
@@ -122,14 +120,9 @@ public class QuoteNegotiationService {
 	@Transactional
 	public QuoteNegotiationResponse lockNegotiation(Long chatRoomId, Long currentUserId) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-		negotiation.lock(currentUserId);
-
-		// [추가] 협상 결과를 확정 Quote(status=ACCEPTED)로 발행한다.
-		// 이후 Order 생성/마이페이지 조회는 제안형이든 협상형이든 이 Quote
-		// 하나만 기준으로 삼는다 (합의안 4장: orders.quote_id 필수).
+		negotiation.lock(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		Quote finalizedQuote = quoteService.createFromLockedNegotiation(negotiation);
 		negotiation.markQuoteCreated(finalizedQuote.getId());
-
 		return QuoteNegotiationResponse.from(negotiation);
 	}
 
