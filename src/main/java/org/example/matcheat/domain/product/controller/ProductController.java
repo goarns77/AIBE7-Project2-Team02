@@ -66,9 +66,10 @@ public class ProductController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> findById(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id
     ) {
-        ProductResponseDTO response = productService.findById(id);
+        ProductResponseDTO response = productService.findById(id, viewerId(jwt));
 
         return ResponseEntity.ok(response);
     }
@@ -91,8 +92,10 @@ public class ProductController {
      * 등록된 모든 판매 조건을 조회한다.
      */
     @GetMapping
-    public ResponseEntity<List<ProductResponseDTO>> findAll() {
-        List<ProductResponseDTO> response = productService.findAll();
+    public ResponseEntity<List<ProductResponseDTO>> findAll(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        List<ProductResponseDTO> response = productService.findAll(viewerId(jwt));
 
         return ResponseEntity.ok(response);
     }
@@ -102,11 +105,12 @@ public class ProductController {
      */
     @GetMapping("/search")
     public ResponseEntity<List<ProductResponseDTO>> search(
+            @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) String quantity,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String servingPrice
     ) {
-        List<ProductResponseDTO> response = productService.search(quantity, category, servingPrice);
+        List<ProductResponseDTO> response = productService.search(quantity, category, servingPrice, viewerId(jwt));
 
         return ResponseEntity.ok(response);
     }
@@ -158,5 +162,12 @@ public class ProductController {
         ProductResponseDTO response = productService.softDelete(id, userId, isAdmin);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * JWT가 있으면 sub 클레임에서 계정 ID를 꺼내고, 없으면(비로그인) null을 반환한다.
+     */
+    private static Long viewerId(Jwt jwt) {
+        return jwt == null ? null : Long.valueOf(jwt.getSubject());
     }
 }

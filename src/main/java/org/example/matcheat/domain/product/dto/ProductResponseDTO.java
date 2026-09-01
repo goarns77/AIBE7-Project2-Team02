@@ -14,7 +14,6 @@ import java.util.List;
  */
 public class ProductResponseDTO {
     private final Long id;
-    private final Long ownerAccountId;
     private final String productName;
     private final Integer minHeadcount;
     private final Integer maxHeadcount;
@@ -31,13 +30,16 @@ public class ProductResponseDTO {
     private final String imageUrl;
     private final boolean hidden;
     private final LocalDateTime updatedAt;
+    /**
+     * 조회하는 사람이 이 판매 조건의 소유자인지 여부. 실제 계정 ID는 노출하지 않는다.
+     */
+    private final boolean owner;
 
     /**
      * 엔티티 값을 응답 DTO로 옮겨 담는 생성자이다.
      */
-    private ProductResponseDTO(ProductEntity product) {
+    private ProductResponseDTO(ProductEntity product, Long viewerAccountId) {
         this.id = product.getId();
-        this.ownerAccountId = product.getOwnerAccountId();
         this.productName = product.getProductName();
         this.minHeadcount = product.getMinHeadcount();
         this.maxHeadcount = product.getMaxHeadcount();
@@ -56,12 +58,14 @@ public class ProductResponseDTO {
         this.imageUrl = product.getImageUrl();
         this.hidden = product.isHidden();
         this.updatedAt = product.getUpdatedAt();
+        this.owner = viewerAccountId != null && viewerAccountId.equals(product.getOwnerAccountId());
     }
 
     /**
-     * 엔티티를 응답 DTO로 변환한다.
+     * 엔티티를 응답 DTO로 변환한다. viewerAccountId는 현재 조회하는 사용자의 계정 ID(비로그인이면 null)로,
+     * 응답에 그대로 노출되지 않고 owner 여부를 계산하는 데만 쓰인다.
      */
-    public static ProductResponseDTO from(ProductEntity product) {
-        return new ProductResponseDTO(product);
+    public static ProductResponseDTO from(ProductEntity product, Long viewerAccountId) {
+        return new ProductResponseDTO(product, viewerAccountId);
     }
 }

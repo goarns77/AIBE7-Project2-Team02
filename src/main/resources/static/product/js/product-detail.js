@@ -49,6 +49,25 @@ function renderImage(imageUrl, productName) {
     imageHolder.innerHTML = `<img src="${encodeURI(imageUrl)}" alt="${productName || '상품 이미지'}">`;
 }
 
+async function isOwnedProduct(productId) {
+    if (readCurrentUserId() === null) {
+        return false;
+    }
+
+    try {
+        const response = await authFetch('/api/v1/products/mine');
+        if (!response.ok) {
+            return false;
+        }
+
+        const products = await readApiBody(response);
+        return Array.isArray(products)
+            && products.some(product => Number(product.id) === Number(productId));
+    } catch {
+        return false;
+    }
+}
+
 async function loadDetail() {
     const id = getIdFromQuery();
     if (!id) {
@@ -84,19 +103,13 @@ async function loadDetail() {
 
         renderImage(product.imageUrl, product.productName);
 
-        if (product.ownerAccountId != null) {
-            const params = new URLSearchParams({
-                itemName: product.productName ?? '',
-                productId: product.id,
-                sellerId: product.ownerAccountId
-            });
-            estimateButton.href = `/estimates/new?${params.toString()}`;
-        } else {
-            estimateButton.style.display = 'none';
-        }
+        const params = new URLSearchParams({
+            itemName: product.productName ?? '',
+            productId: product.id
+        });
+        estimateButton.href = `/estimates/new?${params.toString()}`;
 
-        const currentUserId = readCurrentUserId();
-        if (currentUserId !== null && product.ownerAccountId === currentUserId) {
+        if (await isOwnedProduct(product.id)) {
             editButton.href = `/product/update?id=${product.id}`;
             editButton.style.display = '';
         }

@@ -9,8 +9,10 @@ import org.example.matcheat.domain.quote.ai.QuoteAiSummaryClient;
 import org.example.matcheat.domain.quote.ai.dto.AiQuoteSummaryResult;
 import org.example.matcheat.domain.quote.dto.QuoteNegotiationCreateRequest;
 import org.example.matcheat.domain.quote.dto.QuoteNegotiationResponse;
+import org.example.matcheat.domain.quote.entity.Quote;
 import org.example.matcheat.domain.quote.entity.QuoteNegotiation;
 import org.example.matcheat.domain.quote.repository.QuoteNegotiationRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,9 +24,10 @@ import java.util.Optional;
 public class QuoteNegotiationService {
 
 	private final QuoteNegotiationRepository quoteNegotiationRepository;
-	private final ChatService chatService; // 기존 QuoteService와 동일한 패턴 — Chat 조회는 직접 의존 허용
-	private final ChatMessageService chatMessageService; // 생성자에 추가
-	private final QuoteAiSummaryClient quoteAiSummaryClient; // 생성자에 추가
+	private final ChatService chatService;
+	private final ChatMessageService chatMessageService;
+	private final QuoteAiSummaryClient quoteAiSummaryClient;
+	private final QuoteService quoteService; // [추가] 잠금 시 확정 Quote 발행용
 
 	@Transactional
 	public QuoteNegotiationResponse createInitialNegotiation(Long chatRoomId, Long currentUserId,
@@ -32,8 +35,6 @@ public class QuoteNegotiationService {
 		ChatRoom chatRoom = chatService.getChatRoomEntity(chatRoomId);
 		chatRoom.validateParticipant(currentUserId);
 
-		// 멱등 처리: 이미 생성돼 있으면 새로 만들지 않고 기존 것을 반환한다
-		// (ChatRoom 중복 생성 방지와 같은 관례)
 		Optional<QuoteNegotiation> existing = quoteNegotiationRepository.findByChatRoomId(chatRoomId);
 		if (existing.isPresent()) {
 			return QuoteNegotiationResponse.from(existing.get());
@@ -52,7 +53,20 @@ public class QuoteNegotiationService {
 				.deliveryFee(deliveryFee)
 				.build();
 
-		return QuoteNegotiationResponse.from(quoteNegotiationRepository.save(negotiation));
+		try {
+			// [수정] saveAndFlush로 즉시 DB 유니크 제약(chatRoomId)을 확인한다.
+			// save()만 쓰면 실제 INSERT가 트랜잭션 커밋 시점까지 미뤄질 수 있어서,
+			// "조회했을 때는 없었는데 그 사이 다른 요청이 먼저 만든" 레이스 컨디션을
+			// 여기서 못 잡고 나중에 알 수 없는 시점에 에러가 났다.
+			QuoteNegotiation saved = quoteNegotiationRepository.saveAndFlush(negotiation);
+			return QuoteNegotiationResponse.from(saved);
+		} catch (DataIntegrityViolationException e) {
+			// 동시에 다른 요청이 먼저 만들었다면, 방금 만들어진 걸 다시 조회해서
+			// 멱등하게 반환한다 (예외를 그대로 던지지 않음).
+			return quoteNegotiationRepository.findByChatRoomId(chatRoomId)
+					.map(QuoteNegotiationResponse::from)
+					.orElseThrow(() -> e);
+		}
 	}
 
 	@Transactional(readOnly = true)
@@ -71,15 +85,14 @@ public class QuoteNegotiationService {
 		return QuoteNegotiationResponse.from(negotiation);
 	}
 
-	/**
-	 * [TODO] 실제 AI 요약 호출부. Gemini(spring.ai.google.genai) 연동은 이미
-	 * application.yml에 GEMINI_API_KEY로 준비되어 있음 — 채팅 이력 수집과
-	 * 실제 프롬프트 설계는 아직 미구현. 지금은 "1회 제한 강제" 뼈대만 구현.
-	 */
 	@Transactional
 	public QuoteNegotiationResponse triggerAiSummary(Long chatRoomId, Long currentUserId) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-		negotiation.validateParticipant(currentUserId);
+
+		// [수정] AI 호출(비용 발생) 이전에 참여자/상태/1회제한을 전부 먼저 검증한다.
+		// 예전에는 이 검증들이 AI 호출 뒤에 있어서, 이미 사용된 협상에 다시
+		// 호출해도 Gemini API가 한 번 더 나간 뒤에야 예외가 났다 (테스트로 확인된 버그).
+		negotiation.validateBeforeAiSummary(currentUserId);
 
 		List<ChatMessageResponse> messages = chatMessageService.getChatHistory(chatRoomId, currentUserId);
 		AiQuoteSummaryResult result = quoteAiSummaryClient.summarize(negotiation, messages);
@@ -87,6 +100,9 @@ public class QuoteNegotiationService {
 		negotiation.applyAiSummaryResult(
 				result.getQuantity(), result.getUnitPrice(), result.getDeliveryFee(), result.getAdditionalNotes());
 		negotiation.markAiSummaryUsed();
+
+		// TODO: AI 요약 완료 알림 — REST 응답으로만 받을지, 채팅 메시지처럼
+		// 실시간 브로드캐스트할지는 보류. 지금은 REST 응답으로만 전달한다.
 
 		return QuoteNegotiationResponse.from(negotiation);
 	}
@@ -104,7 +120,13 @@ public class QuoteNegotiationService {
 	public QuoteNegotiationResponse lockNegotiation(Long chatRoomId, Long currentUserId) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
 		negotiation.lock(currentUserId);
-		// Order 생성 연동은 이번 범위에서 보류
+
+		// [추가] 협상 결과를 확정 Quote(status=ACCEPTED)로 발행한다.
+		// 이후 Order 생성/마이페이지 조회는 제안형이든 협상형이든 이 Quote
+		// 하나만 기준으로 삼는다 (합의안 4장: orders.quote_id 필수).
+		Quote finalizedQuote = quoteService.createFromLockedNegotiation(negotiation);
+		negotiation.markQuoteCreated(finalizedQuote.getId());
+
 		return QuoteNegotiationResponse.from(negotiation);
 	}
 

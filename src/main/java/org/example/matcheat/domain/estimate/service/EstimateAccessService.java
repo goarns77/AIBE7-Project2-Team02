@@ -19,13 +19,15 @@ import java.util.List;
  * 로그인 사용자(accountId)를 기준으로 Estimate에 대한 권한과 자격을 검증하는 서비스이다.
  * <p>
  * 실제 Estimate 저장과 조회는 {@link EstimateService}가 담당하고,
- * 이 서비스는 요청자가 구매자/판매자 본인인지, sellerId가 승인된 판매자인지,
- * productId가 그 판매자 소유가 맞는지를 검증하고 주소를 지오코딩한 뒤 EstimateService에 위임한다.
- * ProposalAccessService와 같은 위치이다.
+ * 이 서비스는 요청자가 구매자/판매자 본인인지, 상품의 판매자가 승인된 상태인지를 검증하고
+ * 주소를 지오코딩한 뒤 EstimateService에 위임한다. ProposalAccessService와 같은 위치이다.
  * <p>
  * request_id는 더 이상 OrderRequest를 가리키는 FK가 아니라, 요청자(구매자) 본인의 계정 ID를
  * 그대로 저장한다 — 구매자가 사전에 주문 요청을 등록하지 않았어도 견적을 요청할 수 있도록 하기 위함이다.
  * 그래서 견적에 필요한 값(예산, 행사일자, 항목명, 주소 등)은 전부 이 화면에서 직접 입력받는다.
+ * <p>
+ * sellerId는 클라이언트가 직접 보내지 않는다 — ProductResponseDTO가 판매자 계정 ID를 노출하지 않기
+ * 때문에(보안상 이유), 구매자는 productId만 알려주고 서버가 그 상품의 판매자를 내부적으로 알아낸다.
  */
 public class EstimateAccessService {
 
@@ -35,11 +37,11 @@ public class EstimateAccessService {
     private final GeocodingService geocodingService;
 
     /**
-     * 구매자가 특정 판매자(sellerId)에게 견적을 요청한다. 로그인한 본인의 accountId가
-     * request_id로 그대로 저장된다. sellerId(계정 ID)가 승인된 판매자인지 검증하고,
+     * 구매자가 특정 상품(productId)의 판매자에게 견적을 요청한다. 로그인한 본인의 accountId가
+     * request_id로 그대로 저장된다. productId로 판매자 계정을 알아낸 뒤 승인된 판매자인지 검증하고,
      * 실제로 Estimate에 저장되는 sellerId는 그 계정에 연결된 seller_profiles PK로 변환한다
      * (domain/account의 다른 거래 도메인들과 동일한 판매자 식별 체계를 맞추기 위함).
-     * productId의 소유권을 검증하고 배송(행사) 주소를 지오코딩한 뒤 저장한다.
+     * 배송(행사) 주소를 지오코딩한 뒤 저장한다.
      */
     @Transactional
     public EstimateResponseDTO create(EstimateCreateDTO dto, Long requesterAccountId) {
@@ -47,8 +49,8 @@ public class EstimateAccessService {
             throw new IllegalArgumentException("로그인이 필요합니다.");
         }
 
-        Long sellerProfileId = requireApprovedSeller(dto.getSellerId());
-        verifyProductOwnedBySeller(dto.getProductId(), dto.getSellerId());
+        Long sellerAccountId = productService.findOwnerAccountId(dto.getProductId());
+        Long sellerProfileId = requireApprovedSeller(sellerAccountId);
 
         GeocodingService.Coordinates coordinates = geocodingService.geocode(dto.getDeliveryAddress());
 
@@ -152,17 +154,5 @@ public class EstimateAccessService {
         }
 
         return seller.sellerId();
-    }
-
-    /**
-     * productId가 주어진 경우, 그 상품이 실제로 sellerAccountId(계정 ID) 소유인지 검증한다.
-     * ProductService.findOwnedById()를 재사용해 상품 존재 여부와 소유권을 함께 확인한다.
-     */
-    private void verifyProductOwnedBySeller(Long productId, Long sellerAccountId) {
-        if (productId == null) {
-            return;
-        }
-
-        productService.findOwnedById(productId, sellerAccountId);
     }
 }

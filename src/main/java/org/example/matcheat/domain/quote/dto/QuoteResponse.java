@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 @Builder
 public class QuoteResponse {
 
-	private Long quoteId; // [수정 P0-2] id -> quoteId로 변경
-	private Long chatRoomId;
+	private Long quoteId;
+	private Long chatRoomId; // null일 수 있음 (채팅 없이 생성된 견적)
 	private Long buyerId;
 	private Long sellerId;
 	private Quote.SenderRole senderRole;
@@ -20,12 +20,13 @@ public class QuoteResponse {
 	private Long unitPrice;
 	private Long deliveryFee;
 	private Long totalAmount;
+	private String additionalNotes; // null일 수 있음 (제안형 Quote는 보통 비어있음)
 	private Quote.QuoteStatus status;
-	private LocalDateTime createdAt; // [수정 P0-3] 생성 일시 필드 추가
+	private LocalDateTime createdAt;
 
 	public static QuoteResponse from(Quote quote) {
 		return QuoteResponse.builder()
-				.quoteId(quote.getId()) // [수정 P0-2]
+				.quoteId(quote.getId())
 				.chatRoomId(quote.getChatRoomId())
 				.buyerId(quote.getBuyerId())
 				.sellerId(quote.getSellerId())
@@ -34,8 +35,9 @@ public class QuoteResponse {
 				.unitPrice(quote.getUnitPrice())
 				.deliveryFee(quote.getDeliveryFee())
 				.totalAmount(quote.getTotalAmount())
+				.additionalNotes(quote.getAdditionalNotes())
 				.status(quote.getStatus())
-				.createdAt(quote.getCreatedAt()) // [수정 P0-3]
+				.createdAt(quote.getCreatedAt())
 				.build();
 	}
 }

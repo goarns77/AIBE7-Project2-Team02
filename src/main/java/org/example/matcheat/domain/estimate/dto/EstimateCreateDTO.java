@@ -16,6 +16,7 @@ public class EstimateCreateDTO {
 
     private String description;
 
+    @NotNull
     private Long productId;
 
     @NotNull
@@ -34,9 +35,6 @@ public class EstimateCreateDTO {
 
     @NotNull
     private LocalDateTime eventDateTime;
-
-    @NotNull
-    private Long sellerId;
 
     @NotBlank
     private String deliveryAddress;
