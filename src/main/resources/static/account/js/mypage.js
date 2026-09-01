@@ -40,21 +40,38 @@ if (viewKey === 'profile') {
 }
 
 async function loadRecords(sources) {
-  const responses = await Promise.all(sources.map(({ endpoint }) => authFetch(endpoint)));
-  if (responses.some((response) => response.status === 401)) redirectToLogin();
-  if (responses.some((response) => [404, 405].includes(response.status))) {
+  if (sources.length === 0) {
     showState('pending');
     return;
   }
-  if (responses.some((response) => !response.ok)) {
-    showFailure('목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+
+  const results = await Promise.all(sources.map(async (source) => ({
+    source,
+    response: await authFetch(source.endpoint),
+  })));
+  if (results.some(({ response }) => response.status === 401)) redirectToLogin();
+
+  const successful = results.filter(({ response }) => response.ok);
+  if (successful.length === 0) {
+    if (results.some(({ response }) => [404, 405].includes(response.status))) {
+      showState('pending');
+    } else {
+      showFailure('목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }
     return;
   }
 
-  const payloads = await Promise.all(responses.map(readApiBody));
-  const records = payloads.flatMap((payload, index) =>
-    adaptMypagePayload(sources[index].key, payload));
-  const pages = payloads.map(extractPage);
+  const payloads = await Promise.all(successful.map(async ({ source, response }) => ({
+    source,
+    payload: await readApiBody(response),
+  })));
+  const records = payloads
+    .flatMap(({ source, payload }) => adaptMypagePayload(source.key, payload))
+    .sort((left, right) => right.sortAt - left.sortAt);
+  const pages = payloads.map(({ payload }) => extractPage(payload));
+  if (successful.length !== results.length) {
+    document.querySelector('[data-partial-state]').hidden = false;
+  }
   if (records.length === 0) {
     showState('empty');
     return;
@@ -65,7 +82,11 @@ async function loadRecords(sources) {
 function renderProfileSummary(profile) {
   document.querySelector('[data-profile-name]').textContent = `${profile.name}님의 거래`;
   document.querySelector('[data-profile-email]').textContent = profile.email;
-  document.querySelector('[data-account-status]').textContent = profile.role === 'ADMIN' ? '관리자' : '활성 계정';
+  document.querySelector('[data-account-status]').textContent = {
+    ADMIN: '관리자',
+    SELLER: '판매자 계정',
+    USER: '활성 계정',
+  }[profile.role] || '계정 확인';
   document.querySelectorAll('[data-profile-field]').forEach((element) => {
     const value = profile[element.dataset.profileField];
     element.textContent = profileLabel(element.dataset.profileField, value);
@@ -191,7 +212,7 @@ function optionalNumber(value) {
 
 function profileLabel(field, value) {
   const labels = {
-    role: { USER: '일반 회원', ADMIN: '관리자' },
+    role: { USER: '일반 회원', SELLER: '판매자', ADMIN: '관리자' },
     sellerStatus: { PENDING: '심사 대기', APPROVED: '승인', REJECTED: '거부' },
   };
   return labels[field]?.[value] || value || '신청 전';
@@ -205,11 +226,22 @@ function renderRecords(records, pages) {
     const article = document.createElement('article');
     article.className = 'record-card';
     article.dataset.recordKey = record.key;
-    article.innerHTML = `<div><h2></h2><p></p><small></small></div><span class="status-chip"></span>`;
+    article.innerHTML = `
+      <div class="record-card-content"><h2></h2><p></p><small></small></div>
+      <div class="record-card-actions">
+        <span class="status-chip"></span>
+        <a class="record-link" hidden></a>
+      </div>`;
     article.querySelector('h2').textContent = record.title;
     article.querySelector('p').textContent = record.detail;
     article.querySelector('small').textContent = record.meta;
     article.querySelector('.status-chip').textContent = record.status;
+    if (record.href) {
+      const link = article.querySelector('.record-link');
+      link.href = record.href;
+      link.textContent = record.actionLabel || '상세 보기';
+      link.hidden = false;
+    }
     list.append(article);
   });
 
