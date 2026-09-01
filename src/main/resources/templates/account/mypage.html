@@ -20,13 +20,13 @@
             <a th:href="@{/mypage}" data-view="profile">계정 개요</a>
             <a th:href="@{/mypage/requests}" data-view="requests">내 구매 요청</a>
             <a th:href="@{/mypage/purchases}" data-view="purchases">구매 내역</a>
-            <a th:href="@{/mypage/sales}" data-view="sales">판매 내역</a>
+            <a th:href="@{/mypage/sales}" data-view="sales" data-seller-navigation hidden>판매 내역</a>
             <a th:href="@{/mypage/offers}" data-view="offers">오퍼</a>
             <a th:href="@{/mypage/chats}" data-view="chats">채팅</a>
         </nav>
     </aside>
 
-    <section class="mypage-content" aria-live="polite">
+    <section class="mypage-content">
         <div class="content-heading">
             <div>
                 <p class="eyebrow" data-view-kicker>ACCOUNT</p>
@@ -67,6 +67,7 @@
                 <div class="seller-state" data-seller-state hidden>
                     <strong data-seller-state-title></strong>
                     <p data-seller-state-description></p>
+                    <a th:href="@{/product}" data-seller-products hidden>상품 관리로 이동</a>
                 </div>
                 <form data-seller-form novalidate>
                     <label for="business-name">사업자명</label>
@@ -121,22 +122,47 @@
             </section>
         </div>
 
-        <div class="data-state" data-loading-state>
+        <div class="record-tools" data-record-tools hidden>
+            <label class="record-search">
+                <span>내역 검색</span>
+                <input type="search" data-record-search placeholder="제목, 설명, 유형 검색" autocomplete="off">
+            </label>
+            <label class="record-status-filter">
+                <span>상태</span>
+                <select data-record-status>
+                    <option value="">전체 상태</option>
+                </select>
+            </label>
+            <p class="record-summary" data-record-summary role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="data-state" data-loading-state role="status" aria-live="polite">
             <span class="loading-mark" aria-hidden="true"></span>
             <p>목록을 불러오고 있습니다.</p>
         </div>
-        <div class="data-state" data-empty-state hidden>
+        <div class="data-state" data-empty-state hidden role="status">
             <strong>아직 표시할 내역이 없습니다.</strong>
             <p>새 거래가 시작되면 이곳에서 진행 상태를 확인할 수 있습니다.</p>
         </div>
-        <div class="data-state is-pending" data-pending-state hidden>
+        <div class="data-state is-pending" data-pending-state hidden role="status">
             <strong>담당 도메인 API 연동 대기 중입니다.</strong>
             <p>화면 경로와 인증 처리는 준비됐으며 API가 병합되면 목록이 연결됩니다.</p>
         </div>
-        <p class="partial-state" data-partial-state hidden>
-            일부 내역은 아직 연결되지 않아 조회 가능한 항목만 표시합니다.
-        </p>
-        <div class="record-list" data-record-list></div>
+        <div class="data-state is-error" data-error-state hidden role="alert">
+            <strong>내역을 불러오지 못했습니다.</strong>
+            <p>네트워크 연결을 확인한 뒤 다시 시도해 주세요.</p>
+            <button type="button" data-retry-all>다시 시도</button>
+        </div>
+        <div class="partial-state" data-partial-state hidden role="status">
+            <p data-partial-message>일부 내역을 불러오지 못해 조회 가능한 항목만 표시합니다.</p>
+            <button type="button" data-retry-partial>불러오지 못한 내역 다시 시도</button>
+        </div>
+        <div class="filter-empty" data-filter-empty hidden role="status">
+            <strong>검색 조건에 맞는 내역이 없습니다.</strong>
+            <button type="button" data-reset-filters>검색 조건 초기화</button>
+        </div>
+        <div class="record-list" data-record-list aria-label="거래 내역"></div>
+        <button class="load-more-button" type="button" data-load-more hidden>내역 더 보기</button>
     </section>
 </main>
 

@@ -172,6 +172,8 @@ body {
 .seller-state { align-self: center; padding: 18px; border-left: 3px solid var(--orange); background: var(--cream); }
 .seller-state strong { display: block; margin-bottom: 6px; }
 .seller-state p { margin: 0; color: #69736b; }
+.seller-state a { display: inline-block; margin-top: 12px; color: var(--forest); font-size: 0.8rem; font-weight: 800; }
+.seller-state a[hidden] { display: none; }
 .danger-card { border-color: rgba(164, 61, 45, 0.32); }
 .danger-card button { background: #8f3328; }
 .withdraw-confirm { display: flex; gap: 8px; align-items: start; line-height: 1.55; }
@@ -189,6 +191,23 @@ body {
 .data-state strong { color: var(--ink); font-size: 1.15rem; }
 .data-state p { max-width: 430px; margin: 8px 0; line-height: 1.7; }
 .is-pending { border: 1px dashed #c7bca9; background: rgba(243, 238, 227, 0.55); }
+.is-error { border: 1px solid rgba(164, 61, 45, 0.24); background: rgba(164, 61, 45, 0.05); }
+.data-state button,
+.partial-state button,
+.filter-empty button,
+.load-more-button {
+    padding: 9px 13px;
+    border: 1px solid var(--forest);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--forest);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+.data-state button:disabled,
+.partial-state button:disabled { cursor: wait; opacity: 0.55; }
 
 .loading-mark {
     width: 34px;
@@ -199,13 +218,56 @@ body {
     animation: spin 0.8s linear infinite;
 }
 
+.record-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 0.38fr) auto;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 22px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    background: rgba(243, 238, 227, 0.42);
+}
+.record-tools[hidden] { display: none; }
+.record-tools label { display: grid; gap: 6px; color: #606c64; font-size: 0.72rem; font-weight: 800; }
+.record-tools input,
+.record-tools select {
+    min-width: 0;
+    height: 42px;
+    padding: 0 11px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+}
+.record-tools input:focus,
+.record-tools select:focus { outline: 2px solid rgba(36, 83, 58, 0.25); outline-offset: 1px; }
+.record-summary { min-width: 82px; margin: 0 0 12px; color: #687269; font-size: 0.78rem; text-align: right; }
 .record-list { display: grid; }
 .record-card { padding: 20px 0; border-top: 1px solid var(--line); }
 .record-card h2 { margin: 0 0 7px; font-size: 1.05rem; }
-.record-card p { margin: 0; color: #727a73; }
+.record-card p { max-width: 62ch; margin: 0; overflow-wrap: anywhere; color: #727a73; line-height: 1.55; }
 .record-card small { display: block; margin-top: 8px; color: #8a928b; }
 .record-card-content { min-width: 0; }
 .record-card-actions { display: grid; justify-items: end; gap: 10px; }
+.record-source {
+    display: inline-block;
+    margin-bottom: 7px;
+    color: var(--orange);
+    font-size: 0.67rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+.status-chip[data-status='ACCEPTED'],
+.status-chip[data-status='CONFIRMED'],
+.status-chip[data-status='COMPLETED'] { background: #d9e9d6; color: #1d6035; }
+.status-chip[data-status='REJECTED'],
+.status-chip[data-status='FAILED'],
+.status-chip[data-status='CANCELED'],
+.status-chip[data-status='CANCELLED'] { background: #f3ddd6; color: #913729; }
+.status-chip[data-status='WITHDRAWN'],
+.status-chip[data-status='CLOSED'] { background: #e7e4dc; color: #68645b; }
 .record-link {
     padding-bottom: 2px;
     border-bottom: 1px solid currentColor;
@@ -214,6 +276,10 @@ body {
     font-weight: 800;
 }
 .partial-state {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     margin: 0 0 18px;
     padding: 10px 12px;
     border-left: 3px solid var(--orange);
@@ -221,6 +287,13 @@ body {
     color: #6d5a4d;
     font-size: 0.85rem;
 }
+.partial-state[hidden] { display: none; }
+.partial-state p { margin: 0; line-height: 1.5; }
+.filter-empty { padding: 38px 16px; text-align: center; color: #687269; }
+.filter-empty[hidden] { display: none; }
+.filter-empty strong { display: block; margin-bottom: 13px; color: var(--ink); }
+.load-more-button { display: block; margin: 22px auto 0; min-width: 150px; }
+.load-more-button[hidden] { display: none; }
 
 .header-link {
     padding: 0;
@@ -240,11 +313,21 @@ body {
     .mypage-navigation a { flex: none; border-left: 0; border-bottom: 2px solid transparent; }
     .mypage-navigation a[aria-current='page'] { border-bottom-color: var(--orange); }
     .mypage-content { padding: 24px 18px; border-radius: 4px 28px 4px 4px; }
-    .record-card { align-items: flex-start; }
+    .record-tools { grid-template-columns: 1fr; }
+    .record-summary { margin: 0; text-align: left; }
+    .record-card { align-items: flex-start; gap: 14px; }
+    .record-card-actions { justify-items: end; }
+    .partial-state { align-items: flex-start; flex-direction: column; }
     .profile-grid { grid-template-columns: 1fr; }
     .account-action-card { grid-template-columns: 1fr; padding: 22px 18px; }
     .coordinate-grid { grid-template-columns: 1fr; }
     .content-heading { align-items: end; }
+}
+
+@media (max-width: 460px) {
+    .mypage-shell { width: min(100% - 24px, 1180px); }
+    .record-card { display: grid; }
+    .record-card-actions { grid-template-columns: auto 1fr; justify-items: start; align-items: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {
