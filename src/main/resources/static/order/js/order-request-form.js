@@ -3,44 +3,111 @@ import {authFetch, readApiBody, readCurrentUserId} from '/account/js/auth-client
 /**
  * 주문 등록/수정 폼을 JWT 인증 API와 연결한다.
  */
-const form = document.getElementById('orderRequestForm');
+const form =
+    document.getElementById('orderRequestForm');
 
 if (form) {
-    const currentUserId = readCurrentUserId();
-    const mode = form.dataset.mode;
-    const requestId = form.dataset.requestId;
+    const currentUserId =
+        readCurrentUserId();
+
+    const mode =
+        form.dataset.mode;
+
+    const requestId =
+        form.dataset.requestId;
+
+    const imageFileInput =
+        document.getElementById('imageFile');
+
+    const imagePreviewArea =
+        document.getElementById('imagePreviewArea');
+
+    const imagePreview =
+        document.getElementById('imagePreview');
+
+    let existingImageUrl = null;
+    let previewObjectUrl = null;
 
     // 주문 등록과 수정은 로그인 사용자만 이용한다.
     if (currentUserId === null) {
-        const redirect = encodeURIComponent(window.location.pathname);
-        window.location.href = `/login?redirect=${redirect}`;
+        const redirect =
+            encodeURIComponent(
+                window.location.pathname
+            );
+
+        window.location.href =
+            `/login?redirect=${redirect}`;
     } else if (mode === 'edit') {
-        const response = await authFetch(`/api/v1/requests/${requestId}`);
+        const response =
+            await authFetch(
+                `/api/v1/requests/${requestId}`
+            );
+
         if (response.status === 401) {
-            const redirect = encodeURIComponent(window.location.pathname);
-            window.location.href = `/login?redirect=${redirect}`;
-            throw new Error('Redirecting to login');
+            const redirect =
+                encodeURIComponent(
+                    window.location.pathname
+                );
+
+            window.location.href =
+                `/login?redirect=${redirect}`;
+
+            throw new Error(
+                'Redirecting to login'
+            );
         }
+
         if (!response.ok) {
-            alert('주문 정보를 불러올 수 없습니다.');
-            window.location.href = '/requests';
-            throw new Error('Unable to load order');
+            alert(
+                '주문 정보를 불러올 수 없습니다.'
+            );
+
+            window.location.href =
+                '/requests';
+
+            throw new Error(
+                'Unable to load order'
+            );
         }
-        const order = await response.json();
-        if (currentUserId !== Number(order.buyerId)) {
-            alert('본인이 등록한 주문만 수정할 수 있습니다.');
-            window.location.href = `/requests/${requestId}`;
-            throw new Error('Forbidden order edit');
+
+        const order =
+            await response.json();
+
+        if (
+            currentUserId
+            !== Number(order.buyerId)
+        ) {
+            alert(
+                '본인이 등록한 주문만 수정할 수 있습니다.'
+            );
+
+            window.location.href =
+                `/requests/${requestId}`;
+
+            throw new Error(
+                'Forbidden order edit'
+            );
         }
+
         populateEditForm(order);
+
         form.hidden = false;
     } else {
         form.hidden = false;
     }
 
-    const categorySelect = document.getElementById('category');
-    const customCategoryArea = document.getElementById('customCategoryArea');
-    const customCategoryInput = document.getElementById('customCategory');
+    const categorySelect =
+        document.getElementById('category');
+
+    const customCategoryArea =
+        document.getElementById(
+            'customCategoryArea'
+        );
+
+    const customCategoryInput =
+        document.getElementById(
+            'customCategory'
+        );
 
     const standardCategories = [
         '한식',
@@ -54,104 +121,329 @@ if (form) {
     ];
 
     // 수정 화면에서 기존 값이 직접 입력 카테고리라면 "기타" 입력란을 연다.
-    const originalCategory = categorySelect.dataset.originalCategory;
+    const originalCategory =
+        categorySelect.dataset.originalCategory;
 
-    if (originalCategory && !standardCategories.includes(originalCategory)) {
+    if (
+        originalCategory
+        && !standardCategories.includes(
+            originalCategory
+        )
+    ) {
         categorySelect.value = '기타';
-        customCategoryInput.value = originalCategory;
-        customCategoryInput.required = true;
-        customCategoryArea.hidden = false;
+
+        customCategoryInput.value =
+            originalCategory;
+
+        customCategoryInput.required =
+            true;
+
+        customCategoryArea.hidden =
+            false;
     }
 
-    categorySelect.addEventListener('change', () => {
-        const isOther = categorySelect.value === '기타';
+    categorySelect.addEventListener(
+        'change',
+        () => {
+            const isOther =
+                categorySelect.value === '기타';
 
-        customCategoryArea.hidden = !isOther;
-        customCategoryInput.required = isOther;
+            customCategoryArea.hidden =
+                !isOther;
 
-        if (!isOther) {
-            customCategoryInput.value = '';
+            customCategoryInput.required =
+                isOther;
+
+            if (!isOther) {
+                customCategoryInput.value =
+                    '';
+            }
         }
-    });
+    );
 
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
+    imageFileInput.addEventListener(
+        'change',
+        () => {
+            const file =
+                imageFileInput.files?.[0];
 
-        if (!form.reportValidity()) {
-            return;
+            updateImagePreview(file);
         }
+    );
 
-        const category = categorySelect.value === '기타'
-            ? customCategoryInput.value.trim()
-            : categorySelect.value;
+    form.addEventListener(
+        'submit',
+        async event => {
+            event.preventDefault();
 
-        if (!category) {
-            alert('음식 카테고리를 입력해주세요.');
-            return;
+            if (!form.reportValidity()) {
+                return;
+            }
+
+            const category =
+                categorySelect.value === '기타'
+                    ? customCategoryInput
+                        .value
+                        .trim()
+                    : categorySelect.value;
+
+            if (!category) {
+                alert(
+                    '음식 카테고리를 입력해주세요.'
+                );
+
+                return;
+            }
+
+            const payload = {
+                title:
+                    form.elements
+                        .namedItem('title')
+                        .value
+                        .trim(),
+
+                description:
+                    form.elements
+                        .namedItem('description')
+                        .value
+                        .trim(),
+
+                eventDateTime:
+                form.elements
+                    .namedItem('eventDateTime')
+                    .value,
+
+                quantity:
+                    Number(
+                        form.elements
+                            .namedItem('quantity')
+                            .value
+                    ),
+
+                budgetType:
+                form.elements
+                    .namedItem('budgetType')
+                    .value,
+
+                budget:
+                    Number(
+                        form.elements
+                            .namedItem('budget')
+                            .value
+                    ),
+
+                category,
+
+                deliveryAddress:
+                    form.elements
+                        .namedItem(
+                            'deliveryAddress'
+                        )
+                        .value
+                        .trim()
+            };
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                'request',
+                new Blob(
+                    [
+                        JSON.stringify(
+                            payload
+                        )
+                    ],
+                    {
+                        type:
+                            'application/json'
+                    }
+                )
+            );
+
+            const imageFile =
+                imageFileInput.files?.[0];
+
+            if (imageFile) {
+                formData.append(
+                    'imageFile',
+                    imageFile
+                );
+            }
+
+            const url =
+                mode === 'edit'
+                    ? `/api/v1/requests/${requestId}`
+                    : '/api/v1/requests';
+
+            const method =
+                mode === 'edit'
+                    ? 'PATCH'
+                    : 'POST';
+
+            const response =
+                await authFetch(
+                    url,
+                    {
+                        method,
+                        body: formData
+                    }
+                );
+
+            if (response.status === 401) {
+                const redirect =
+                    encodeURIComponent(
+                        window.location.pathname
+                    );
+
+                window.location.href =
+                    `/login?redirect=${redirect}`;
+
+                return;
+            }
+
+            if (response.status === 403) {
+                alert(
+                    '본인이 등록한 주문만 수정할 수 있습니다.'
+                );
+
+                return;
+            }
+
+            if (!response.ok) {
+                const body =
+                    await readApiBody(
+                        response
+                    );
+
+                alert(
+                    body?.message
+                    ?? '주문 처리 중 문제가 발생했습니다.'
+                );
+
+                return;
+            }
+
+            const body =
+                await readApiBody(
+                    response
+                );
+
+            if (mode === 'edit') {
+                window.location.href =
+                    `/requests/${requestId}`;
+            } else {
+                window.location.href =
+                    `/requests/${body.id}/matches`;
+            }
         }
+    );
 
-        const payload = {
-            title: form.elements.namedItem('title').value.trim(),
-            description: form.elements.namedItem('description').value.trim(),
-            eventDateTime: form.elements.namedItem('eventDateTime').value,
-            quantity: Number(form.elements.namedItem('quantity').value),
-            budgetType: form.elements.namedItem('budgetType').value,
-            budget: Number(form.elements.namedItem('budget').value),
-            category,
-            deliveryAddress: form.elements.namedItem('deliveryAddress').value.trim(),
-        };
-
-        const url = mode === 'edit'
-            ? `/api/v1/requests/${requestId}`
-            : '/api/v1/requests';
-
-        const method = mode === 'edit' ? 'PATCH' : 'POST';
-
-        const response = await authFetch(url, {
-            method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (response.status === 401) {
-            const redirect = encodeURIComponent(window.location.pathname);
-            window.location.href = `/login?redirect=${redirect}`;
-            return;
-        }
-
-        if (response.status === 403) {
-            alert('본인이 등록한 주문만 수정할 수 있습니다.');
-            return;
-        }
-
-        if (!response.ok) {
-            const body = await readApiBody(response);
-            alert(body?.message ?? '주문 처리 중 문제가 발생했습니다.');
-            return;
-        }
-
-        const body = await readApiBody(response);
-
-        if (mode === 'edit') {
-            window.location.href =
-                `/requests/${requestId}`;
-        } else {
-            window.location.href =
-                `/requests/${body.id}/matches`;
-        }
-    });
-
+    /**
+     * 기존 주문 정보를 수정 폼에 표시한다.
+     */
     function populateEditForm(order) {
-        form.elements.namedItem('title').value = order.title || '';
-        form.elements.namedItem('eventDateTime').value = order.eventDateTime?.slice(0, 16) || '';
-        form.elements.namedItem('quantity').value = order.quantity ?? '';
-        form.elements.namedItem('budgetType').value = order.budgetType || 'PER_PERSON';
-        form.elements.namedItem('budget').value = order.budget ?? '';
-        form.elements.namedItem('category').value = order.category || '';
-        form.elements.namedItem('category').dataset.originalCategory = order.category || '';
-        form.elements.namedItem('deliveryAddress').value = order.deliveryAddress || '';
-        form.elements.namedItem('description').value = order.description || '';
+        form.elements
+            .namedItem('title')
+            .value =
+            order.title || '';
+
+        form.elements
+            .namedItem('eventDateTime')
+            .value =
+            order.eventDateTime
+                ?.slice(0, 16)
+            || '';
+
+        form.elements
+            .namedItem('quantity')
+            .value =
+            order.quantity ?? '';
+
+        form.elements
+            .namedItem('budgetType')
+            .value =
+            order.budgetType
+            || 'PER_PERSON';
+
+        form.elements
+            .namedItem('budget')
+            .value =
+            order.budget ?? '';
+
+        form.elements
+            .namedItem('category')
+            .value =
+            order.category || '';
+
+        form.elements
+            .namedItem('category')
+            .dataset
+            .originalCategory =
+            order.category || '';
+
+        form.elements
+            .namedItem(
+                'deliveryAddress'
+            )
+            .value =
+            order.deliveryAddress
+            || '';
+
+        form.elements
+            .namedItem('description')
+            .value =
+            order.description || '';
+
+        existingImageUrl =
+            order.referenceImageUrl
+            || null;
+
+        updateImagePreview(null);
+    }
+
+    /**
+     * 선택한 참고 이미지 또는 기존 이미지를 미리보기로 표시한다.
+     */
+    function updateImagePreview(file) {
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(
+                previewObjectUrl
+            );
+
+            previewObjectUrl = null;
+        }
+
+        if (file) {
+            previewObjectUrl =
+                URL.createObjectURL(
+                    file
+                );
+
+            imagePreview.src =
+                previewObjectUrl;
+
+            imagePreviewArea.hidden =
+                false;
+
+            return;
+        }
+
+        if (existingImageUrl) {
+            imagePreview.src =
+                existingImageUrl;
+
+            imagePreviewArea.hidden =
+                false;
+
+            return;
+        }
+
+        imagePreview.removeAttribute(
+            'src'
+        );
+
+        imagePreviewArea.hidden =
+            true;
     }
 }
