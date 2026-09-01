@@ -1,54 +1,154 @@
 <!doctype html>
 <html lang="ko">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>회원가입 | MatchEAT</title>
-  <link rel="stylesheet" href="/account/css/account-auth.css">
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>회원가입 | MatchEAT</title>
+
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/account/css/account-auth.css">
 </head>
+
 <body class="account-page">
-  <main class="account-shell">
-    <section class="account-brand" aria-label="MatchEAT 소개">
-      <a class="account-wordmark" href="/">Match<span>EAT</span></a>
-      <p class="account-kicker">ONE ACCOUNT, TWO SIDES</p>
-      <h1>구매자로 시작하고<br>판매자로 확장하세요.</h1>
-      <p class="account-intro">판매 권한은 가입 후 사업자 정보 등록과 관리자 승인을 통해 활성화됩니다.</p>
-      <div class="account-brand-mark" aria-hidden="true">E</div>
-    </section>
 
-    <section class="account-card" aria-labelledby="signup-title">
-      <p class="account-step">ACCOUNT / 02</p>
-      <h2 id="signup-title">MatchEAT 시작하기</h2>
-      <p class="account-muted">필수 정보만 입력하면 바로 가입할 수 있습니다.</p>
+<header class="account-header">
+    <div class="account-header-inner">
+        <a href="/"
+           class="account-logo">
+            MatchEAT
+        </a>
+    </div>
+</header>
 
-      <form id="account-signup-form" class="account-form" novalidate>
-        <label for="name">이름</label>
-        <input id="name" name="name" type="text" autocomplete="name" maxlength="50" required>
-        <p class="account-field-message" data-field-error="name" aria-live="polite"></p>
+<main class="account-main">
 
-        <label for="email">이메일</label>
-        <div class="account-inline-field">
-          <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>
-          <button id="account-email-check" type="button">중복 확인</button>
+    <!-- MatchEAT 신규 계정을 생성하는 영역이다. -->
+    <section class="account-card account-card-signup"
+             aria-labelledby="signup-title">
+
+        <div class="account-card-header">
+            <h1 id="signup-title">회원가입</h1>
+
+            <p>
+                기본 정보를 입력하고 MatchEAT을 시작해보세요.
+            </p>
         </div>
-        <p id="account-email-message" class="account-field-message" data-field-error="email" aria-live="polite"></p>
 
-        <label for="password">비밀번호</label>
-        <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="64" required>
-        <p class="account-hint">8~64자, 영문과 숫자를 각각 하나 이상 포함</p>
-        <p class="account-field-message" data-field-error="password" aria-live="polite"></p>
+        <form id="account-signup-form"
+              class="account-form"
+              novalidate>
 
-        <label for="passwordConfirm">비밀번호 확인</label>
-        <input id="passwordConfirm" name="passwordConfirm" type="password" autocomplete="new-password" maxlength="64" required>
-        <p class="account-field-message" data-field-error="passwordConfirm" aria-live="polite"></p>
+            <div class="account-field">
+                <label for="name">이름</label>
 
-        <p id="account-form-message" class="account-message" role="alert" aria-live="polite"></p>
-        <button class="account-submit" type="submit">회원가입</button>
-      </form>
+                <input id="name"
+                       name="name"
+                       type="text"
+                       autocomplete="name"
+                       maxlength="50"
+                       placeholder="이름을 입력해주세요"
+                       required>
 
-      <p class="account-switch">이미 계정이 있나요? <a href="/login">로그인</a></p>
+                <p class="account-field-message"
+                   data-field-error="name"
+                   aria-live="polite">
+                </p>
+            </div>
+
+            <div class="account-field">
+                <label for="email">이메일</label>
+
+                <div class="account-inline-field">
+                    <input id="email"
+                           name="email"
+                           type="email"
+                           autocomplete="email"
+                           maxlength="254"
+                           placeholder="example@email.com"
+                           required>
+
+                    <button id="account-email-check"
+                            type="button">
+                        중복 확인
+                    </button>
+                </div>
+
+                <p id="account-email-message"
+                   class="account-field-message"
+                   data-field-error="email"
+                   aria-live="polite">
+                </p>
+            </div>
+
+            <div class="account-field">
+                <label for="password">비밀번호</label>
+
+                <input id="password"
+                       name="password"
+                       type="password"
+                       autocomplete="new-password"
+                       minlength="8"
+                       maxlength="64"
+                       placeholder="비밀번호를 입력해주세요"
+                       required>
+
+                <p class="account-hint">
+                    8~64자, 영문과 숫자를 각각 하나 이상 포함
+                </p>
+
+                <p class="account-field-message"
+                   data-field-error="password"
+                   aria-live="polite">
+                </p>
+            </div>
+
+            <div class="account-field">
+                <label for="passwordConfirm">
+                    비밀번호 확인
+                </label>
+
+                <input id="passwordConfirm"
+                       name="passwordConfirm"
+                       type="password"
+                       autocomplete="new-password"
+                       maxlength="64"
+                       placeholder="비밀번호를 다시 입력해주세요"
+                       required>
+
+                <p class="account-field-message"
+                   data-field-error="passwordConfirm"
+                   aria-live="polite">
+                </p>
+            </div>
+
+            <p id="account-form-message"
+               class="account-message"
+               role="alert"
+               aria-live="polite">
+            </p>
+
+            <button class="account-submit"
+                    type="submit">
+                회원가입
+            </button>
+
+        </form>
+
+        <div class="account-switch">
+            <span>이미 계정이 있나요?</span>
+            <a href="/login">로그인</a>
+        </div>
+
     </section>
-  </main>
-  <script type="module" src="/account/js/signup.js"></script>
+
+</main>
+
+<script type="module"
+        src="/account/js/signup.js">
+</script>
+
 </body>
 </html>

@@ -25,6 +25,7 @@ public class OrderRequestResponseDTO {
     private final String deliveryAddress;
     private final Double latitude;
     private final Double longitude;
+    private final String referenceImageUrl;
     private final RequestStatus status;
 
     private OrderRequestResponseDTO(OrderRequest orderRequest) {
@@ -40,6 +41,8 @@ public class OrderRequestResponseDTO {
         this.deliveryAddress = orderRequest.getDeliveryAddress();
         this.latitude = orderRequest.getLatitude();
         this.longitude = orderRequest.getLongitude();
+        this.referenceImageUrl =
+                orderRequest.getReferenceImageUrl();
         this.status = orderRequest.getStatus();
     }
 
@@ -48,5 +51,18 @@ public class OrderRequestResponseDTO {
      */
     public static OrderRequestResponseDTO from(OrderRequest orderRequest) {
         return new OrderRequestResponseDTO(orderRequest);
+    }
+
+    /**
+     * 주문의 총 예산을 계산한다.
+     */
+    public BigDecimal getTotalBudget() {
+        if (budgetType == BudgetType.TOTAL) {
+            return budget;
+        }
+
+        return budget.multiply(
+                BigDecimal.valueOf(quantity)
+        );
     }
 }

@@ -5,48 +5,76 @@
 <body>
 
 <!-- MatchEAT 각 페이지에서 공통으로 사용하는 상단 헤더 Fragment -->
-<header th:fragment="header" class="site-header" data-auth-header>
+<header th:fragment="header"
+        class="site-header"
+        data-auth-header>
 
-    <h1>
-        <a th:href="@{/}">MatchEAT</a>
-    </h1>
+    <div class="site-header-inner">
 
-    <nav>
-        <a th:href="@{/}">홈</a>
-        <a th:href="@{/product}">상품</a>
-        <a th:href="@{/requests}">주문</a>
+        <h1 class="site-logo">
+            <a th:href="@{/}">
+                MatchEAT
+            </a>
+        </h1>
 
-        <a th:href="@{/admin}"
-           data-admin-link
-           hidden>
-            관리자
-        </a>
+        <nav class="site-nav"
+             aria-label="주요 메뉴">
 
-        <a th:href="@{/mypage}"
-           data-member-link
-           hidden>
-            마이페이지
-        </a>
+            <a th:href="@{/}"
+               class="site-nav-link">
+                홈
+            </a>
 
-        <button type="button"
-                class="header-link"
-                data-logout-button
-                hidden>
-            로그아웃
-        </button>
+            <a th:href="@{/product}"
+               class="site-nav-link">
+                상품
+            </a>
 
-        <a th:href="@{/login}"
-           data-guest-link>
-            로그인
-        </a>
+            <a th:href="@{/requests}"
+               class="site-nav-link">
+                주문
+            </a>
 
-        <a th:href="@{/signup}"
-           data-guest-link>
-            회원가입
-        </a>
-    </nav>
+            <a th:href="@{/admin}"
+               class="site-nav-link"
+               data-admin-link
+               hidden>
+                관리자
+            </a>
 
-    <script type="module" th:src="@{/account/js/auth-header.js}"></script>
+            <a th:href="@{/mypage}"
+               class="site-nav-link"
+               data-member-link
+               hidden>
+                마이페이지
+            </a>
+
+            <button type="button"
+                    class="header-link"
+                    data-logout-button
+                    hidden>
+                로그아웃
+            </button>
+
+            <a th:href="@{/login}"
+               class="site-nav-link"
+               data-guest-link>
+                로그인
+            </a>
+
+            <a th:href="@{/signup}"
+               class="site-nav-link site-nav-primary"
+               data-guest-link>
+                회원가입
+            </a>
+
+        </nav>
+
+    </div>
+
+    <script type="module"
+            th:src="@{/account/js/auth-header.js}">
+    </script>
 
 </header>
 
