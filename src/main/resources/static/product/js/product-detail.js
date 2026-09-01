@@ -102,7 +102,9 @@ async function loadDetail() {
         document.getElementById('updatedAt').textContent = product.updatedAt ? new Date(product.updatedAt).toLocaleString() : '-';
 
         renderImage(product.imageUrl, product.productName);
-        estimateButton.href = `/estimates/new?itemName=${encodeURIComponent(product.productName ?? '')}`;
+        // A quote requires an owned order request and a seller profile ID, neither of
+        // which is exposed by the public product response. Start from the supported flow.
+        estimateButton.href = '/requests/new';
 
         if (await isOwnedProduct(product.id)) {
             editButton.href = `/product/update?id=${product.id}`;
