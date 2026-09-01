@@ -184,3 +184,15 @@
         text-align: left;
     }
 }
+
+/* 판매자 맞춤 주문 카드 */
+
+.main-seller-match-footer {
+    margin-top: 18px;
+
+    text-align: right;
+}
+
+.main-seller-match-footer .button {
+    display: inline-block;
+}
