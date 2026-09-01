@@ -19,16 +19,19 @@ public class AccountProfileService {
     private final UserCredentialRepository users;
     private final SellerApplicationRepository sellerApplications;
     private final PasswordHasher passwordHasher;
+    private final AccountTradeActivityPort tradeActivity;
     private final Clock clock;
 
     public AccountProfileService(
             UserCredentialRepository users,
             SellerApplicationRepository sellerApplications,
             PasswordHasher passwordHasher,
+            AccountTradeActivityPort tradeActivity,
             @Qualifier("accountClock") Clock clock) {
         this.users = users;
         this.sellerApplications = sellerApplications;
         this.passwordHasher = passwordHasher;
+        this.tradeActivity = tradeActivity;
         this.clock = clock;
     }
 
@@ -53,6 +56,11 @@ public class AccountProfileService {
             throw new AccountApplicationException(
                     AccountErrorCode.CURRENT_PASSWORD_MISMATCH,
                     "현재 비밀번호가 일치하지 않습니다.");
+        }
+        if (tradeActivity.hasActiveTrade(userId)) {
+            throw new AccountApplicationException(
+                    AccountErrorCode.ACTIVE_TRANSACTION_EXISTS,
+                    "진행 중인 거래가 있어 회원 탈퇴를 할 수 없습니다.");
         }
         users.withdraw(userId, clock.instant()).orElseThrow(AccountProfileService::userNotFound);
     }

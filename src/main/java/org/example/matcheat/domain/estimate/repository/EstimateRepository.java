@@ -1,8 +1,10 @@
 package org.example.matcheat.domain.estimate.repository;
 
 import org.example.matcheat.domain.estimate.entity.EstimateEntity;
+import org.example.matcheat.domain.estimate.enums.EstimateStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -24,4 +26,6 @@ public interface EstimateRepository extends JpaRepository<EstimateEntity, Long> 
      * 여러 주문 요청 ID에 걸쳐 달린 견적 목록을 최신순으로 조회한다. (내가 보낸 견적 조회용)
      */
     List<EstimateEntity> findAllByRequestIdInOrderByIdDesc(List<Long> requestIds);
+
+    boolean existsBySellerIdAndStatusIn(Long sellerId, Collection<EstimateStatus> statuses);
 }

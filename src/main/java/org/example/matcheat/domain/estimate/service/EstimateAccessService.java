@@ -10,6 +10,7 @@ import org.example.matcheat.domain.order.enums.BudgetType;
 import org.example.matcheat.domain.order.repository.OrderRequestRepository;
 import org.example.matcheat.domain.product.service.ProductService;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -43,8 +44,8 @@ public class EstimateAccessService {
     public EstimateResponseDTO create(Long requestId, EstimateCreateDTO dto, Long requesterAccountId) {
         OrderRequest orderRequest = loadOrderRequest(requestId);
         verifyBuyer(orderRequest, requesterAccountId);
-        requireApprovedSeller(dto.getSellerId());
-        verifyProductOwnedBySeller(dto.getProductId(), dto.getSellerId());
+        Long sellerAccountId = requireApprovedSeller(dto.getSellerId());
+        verifyProductOwnedBySeller(dto.getProductId(), sellerAccountId);
 
         return estimateService.create(
                 requestId,
@@ -74,7 +75,7 @@ public class EstimateAccessService {
      */
     public List<EstimateResponseDTO> findAll(boolean requesterIsAdmin) {
         if (!requesterIsAdmin) {
-            throw new IllegalArgumentException("전체 견적 목록은 관리자만 조회할 수 있습니다.");
+            throw new AccessDeniedException("전체 견적 목록은 관리자만 조회할 수 있습니다.");
         }
 
         return estimateService.findAll();
@@ -115,7 +116,9 @@ public class EstimateAccessService {
             throw new IllegalArgumentException("로그인이 필요합니다.");
         }
 
-        return estimateService.findBySellerId(requesterAccountId);
+        SellerApplicationRepository.SellerApplication seller = sellerApplicationRepository.findByUserId(requesterAccountId)
+                .orElseThrow(() -> new AccessDeniedException("판매자 등록이 필요한 기능입니다."));
+        return estimateService.findBySellerId(seller.sellerId());
     }
 
     /**
@@ -135,43 +138,47 @@ public class EstimateAccessService {
      */
     private void verifyBuyer(OrderRequest orderRequest, Long requesterAccountId) {
         if (requesterAccountId == null || !orderRequest.getBuyerId().equals(requesterAccountId)) {
-            throw new IllegalArgumentException("본인이 등록한 주문 요청에 대해서만 처리할 수 있습니다.");
+            throw new AccessDeniedException("본인이 등록한 주문 요청에 대해서만 처리할 수 있습니다.");
         }
     }
 
     /**
      * sellerId가 승인된(APPROVED) 판매자인지 검증한다.
      */
-    private void requireApprovedSeller(Long sellerId) {
+    private Long requireApprovedSeller(Long sellerId) {
         if (sellerId == null) {
             throw new IllegalArgumentException("sellerId는 필수입니다.");
         }
 
-        SellerVerificationStatus status = sellerApplicationRepository.findStatusByUserId(sellerId)
+        Long sellerAccountId = sellerApplicationRepository.findUserIdBySellerId(sellerId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 판매자입니다. sellerId=" + sellerId));
+        SellerVerificationStatus status = sellerApplicationRepository.findStatusByUserId(sellerAccountId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 판매자입니다. sellerId=" + sellerId));
 
         if (status != SellerVerificationStatus.APPROVED) {
-            throw new IllegalArgumentException("승인된 판매자에게만 견적을 요청할 수 있습니다.");
+            throw new AccessDeniedException("승인된 판매자에게만 견적을 요청할 수 있습니다.");
         }
+        return sellerAccountId;
     }
 
     /**
      * productId가 주어진 경우, 그 상품이 실제로 sellerId 소유인지 검증한다.
      * ProductService.findOwnedById()를 재사용해 상품 존재 여부와 소유권을 함께 확인한다.
      */
-    private void verifyProductOwnedBySeller(Long productId, Long sellerId) {
+    private void verifyProductOwnedBySeller(Long productId, Long sellerAccountId) {
         if (productId == null) {
             return;
         }
 
-        productService.findOwnedById(productId, sellerId);
+        productService.findOwnedById(productId, sellerAccountId);
     }
 
     /**
      * 요청자가 이 견적의 구매자(주문 요청 buyerId) 또는 판매자(sellerId)인지 검증한다.
      */
     private void verifyAccess(EstimateResponseDTO estimate, Long requesterAccountId) {
-        if (requesterAccountId != null && requesterAccountId.equals(estimate.getSellerId())) {
+        Long sellerAccountId = sellerApplicationRepository.findUserIdBySellerId(estimate.getSellerId()).orElse(null);
+        if (requesterAccountId != null && requesterAccountId.equals(sellerAccountId)) {
             return;
         }
 
