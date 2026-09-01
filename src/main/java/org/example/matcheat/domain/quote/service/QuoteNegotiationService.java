@@ -15,6 +15,7 @@ import org.example.matcheat.domain.quote.repository.QuoteNegotiationRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,7 @@ public class QuoteNegotiationService {
 	private final ChatMessageService chatMessageService;
 	private final QuoteAiSummaryClient quoteAiSummaryClient;
 	private final QuoteService quoteService; // [추가] 잠금 시 확정 Quote 발행용
+	private final TransactionTemplate requiresNewTransactionTemplate; // 추가
 
 	@Transactional
 	public QuoteNegotiationResponse createInitialNegotiation(Long chatRoomId, Long currentUserId,
@@ -54,15 +56,16 @@ public class QuoteNegotiationService {
 				.build();
 
 		try {
-			// [수정] saveAndFlush로 즉시 DB 유니크 제약(chatRoomId)을 확인한다.
-			// save()만 쓰면 실제 INSERT가 트랜잭션 커밋 시점까지 미뤄질 수 있어서,
-			// "조회했을 때는 없었는데 그 사이 다른 요청이 먼저 만든" 레이스 컨디션을
-			// 여기서 못 잡고 나중에 알 수 없는 시점에 에러가 났다.
-			QuoteNegotiation saved = quoteNegotiationRepository.saveAndFlush(negotiation);
+			// [수정] 별도 물리 트랜잭션(REQUIRES_NEW)에서 INSERT를 시도한다.
+			// 그냥 saveAndFlush만 쓰면, 실패 시 바깥 @Transactional 전체가
+			// Postgres에서 "aborted" 상태가 되어 바로 아래 재조회까지 같이
+			// 실패한다 (Supabase=Postgres 환경에서 실제로 재현되는 문제).
+			QuoteNegotiation saved = requiresNewTransactionTemplate.execute(status ->
+					quoteNegotiationRepository.saveAndFlush(negotiation));
 			return QuoteNegotiationResponse.from(saved);
 		} catch (DataIntegrityViolationException e) {
-			// 동시에 다른 요청이 먼저 만들었다면, 방금 만들어진 걸 다시 조회해서
-			// 멱등하게 반환한다 (예외를 그대로 던지지 않음).
+			// 별도 트랜잭션에서만 실패했으므로, 바깥(현재) 트랜잭션은 멀쩡하다.
+			// 동시에 다른 요청이 먼저 만든 것을 재조회해서 멱등하게 반환한다.
 			return quoteNegotiationRepository.findByChatRoomId(chatRoomId)
 					.map(QuoteNegotiationResponse::from)
 					.orElseThrow(() -> e);
