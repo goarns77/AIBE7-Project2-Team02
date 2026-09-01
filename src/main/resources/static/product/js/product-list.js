@@ -14,6 +14,7 @@ const newProductButton = document.getElementById('newProductButton');
 
 const currentUserId = readCurrentUserId();
 const isAdmin = readCurrentUserRole() === 'ADMIN';
+let ownedProductIds = new Set();
 
 const dayOfWeekMap = {
     MONDAY: '월요일',
@@ -42,6 +43,26 @@ async function showRegisterButtonIfApprovedSeller() {
         }
     } catch {
         // 계정 정보를 못 가져와도 목록 조회 자체는 계속 진행한다.
+    }
+}
+
+async function loadOwnedProductIds() {
+    if (currentUserId === null || isAdmin) {
+        return;
+    }
+
+    try {
+        const response = await authFetch('/api/v1/products/mine');
+        if (!response.ok) {
+            return;
+        }
+
+        const products = await readApiBody(response);
+        ownedProductIds = new Set(
+            (Array.isArray(products) ? products : []).map(product => Number(product.id))
+        );
+    } catch {
+        // 소유 상품 조회 실패는 공개 목록 조회를 막지 않는다.
     }
 }
 
@@ -137,7 +158,7 @@ function renderItems(items) {
 
             <div class="product-item-actions">
                 <a href="/product/detail?id=${product.id}">상세 보기</a>
-                ${(isAdmin || (currentUserId !== null && product.ownerAccountId === currentUserId))
+                ${(isAdmin || ownedProductIds.has(Number(product.id)))
                     ? `<button type="button" class="product-item-danger" data-product-id="${product.id}">숨김 처리</button>`
                     : ''
                 }
@@ -206,5 +227,12 @@ resetBtn.addEventListener('click', () => {
     fetchProducts();
 });
 
-showRegisterButtonIfApprovedSeller();
-fetchProducts();
+async function initialize() {
+    await Promise.all([
+        showRegisterButtonIfApprovedSeller(),
+        loadOwnedProductIds()
+    ]);
+    await fetchProducts();
+}
+
+initialize();

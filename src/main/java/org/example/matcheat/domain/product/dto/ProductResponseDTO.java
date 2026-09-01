@@ -14,7 +14,6 @@ import java.util.List;
  */
 public class ProductResponseDTO {
     private final Long id;
-    private final Long ownerAccountId;
     private final String productName;
     private final Integer minHeadcount;
     private final Integer maxHeadcount;
@@ -37,7 +36,6 @@ public class ProductResponseDTO {
      */
     private ProductResponseDTO(ProductEntity product) {
         this.id = product.getId();
-        this.ownerAccountId = product.getOwnerAccountId();
         this.productName = product.getProductName();
         this.minHeadcount = product.getMinHeadcount();
         this.maxHeadcount = product.getMaxHeadcount();
