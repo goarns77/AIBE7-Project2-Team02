@@ -5,17 +5,23 @@ import org.example.matcheat.domain.chat.dto.ChatRoomCreateRequest;
 import org.example.matcheat.domain.chat.dto.ChatRoomResponse;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.repository.ChatRoomRepository;
+import org.example.matcheat.domain.account.service.TradeAccountValidationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ChatService {
 
 	private final ChatRoomRepository chatRoomRepository;
+	private final TradeAccountValidationService accounts;
 
 	@Transactional
 	public ChatRoomResponse createChatRoom(ChatRoomCreateRequest request, Long currentUserId) {
+		accounts.requireActiveUser(currentUserId);
+		accounts.requireApprovedSeller(request.getSellerId());
 		if (request.getProposalId() == null && request.getOriginType() == ChatRoom.OriginType.PROPOSAL) {
 			throw new IllegalArgumentException("proposalId 없이 PROPOSAL 타입의 채팅방을 생성할 수 없습니다.");
 		}
@@ -31,6 +37,8 @@ public class ChatService {
 
 	@Transactional
 	public ChatRoom getOrCreateChatRoomForQuote(Long proposalId, ChatRoom.OriginType originType, Long buyerId, Long sellerId) {
+		accounts.requireActiveUser(buyerId);
+		accounts.requireApprovedSeller(sellerId);
 		return getOrCreateChatRoomEntity(proposalId, originType, buyerId, sellerId);
 	}
 
@@ -99,5 +107,12 @@ public class ChatService {
 		ChatRoom chatRoom = getChatRoomEntity(chatRoomId);
 		chatRoom.validateParticipant(currentUserId);
 		return ChatRoomResponse.from(chatRoom);
+	}
+
+	@Transactional(readOnly = true)
+	public List<ChatRoomResponse> getChatRooms(Long currentUserId) {
+		return chatRoomRepository.findAllByParticipant(currentUserId).stream()
+				.map(ChatRoomResponse::from)
+				.toList();
 	}
 }

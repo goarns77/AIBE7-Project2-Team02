@@ -1,7 +1,7 @@
 package org.example.matcheat.config;
 
-import lombok.RequiredArgsConstructor;
 import org.example.matcheat.domain.chat.interceptor.ChatSubscriptionInterceptor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -11,17 +11,24 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
-@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	private final ChatSubscriptionInterceptor chatSubscriptionInterceptor;
+	private final String[] allowedOriginPatterns;
+
+	public WebSocketConfig(
+			ChatSubscriptionInterceptor chatSubscriptionInterceptor,
+			@Value("${app.websocket.allowed-origin-patterns:http://localhost:*}") String allowedOriginPatterns) {
+		this.chatSubscriptionInterceptor = chatSubscriptionInterceptor;
+		this.allowedOriginPatterns = allowedOriginPatterns.split("\\s*,\\s*");
+	}
 
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
 		// [수정 P0-4] 동일 경로('/ws-stomp') 중복 등록 제거
 		// SockJS 엔드포인트 하나만 유지하여 핸드셰이크 충돌 방지
 		registry.addEndpoint("/ws-stomp")
-				.setAllowedOriginPatterns("*")
+				.setAllowedOriginPatterns(allowedOriginPatterns)
 				.withSockJS();
 	}
 

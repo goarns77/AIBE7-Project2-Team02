@@ -85,8 +85,30 @@
             판매 조건에 잘 맞는 주문을 확인해보세요.
         </p>
 
-        <div class="matching-preview-state">
-            판매자 맞춤 주문 추천은 준비 중입니다.
+        <div id="sellerMatchingLoading"
+             class="matching-preview-state">
+            맞춤 주문을 확인하고 있습니다.
+        </div>
+
+        <div id="sellerMatchingMessage"
+             class="matching-preview-state"
+             hidden>
+        </div>
+
+        <div id="sellerMatchingCards"
+             class="matching-preview-grid"
+             hidden>
+        </div>
+
+        <div id="sellerMatchingActions"
+             class="matching-preview-actions"
+             hidden>
+
+            <a th:href="@{/product}"
+               class="button">
+                내 상품 보기
+            </a>
+
         </div>
 
     </section>

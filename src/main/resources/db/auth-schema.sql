@@ -10,7 +10,7 @@ create table if not exists users (
     updated_at timestamptz not null,
     withdrawn_at timestamptz,
     constraint uk_users_email unique (email),
-    constraint ck_users_role check (role in ('USER', 'ADMIN')),
+    constraint ck_users_role check (role in ('USER', 'SELLER', 'ADMIN')),
     constraint ck_users_status check (status in ('ACTIVE', 'SUSPENDED', 'WITHDRAWN')),
     constraint ck_users_token_version check (token_version >= 0)
 );

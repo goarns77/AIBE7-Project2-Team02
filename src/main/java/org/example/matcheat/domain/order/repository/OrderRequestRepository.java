@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -22,6 +23,8 @@ public interface OrderRequestRepository extends JpaRepository<OrderRequest, Long
      * 특정 구매자가 등록한 주문을 조회
      */
     List<OrderRequest> findAllByBuyerIdOrderByIdDesc(Long buyerId);
+
+    boolean existsByBuyerIdAndStatusIn(Long buyerId, Collection<RequestStatus> statuses);
 
     /**
      * 제목 또는 음식 카테고리에 검색어가 포함된 주문을 조회

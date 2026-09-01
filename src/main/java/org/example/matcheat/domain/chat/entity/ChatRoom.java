@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -71,7 +72,7 @@ public class ChatRoom {
 
 	public void validateParticipant(Long userId) {
 		if (!isParticipant(userId)) {
-			throw new IllegalArgumentException("해당 채팅방에 접근 권한이 없습니다.");
+			throw new AccessDeniedException("해당 채팅방에 접근 권한이 없습니다.");
 		}
 	}
 

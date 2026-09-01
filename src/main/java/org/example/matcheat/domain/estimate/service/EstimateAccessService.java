@@ -36,8 +36,10 @@ public class EstimateAccessService {
 
     /**
      * 구매자가 특정 판매자(sellerId)에게 견적을 요청한다. 로그인한 본인의 accountId가
-     * request_id로 그대로 저장된다. sellerId의 승인 여부, productId의 소유권을 검증하고
-     * 배송(행사) 주소를 지오코딩한 뒤 저장한다.
+     * request_id로 그대로 저장된다. sellerId(계정 ID)가 승인된 판매자인지 검증하고,
+     * 실제로 Estimate에 저장되는 sellerId는 그 계정에 연결된 seller_profiles PK로 변환한다
+     * (domain/account의 다른 거래 도메인들과 동일한 판매자 식별 체계를 맞추기 위함).
+     * productId의 소유권을 검증하고 배송(행사) 주소를 지오코딩한 뒤 저장한다.
      */
     @Transactional
     public EstimateResponseDTO create(EstimateCreateDTO dto, Long requesterAccountId) {
@@ -45,14 +47,14 @@ public class EstimateAccessService {
             throw new IllegalArgumentException("로그인이 필요합니다.");
         }
 
-        requireApprovedSeller(dto.getSellerId());
+        Long sellerProfileId = requireApprovedSeller(dto.getSellerId());
         verifyProductOwnedBySeller(dto.getProductId(), dto.getSellerId());
 
         GeocodingService.Coordinates coordinates = geocodingService.geocode(dto.getDeliveryAddress());
 
         return estimateService.create(
                 requesterAccountId,
-                dto.getSellerId(),
+                sellerProfileId,
                 dto.getProductId(),
                 dto.getDescription(),
                 dto.getBudget(),
@@ -101,52 +103,66 @@ public class EstimateAccessService {
     }
 
     /**
-     * 내가 판매자로서 받은 견적 요청 목록을 조회한다.
+     * 내가 판매자로서 받은 견적 요청 목록을 조회한다. 내 계정 ID를 seller_profiles PK로
+     * 변환한 뒤 그 PK로 조회한다. 판매자 프로필이 없으면 빈 목록을 반환한다.
      */
     public List<EstimateResponseDTO> findReceivedByMe(Long requesterAccountId) {
         if (requesterAccountId == null) {
             throw new IllegalArgumentException("로그인이 필요합니다.");
         }
 
-        return estimateService.findBySellerId(requesterAccountId);
+        return sellerApplicationRepository.findByUserId(requesterAccountId)
+                .map(seller -> estimateService.findBySellerId(seller.sellerId()))
+                .orElseGet(List::of);
     }
 
     /**
-     * 요청자가 이 견적의 구매자(request_id) 또는 판매자(sellerId) 본인인지 검증한다.
+     * 요청자가 이 견적의 구매자(request_id) 또는 판매자(sellerId를 계정 ID로 환산한 값) 본인인지 검증한다.
      */
     private void verifyAccess(EstimateResponseDTO estimate, Long requesterAccountId) {
-        if (requesterAccountId == null
-                || (!requesterAccountId.equals(estimate.getSellerId())
-                    && !requesterAccountId.equals(estimate.getRequestId()))) {
+        if (requesterAccountId == null) {
+            throw new IllegalArgumentException("본인과 관련된 견적만 조회할 수 있습니다.");
+        }
+
+        if (requesterAccountId.equals(estimate.getRequestId())) {
+            return;
+        }
+
+        Long sellerAccountId = sellerApplicationRepository.findUserIdBySellerId(estimate.getSellerId())
+                .orElse(null);
+
+        if (!requesterAccountId.equals(sellerAccountId)) {
             throw new IllegalArgumentException("본인과 관련된 견적만 조회할 수 있습니다.");
         }
     }
 
     /**
-     * sellerId가 승인된(APPROVED) 판매자인지 검증한다.
+     * accountId가 승인된(APPROVED) 판매자인지 검증하고, 그 판매자의 seller_profiles PK를 반환한다.
      */
-    private void requireApprovedSeller(Long sellerId) {
-        if (sellerId == null) {
+    private Long requireApprovedSeller(Long accountId) {
+        if (accountId == null) {
             throw new IllegalArgumentException("sellerId는 필수입니다.");
         }
 
-        SellerVerificationStatus status = sellerApplicationRepository.findStatusByUserId(sellerId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 판매자입니다. sellerId=" + sellerId));
+        SellerApplicationRepository.SellerApplication seller = sellerApplicationRepository.findByUserId(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 판매자입니다. sellerId=" + accountId));
 
-        if (status != SellerVerificationStatus.APPROVED) {
+        if (seller.status() != SellerVerificationStatus.APPROVED) {
             throw new IllegalArgumentException("승인된 판매자에게만 견적을 요청할 수 있습니다.");
         }
+
+        return seller.sellerId();
     }
 
     /**
-     * productId가 주어진 경우, 그 상품이 실제로 sellerId 소유인지 검증한다.
+     * productId가 주어진 경우, 그 상품이 실제로 sellerAccountId(계정 ID) 소유인지 검증한다.
      * ProductService.findOwnedById()를 재사용해 상품 존재 여부와 소유권을 함께 확인한다.
      */
-    private void verifyProductOwnedBySeller(Long productId, Long sellerId) {
+    private void verifyProductOwnedBySeller(Long productId, Long sellerAccountId) {
         if (productId == null) {
             return;
         }
 
-        productService.findOwnedById(productId, sellerId);
+        productService.findOwnedById(productId, sellerAccountId);
     }
 }

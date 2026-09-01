@@ -91,7 +91,15 @@ public class AccountSecuritySupportConfiguration {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             String role = jwt.getClaimAsString("role");
-            return role == null ? List.of() : List.of(new SimpleGrantedAuthority("ROLE_" + role));
+            if (role == null) {
+                return List.of();
+            }
+            if ("SELLER".equals(role)) {
+                return List.of(
+                        new SimpleGrantedAuthority("ROLE_USER"),
+                        new SimpleGrantedAuthority("ROLE_SELLER"));
+            }
+            return List.of(new SimpleGrantedAuthority("ROLE_" + role));
         });
         return converter;
     }

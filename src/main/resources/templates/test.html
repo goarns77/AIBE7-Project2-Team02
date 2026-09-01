@@ -39,10 +39,15 @@
     let currentSubscription = null;
 
     function connect() {
+		const accessToken = sessionStorage.getItem('matcheat.accessToken');
+		if (!accessToken) {
+			alert('로그인 후 WebSocket에 연결할 수 있습니다.');
+			return;
+		}
         const socket = new WebSocket('ws://localhost:8080/ws-stomp');
         stompClient = Stomp.over(socket);
 
-        stompClient.connect({}, function (frame) {
+		stompClient.connect({Authorization: 'Bearer ' + accessToken}, function (frame) {
             document.getElementById('connectionStatus').innerText = '🟢 연결 성공';
             document.getElementById('connectionStatus').style.color = 'green';
             alert('서버 연결 성공: ' + frame);

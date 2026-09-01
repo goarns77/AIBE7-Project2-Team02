@@ -4,6 +4,7 @@ package org.example.matcheat.domain.quote.service;
 import lombok.RequiredArgsConstructor;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.service.ChatService;
+import org.example.matcheat.domain.account.service.TradeAccountValidationService;
 import org.example.matcheat.domain.quote.dto.QuoteCreateRequest;
 import org.example.matcheat.domain.quote.dto.QuoteDirectRequestToBuyer;
 import org.example.matcheat.domain.quote.dto.QuoteDirectRequestToSeller;
@@ -20,6 +21,7 @@ public class QuoteService {
 
 	private final QuoteRepository quoteRepository;
 	private final ChatService chatService;
+	private final TradeAccountValidationService accounts;
 
 	// -----------------------------------------------------------
 	// 생성 - 채팅방 자동 생성 (기존 흐름: 구매자가 판매자를 지정해 견적 요청)
@@ -71,6 +73,8 @@ public class QuoteService {
 	// -----------------------------------------------------------
 	@Transactional
 	public QuoteResponse createStandaloneQuoteToBuyer(Long currentSellerId, QuoteDirectRequestToBuyer request) {
+		currentSellerId = accounts.approvedSellerIdForUser(currentSellerId);
+		accounts.requireActiveUser(request.getTargetBuyerId());
 		// TODO: 회원 도메인 합류 후 targetBuyerId 존재 여부 검증 추가
 		Quote quote = buildStandaloneQuote(
 				request.getTargetBuyerId(), currentSellerId, Quote.SenderRole.SELLER,
@@ -84,6 +88,8 @@ public class QuoteService {
 	// -----------------------------------------------------------
 	@Transactional
 	public QuoteResponse createStandaloneQuoteToSeller(Long currentBuyerId, QuoteDirectRequestToSeller request) {
+		accounts.requireActiveUser(currentBuyerId);
+		accounts.requireApprovedSeller(request.getTargetSellerId());
 		// TODO: seller_profiles 도메인 합류 후 targetSellerId 존재/승인 여부 검증 추가
 		Quote quote = buildStandaloneQuote(
 				currentBuyerId, request.getTargetSellerId(), Quote.SenderRole.BUYER,

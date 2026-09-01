@@ -32,7 +32,7 @@ public class ChatFileService {
 
 	/**
 	 * [수정] senderId를 파라미터로 받되, 이 값은 클라이언트가 아니라
-	 * 컨트롤러의 resolveCurrentUserId()가 결정한 값이어야 한다.
+	 * 컨트롤러가 검증된 인증 주체에서 결정한 값이어야 한다.
 	 * [수정] 채팅방 존재 여부 + 요청자가 참여자인지 검증 추가 (기존엔 둘 다 없었음).
 	 */
 	@Transactional
