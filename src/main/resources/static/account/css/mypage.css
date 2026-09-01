@@ -204,6 +204,23 @@ body {
 .record-card h2 { margin: 0 0 7px; font-size: 1.05rem; }
 .record-card p { margin: 0; color: #727a73; }
 .record-card small { display: block; margin-top: 8px; color: #8a928b; }
+.record-card-content { min-width: 0; }
+.record-card-actions { display: grid; justify-items: end; gap: 10px; }
+.record-link {
+    padding-bottom: 2px;
+    border-bottom: 1px solid currentColor;
+    color: var(--forest);
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+.partial-state {
+    margin: 0 0 18px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--orange);
+    background: rgba(209, 106, 58, 0.08);
+    color: #6d5a4d;
+    font-size: 0.85rem;
+}
 
 .header-link {
     padding: 0;
@@ -223,6 +240,7 @@ body {
     .mypage-navigation a { flex: none; border-left: 0; border-bottom: 2px solid transparent; }
     .mypage-navigation a[aria-current='page'] { border-bottom-color: var(--orange); }
     .mypage-content { padding: 24px 18px; border-radius: 4px 28px 4px 4px; }
+    .record-card { align-items: flex-start; }
     .profile-grid { grid-template-columns: 1fr; }
     .account-action-card { grid-template-columns: 1fr; padding: 22px 18px; }
     .coordinate-grid { grid-template-columns: 1fr; }
