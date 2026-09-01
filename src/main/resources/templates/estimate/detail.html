@@ -65,12 +65,12 @@
                 <span class="value" id="eventDateTime"></span>
             </div>
             <div class="item">
-                <span class="label">판매자 ID</span>
-                <span class="value" id="sellerId"></span>
+                <span class="label">내 역할</span>
+                <span class="value" id="viewerRole"></span>
             </div>
             <div class="item">
-                <span class="label">주문 요청 ID</span>
-                <span class="value" id="orderId"></span>
+                <span class="label">상태</span>
+                <span class="value" id="status"></span>
             </div>
             <div class="item wide">
                 <span class="label">견적 이미지</span>
@@ -137,8 +137,8 @@
             document.getElementById("budget").textContent = formatMoney(item.budget);
             document.getElementById("budgetType").textContent = item.budgetType ?? "-";
             document.getElementById("eventDateTime").textContent = formatDateTime(item.eventDateTime);
-            document.getElementById("sellerId").textContent = item.sellerId ?? "-";
-            document.getElementById("orderId").textContent = item.requestId ?? "-";
+            document.getElementById("viewerRole").textContent = item.buyer ? "구매자" : (item.seller ? "판매자" : "-");
+            document.getElementById("status").textContent = item.status ?? "-";
             document.getElementById("estimateImage").textContent = item.estimateImage ?? "-";
 
             loadingBox.style.display = "none";
