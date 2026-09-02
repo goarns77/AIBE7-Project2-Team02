@@ -1,6 +1,7 @@
 package org.example.matcheat.domain.review.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.domain.account.repository.SellerApplicationRepository;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.service.ChatService;
 import org.example.matcheat.domain.payment.entity.Payment;
@@ -50,6 +51,7 @@ public class ReviewAccessService {
     private final ProposalRepository proposalRepository;
     private final ProductService productService;
     private final ProductImageStorageService productImageStorageService;
+    private final SellerApplicationRepository sellerApplicationRepository;
 
     /**
      * 결제가 완료된 거래에 대해 리뷰를 작성한다. 요청자가 그 결제의 구매자 본인이고,
@@ -120,6 +122,32 @@ public class ReviewAccessService {
         boolean alreadyReviewed = reviewService.existsByPaymentId(paymentId);
 
         return new ReviewEligibilityDTO(completed && !alreadyReviewed, completed, alreadyReviewed);
+    }
+
+    /**
+     * 주어진 결제 ID 목록 중, 이미 리뷰가 작성된 결제 ID만 골라 반환한다. 마이페이지처럼
+     * 여러 결제 건을 한 화면에 나열할 때, 건마다 eligibility API를 따로 부르지 않고
+     * 이 API 하나로 "리뷰 작성" 버튼 노출 여부를 한 번에 판단할 수 있게 해준다.
+     */
+    public List<Long> findExistingPaymentIds(List<Long> paymentIds, Long requesterAccountId) {
+        if (requesterAccountId == null) {
+            throw new AccessDeniedException("로그인이 필요합니다.");
+        }
+
+        return reviewService.findExistingPaymentIds(paymentIds);
+    }
+
+    /**
+     * 상품 ID로 그 상품을 등록한 판매자의 seller_profiles PK를 알아낸다.
+     * 상품 상세 화면에서 "판매자 리뷰 보기" 링크가 sellerId(seller_profiles PK)를 직접
+     * 노출하지 않고도 목록 화면으로 이동할 수 있도록, 서버가 대신 이 값을 찾아준다.
+     */
+    public Long resolveSellerProfileIdForProduct(Long productId) {
+        Long ownerAccountId = productService.findOwnerAccountId(productId);
+
+        return sellerApplicationRepository.findByUserId(ownerAccountId)
+                .map(SellerApplicationRepository.SellerApplication::sellerId)
+                .orElseThrow(() -> new IllegalArgumentException("판매자 정보를 찾을 수 없습니다."));
     }
 
     /**

@@ -3,6 +3,7 @@ package org.example.matcheat.domain.review.repository;
 import org.example.matcheat.domain.review.entity.ReviewEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -24,4 +25,10 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
      * 특정 상품에 달린 리뷰 목록을 조회한다. 평점 재계산에 쓰인다.
      */
     List<ReviewEntity> findAllByProductId(Long productId);
+
+    /**
+     * 주어진 결제 ID 목록 중, 이미 리뷰가 작성된 결제 ID만 골라 반환한다.
+     * 마이페이지 목록처럼 여러 결제 건의 "리뷰 작성" 버튼 노출 여부를 한 번에 판단할 때 쓴다.
+     */
+    List<Long> findAllPaymentIdByPaymentIdIn(Collection<Long> paymentIds);
 }

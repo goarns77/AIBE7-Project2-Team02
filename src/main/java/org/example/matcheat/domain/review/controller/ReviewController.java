@@ -73,4 +73,19 @@ public class ReviewController {
 
         return ResponseEntity.ok(reviewAccessService.checkEligibility(paymentId, userId));
     }
+
+    /**
+     * 주어진 결제 ID 목록 중, 이미 리뷰가 작성된 결제 ID만 골라 반환한다.
+     * 마이페이지 구매 내역처럼 여러 결제 건을 한 번에 나열할 때, eligibility API를
+     * 건마다 따로 부르지 않고 이 API 하나로 "리뷰 작성" 버튼 노출 여부를 판단할 수 있다.
+     */
+    @GetMapping("/existing-payment-ids")
+    public ResponseEntity<List<Long>> findExistingPaymentIds(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam List<Long> paymentIds
+    ) {
+        Long userId = Long.valueOf(jwt.getSubject());
+
+        return ResponseEntity.ok(reviewAccessService.findExistingPaymentIds(paymentIds, userId));
+    }
 }

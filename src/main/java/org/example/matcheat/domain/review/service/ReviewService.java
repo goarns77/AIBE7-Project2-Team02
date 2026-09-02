@@ -73,4 +73,16 @@ public class ReviewService {
                 .map(ReviewEntity::getRating)
                 .toList();
     }
+
+    /**
+     * 주어진 결제 ID 목록 중, 이미 리뷰가 작성된 결제 ID만 골라 반환한다.
+     */
+    @Transactional(readOnly = true)
+    public List<Long> findExistingPaymentIds(List<Long> paymentIds) {
+        if (paymentIds == null || paymentIds.isEmpty()) {
+            return List.of();
+        }
+
+        return reviewRepository.findAllPaymentIdByPaymentIdIn(paymentIds);
+    }
 }
