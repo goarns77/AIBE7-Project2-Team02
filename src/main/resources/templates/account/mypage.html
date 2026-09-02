@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>마이페이지 | MatchEAT</title>
     <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/proposal.css}">
     <link rel="stylesheet" th:href="@{/account/css/mypage.css}">
 </head>
 <body>
@@ -18,10 +19,17 @@
 
         <nav class="mypage-navigation">
             <a th:href="@{/mypage}" data-view="profile">계정 개요</a>
-            <a th:href="@{/mypage/requests}" data-view="requests">내 구매 요청</a>
-            <a th:href="@{/mypage/purchases}" data-view="purchases">구매 내역</a>
-            <a th:href="@{/mypage/sales}" data-view="sales" data-seller-navigation hidden>판매 내역</a>
-            <a th:href="@{/mypage/offers}" data-view="offers">오퍼</a>
+            <a th:href="@{/mypage/requests}"
+               data-view="requests"
+               data-view-group="registration">
+                등록 관리
+            </a>
+            <a th:href="@{/mypage/offers}" data-view="offers">제안 관리</a>
+            <a th:href="@{/mypage/purchases}"
+               data-view="purchases"
+               data-view-group="trade">
+                거래 내역
+            </a>
             <a th:href="@{/chat}">채팅</a>
         </nav>
     </aside>
@@ -33,6 +41,16 @@
                 <h1 data-view-title>계정 개요</h1>
             </div>
             <span class="status-chip" data-account-status>확인 중</span>
+        </div>
+        <nav class="mypage-view-tabs"
+             data-view-tabs
+             aria-label="마이페이지 하위 메뉴"
+             hidden>
+        </nav>
+        <div class="mypage-proposal-panel"
+             data-proposal-panel
+             hidden>
+            <section th:replace="~{proposal/list :: proposal-list-content}"></section>
         </div>
 
         <div class="profile-grid" data-profile-panel hidden>
@@ -62,7 +80,7 @@
                 <div>
                     <p class="action-index">02 / SELLER</p>
                     <h2 id="seller-action-title">판매자 등록 신청</h2>
-                    <p>관리자 승인 후 판매 기능을 사용할 수 있습니다.</p>
+                    <p>사업자 정보를 입력해 판매자 등록 심사를 신청할 수 있습니다.</p>
                 </div>
                 <div class="seller-state" data-seller-state hidden>
                     <strong data-seller-state-title></strong>
@@ -71,31 +89,28 @@
                 </div>
                 <form data-seller-form novalidate>
                     <label for="business-name">사업자명</label>
-                    <input id="business-name" name="businessName" maxlength="100" required>
-                    <small data-field-error="businessName" aria-live="polite"></small>
+                    <input id="business-name"
+                           name="businessName"
+                           maxlength="100"
+                           placeholder="사업자명을 입력해 주세요."
+                           required>
+                    <small data-field-error="businessName"
+                           aria-live="polite"></small>
 
                     <label for="business-number">사업자번호</label>
-                    <input id="business-number" name="businessNumber" inputmode="numeric" maxlength="20"
-                           placeholder="123-45-67890" required>
-                    <small data-field-error="businessNumber" aria-live="polite"></small>
+                    <input id="business-number"
+                           name="businessNumber"
+                           inputmode="numeric"
+                           maxlength="20"
+                           placeholder="123-45-67890"
+                           required>
+                    <small data-field-error="businessNumber"
+                           aria-live="polite"></small>
 
-                    <div class="coordinate-grid">
-                        <div>
-                            <label for="latitude">위도</label>
-                            <input id="latitude" name="latitude" type="number" min="-90" max="90" step="0.0000001">
-                            <small data-field-error="latitude" aria-live="polite"></small>
-                        </div>
-                        <div>
-                            <label for="longitude">경도</label>
-                            <input id="longitude" name="longitude" type="number" min="-180" max="180" step="0.0000001">
-                            <small data-field-error="longitude" aria-live="polite"></small>
-                        </div>
-                    </div>
+                    <p class="action-message"
+                       data-form-message
+                       role="status"></p>
 
-                    <label for="delivery-radius">배송 반경(km)</label>
-                    <input id="delivery-radius" name="deliveryRadiusKm" type="number" min="0" step="0.01">
-                    <small data-field-error="deliveryRadiusKm" aria-live="polite"></small>
-                    <p class="action-message" data-form-message role="status"></p>
                     <button type="submit">심사 신청</button>
                 </form>
             </section>
@@ -167,5 +182,6 @@
 </main>
 
 <script type="module" th:src="@{/account/js/mypage.js}"></script>
+<script type="module" th:src="@{/proposal/js/proposal-list.js}"></script>
 </body>
 </html>

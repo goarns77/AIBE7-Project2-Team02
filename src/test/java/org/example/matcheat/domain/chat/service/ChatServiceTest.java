@@ -6,6 +6,7 @@ import org.example.matcheat.domain.chat.entity.ChatMessage;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.repository.ChatMessageRepository;
 import org.example.matcheat.domain.chat.repository.ChatRoomRepository;
+import org.example.matcheat.domain.chat.support.ProductOwnerLookup;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -13,16 +14,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class ChatServiceTest {
     private final ChatRoomRepository chatRooms = mock(ChatRoomRepository.class);
     private final ChatMessageRepository messages = mock(ChatMessageRepository.class);
     private final TradeAccountValidationService accounts = mock(TradeAccountValidationService.class);
-    private final ChatService service = new ChatService(chatRooms, messages, accounts);
+    private final ProductOwnerLookup productOwnerLookup = mock(ProductOwnerLookup.class);
+
+    private final ChatService service =
+            new ChatService(chatRooms, messages, accounts, productOwnerLookup);
 
     @Test
     void returnsParticipantRoomsWithLatestMessageSnippets() {
