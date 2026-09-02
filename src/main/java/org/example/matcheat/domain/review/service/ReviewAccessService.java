@@ -95,8 +95,8 @@ public class ReviewAccessService {
     }
 
     /**
-     * 특정 판매자가 받은 리뷰 목록을 최신순으로 조회한다. 누구나 볼 수 있는 공개 목록이다.
-     * viewerAccountId는 각 리뷰의 작성자 본인 여부(owner)를 계산하는 데만 쓰인다.
+     * 특정 판매자가 받은 리뷰 목록을 최신순으로 조회한다. viewerAccountId는 각 리뷰의
+     * 작성자 본인 여부(owner)를 계산하는 데만 쓰인다.
      */
     public List<ReviewResponseDTO> findBySellerId(Long sellerId, Long viewerAccountId) {
         return reviewService.findBySellerId(sellerId).stream()

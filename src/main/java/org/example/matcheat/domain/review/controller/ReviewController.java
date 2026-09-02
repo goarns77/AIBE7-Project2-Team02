@@ -49,14 +49,14 @@ public class ReviewController {
     }
 
     /**
-     * 특정 판매자가 받은 리뷰 목록을 조회한다. 로그인하지 않아도 볼 수 있다.
+     * 특정 판매자가 받은 리뷰 목록을 조회한다.
      */
     @GetMapping
     public ResponseEntity<List<ReviewResponseDTO>> findBySellerId(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam Long sellerId
     ) {
-        Long viewerId = jwt == null ? null : Long.valueOf(jwt.getSubject());
+        Long viewerId = Long.valueOf(jwt.getSubject());
 
         return ResponseEntity.ok(reviewAccessService.findBySellerId(sellerId, viewerId));
     }

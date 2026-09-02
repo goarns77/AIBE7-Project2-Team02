@@ -83,6 +83,6 @@ public class ReviewService {
             return List.of();
         }
 
-        return reviewRepository.findAllPaymentIdByPaymentIdIn(paymentIds);
+        return reviewRepository.findPaymentIdsIn(paymentIds);
     }
 }

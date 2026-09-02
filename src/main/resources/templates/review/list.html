@@ -1,41 +1,38 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>판매자 리뷰</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 24px; background: #fafafa; color: #1f2937; }
-        .page { max-width: 720px; margin: 0 auto; }
-        .nav a { margin-right: 14px; text-decoration: none; color: #2563eb; font-weight: 700; }
-        h1 { margin-bottom: 4px; }
-        .muted { color: #64748b; }
-        .review-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05); }
-        .review-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-        .review-item { font-weight: 700; }
-        .review-stars { color: #f59e0b; font-size: 16px; letter-spacing: 1px; }
-        .review-date { font-size: 12px; color: #94a3b8; }
-        .review-content { margin: 10px 0 0; line-height: 1.6; white-space: pre-wrap; }
-        .review-image { margin-top: 10px; max-width: 220px; border-radius: 10px; border: 1px solid #e5e7eb; }
-        .empty { padding: 30px; text-align: center; color: #64748b; }
-    </style>
+    <title>판매자 리뷰 | MatchEAT</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/review.css}">
 </head>
 <body>
-<div class="page">
-    <div class="nav">
-        <a href="/">홈</a>
+
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <div class="review-page">
+        <section class="review-page-header">
+            <p class="review-page-kicker">거래 후기</p>
+            <h1>판매자 리뷰</h1>
+        </section>
+
+        <p class="review-list-summary" id="subtitle">불러오는 중...</p>
+
+        <div id="reviewList"></div>
     </div>
-
-    <h1>판매자 리뷰</h1>
-    <p class="muted" id="subtitle">불러오는 중...</p>
-
-    <div id="reviewList"></div>
-</div>
+</main>
 
 <script type="module">
-    import { authFetch, readApiBody } from "/account/js/auth-client.js";
+    import { authFetch, readApiBody, readCurrentUserId } from "/account/js/auth-client.js";
 
     const subtitle = document.getElementById("subtitle");
     const reviewList = document.getElementById("reviewList");
+
+    if (readCurrentUserId() === null) {
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login?redirect=${redirect}`;
+    }
 
     const sellerId = new URLSearchParams(window.location.search).get("sellerId");
 
@@ -49,19 +46,19 @@
 
     function renderReviews(reviews) {
         if (!reviews.length) {
-            reviewList.innerHTML = `<div class="empty">아직 작성된 리뷰가 없습니다.</div>`;
+            reviewList.innerHTML = `<div class="empty-state"><p>아직 작성된 리뷰가 없습니다.</p></div>`;
             return;
         }
 
         reviewList.innerHTML = reviews.map(review => `
-            <article class="review-card">
-                <div class="review-head">
-                    <span class="review-item">${review.itemName ?? "-"}</span>
-                    <span class="review-stars">${stars(review.rating)}</span>
+            <article class="review-list-item">
+                <div class="review-list-head">
+                    <span class="review-list-item-name">${review.itemName ?? "-"}</span>
+                    <span class="review-list-stars">${stars(review.rating)}</span>
                 </div>
-                <div class="review-date">${formatDate(review.createdAt)}</div>
-                <p class="review-content">${review.content ?? ""}</p>
-                ${review.imageUrl ? `<img class="review-image" src="${encodeURI(review.imageUrl)}" alt="리뷰 이미지">` : ""}
+                <div class="review-list-date">${formatDate(review.createdAt)}</div>
+                <p class="review-list-content">${review.content ?? ""}</p>
+                ${review.imageUrl ? `<img class="review-list-image" src="${encodeURI(review.imageUrl)}" alt="리뷰 이미지">` : ""}
             </article>
         `).join("");
     }
