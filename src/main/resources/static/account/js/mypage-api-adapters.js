@@ -305,6 +305,11 @@ function adaptTradeActivity(record, perspective) {
     const sourceId = value(record, 'sourceId', 'quoteId', 'id');
     const state = tradeDisplayState(record);
     const href = tradeActivityHref(record);
+    const paymentId = value(record, 'paymentId');
+    const reviewPaymentId =
+        perspective === 'purchase' && state.code === 'COMPLETED' && paymentId
+            ? paymentId
+            : null;
     const view = viewRecord(
         `${perspective}-${id}`,
         value(record, 'itemName', 'title', 'requestTitle', 'productName')
@@ -324,6 +329,7 @@ function adaptTradeActivity(record, perspective) {
         href,
         href ? '거래 보기' : '',
         value(record, 'paidAt', 'createdAt', 'eventDateTime'),
+        reviewPaymentId,
     );
 
     return {
@@ -502,7 +508,7 @@ function adaptChatRoom(record) {
     );
 }
 
-function viewRecord(key, title, status, detail, meta, href = '', actionLabel = '', sortValue = '') {
+function viewRecord(key, title, status, detail, meta, href = '', actionLabel = '', sortValue = '', reviewPaymentId = null) {
     const statusCode = status || 'ACTIVE';
     return {
         key,
@@ -514,6 +520,7 @@ function viewRecord(key, title, status, detail, meta, href = '', actionLabel = '
         href,
         actionLabel,
         sortAt: timestamp(sortValue),
+        reviewPaymentId,
     };
 }
 
