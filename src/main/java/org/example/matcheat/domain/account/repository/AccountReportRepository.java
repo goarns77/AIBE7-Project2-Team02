@@ -9,6 +9,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface AccountReportRepository extends JpaRepository<AccountReportEntity, Long> {
+    boolean existsByReporterIdAndTargetTypeAndTargetIdAndStatusIn(
+            Long reporterId,
+            org.example.matcheat.domain.account.enums.AccountReportTargetType targetType,
+            Long targetId,
+            java.util.Collection<AccountReportStatus> statuses);
+
+    long countByReporterIdAndCreatedAtAfter(Long reporterId, java.time.Instant createdAfter);
+
     Page<AccountReportEntity> findByReporterId(Long reporterId, Pageable pageable);
 
     @Query("select report from AccountReportEntity report where (:status is null or report.status = :status)")

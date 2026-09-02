@@ -55,6 +55,9 @@ public class UserAccountEntity {
     @Column(name = "withdrawn_at")
     private Instant withdrawnAt;
 
+    @Column(name = "manual_suspension", nullable = false)
+    private boolean manualSuspension;
+
     protected UserAccountEntity() {
     }
 
@@ -92,6 +95,24 @@ public class UserAccountEntity {
             tokenVersion++;
         }
         status = targetStatus;
+        manualSuspension = targetStatus == UserStatus.SUSPENDED;
+    }
+
+    public void suspendForPenalty() {
+        if (status != UserStatus.SUSPENDED) {
+            tokenVersion++;
+        }
+        status = UserStatus.SUSPENDED;
+    }
+
+    public void activateAfterPenalty() {
+        if (!manualSuspension && status == UserStatus.SUSPENDED) {
+            status = UserStatus.ACTIVE;
+        }
+    }
+
+    public boolean manualSuspension() {
+        return manualSuspension;
     }
 
     public void promoteToSeller() {

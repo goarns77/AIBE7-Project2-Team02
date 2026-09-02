@@ -138,6 +138,8 @@
                     <label for="report-message">내용</label>
                     <textarea id="report-message" name="message" maxlength="2000" required></textarea>
                     <small data-field-error="message" aria-live="polite"></small>
+                    <label for="report-evidence">증거 이미지 (선택, 최대 3개)</label>
+                    <input id="report-evidence" name="evidence" type="file" accept="image/jpeg,image/png,image/webp" multiple>
                     <p class="action-message" data-form-message role="status"></p>
                     <button type="submit">관리자에게 보내기</button>
                 </form>

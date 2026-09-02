@@ -209,11 +209,32 @@ function reportCard(report) {
   const meta = paragraph(`접수 ${formatDateTime(report.createdAt)}`);
   meta.className = 'admin-report-meta';
   card.append(heading, message, meta);
+  if (report.reportedUserId) {
+    const reported = paragraph(`피신고자 회원 #${report.reportedUserId}`);
+    reported.className = 'admin-report-target';
+    card.append(reported);
+  }
   if (report.targetType && report.targetId) {
     const target = paragraph(`신고 대상: ${reportTargetLabel(report.targetType)} #${report.targetId}`);
     target.className = 'admin-report-target';
     card.append(target);
   }
+
+  if (report.targetSnapshot) {
+    const snapshot = paragraph(report.targetSnapshot);
+    snapshot.className = 'admin-report-response';
+    card.append(snapshot);
+  }
+  const evidenceButton = actionButton('첨부 증거 보기', '');
+  evidenceButton.addEventListener('click', async () => {
+    const files = await request(`/api/v1/admin/reports/${report.reportId}/attachments`);
+    if (!files?.length) return fail('첨부된 증거 이미지가 없습니다.');
+    for (const file of files) {
+      const response = await authFetch(`/api/v1/admin/reports/attachments/${file.attachmentId}`);
+      if (response.ok) window.open(URL.createObjectURL(await response.blob()), '_blank', 'noopener');
+    }
+  });
+  card.append(evidenceButton);
 
   if (report.adminResponse) {
     const previous = paragraph(`관리자 답변: ${report.adminResponse}`);
@@ -248,7 +269,62 @@ function reportCard(report) {
     });
     card.append(form);
   }
+  if (report.status === 'RESOLVED' && report.reportedUserId) {
+    const penaltyForm = document.createElement('form');
+    penaltyForm.className = 'admin-report-form';
+    const days = document.createElement('select');
+    [1, 3, 7, 15, 30].forEach(value => days.append(new Option(`${value}일 정지`, value)));
+    const reason = document.createElement('textarea');
+    reason.maxLength = 500;
+    reason.placeholder = '제재 사유';
+    const submit = actionButton('기간 정지 적용', 'is-danger');
+    submit.type = 'submit';
+    penaltyForm.append(days, reason, submit);
+    penaltyForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const result = await request(`/api/v1/admin/reports/${report.reportId}/penalties`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: Number(days.value), reason: reason.value }),
+      });
+      if (result) submit.disabled = true;
+    });
+    card.append(penaltyForm);
+  }
+  const historyButton = actionButton('처리 이력 보기', '');
+  historyButton.classList.add('admin-history-button');
+  const history = document.createElement('ol');
+  history.className = 'admin-report-history';
+  history.hidden = true;
+  historyButton.addEventListener('click', async () => {
+    if (history.dataset.loaded !== 'true') {
+      const entries = await request(`/api/v1/admin/reports/${report.reportId}/history`);
+      if (!entries) return;
+      history.replaceChildren(...entries.map(historyItem));
+      history.dataset.loaded = 'true';
+    }
+    history.hidden = !history.hidden;
+    historyButton.textContent = history.hidden ? '처리 이력 보기' : '처리 이력 닫기';
+  });
+  card.append(historyButton, history);
   return card;
+}
+
+function historyItem(entry) {
+  const item = document.createElement('li');
+  const transition = entry.previousStatus
+    ? `${reportStatusLabel(entry.previousStatus)} → ${reportStatusLabel(entry.newStatus)}`
+    : `${reportStatusLabel(entry.newStatus)} 접수`;
+  const title = document.createElement('strong');
+  title.textContent = transition;
+  const meta = document.createElement('span');
+  meta.textContent = `${formatDateTime(entry.changedAt)} · 처리자 #${entry.actorId}`;
+  item.append(title, meta);
+  if (entry.adminResponse) item.append(paragraph(entry.adminResponse));
+  return item;
+}
+
+function reportStatusLabel(status) {
+  return { PENDING: '접수', IN_REVIEW: '검토 중', RESOLVED: '처리 완료', REJECTED: '반려' }[status] || status;
 }
 
 async function loadPendingReportBadge() {

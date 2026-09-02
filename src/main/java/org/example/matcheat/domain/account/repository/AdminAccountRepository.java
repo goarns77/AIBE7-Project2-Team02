@@ -16,6 +16,10 @@ public interface AdminAccountRepository {
 
     Optional<UserSummary> changeUserStatus(long userId, UserStatus status);
 
+    Optional<UserSummary> suspendForPenalty(long userId);
+
+    Optional<UserSummary> activateAfterPenalty(long userId);
+
     PageResult<SellerSummary> searchSellerApplications(
             SellerVerificationStatus status, int page, int size);
 

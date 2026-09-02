@@ -5,6 +5,8 @@ import org.example.matcheat.domain.account.dto.AccountReportResponse;
 import org.example.matcheat.domain.account.enums.AccountReportStatus;
 import org.example.matcheat.domain.account.security.AccountSecurityErrorHandler;
 import org.example.matcheat.domain.account.service.AccountReportService;
+import org.example.matcheat.domain.account.service.AccountReportAttachmentService;
+import org.example.matcheat.domain.account.service.AccountReportSubmissionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -28,6 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -40,6 +43,12 @@ class AccountReportRestControllerMvcTest {
 
     @MockitoBean
     private AccountReportService service;
+
+    @MockitoBean
+    private AccountReportAttachmentService attachments;
+
+    @MockitoBean
+    private AccountReportSubmissionService submissions;
 
     @Test
     void rejectsUnauthenticatedReport() throws Exception {
@@ -64,6 +73,26 @@ class AccountReportRestControllerMvcTest {
                 .andExpect(jsonPath("$.status").value("PENDING"));
 
         verify(service).create(org.mockito.ArgumentMatchers.eq(7L), any());
+    }
+
+    @Test
+    void createsReportAndEvidenceUsingSingleMultipartRequest() throws Exception {
+        var response = new AccountReportResponse(
+                3L, "report", "message", null, null, AccountReportStatus.PENDING, null,
+                Instant.parse("2026-09-02T03:00:00Z"), Instant.parse("2026-09-02T03:00:00Z"), null);
+        when(submissions.submit(org.mockito.ArgumentMatchers.eq(7L), any(), any())).thenReturn(response);
+        var report = new org.springframework.mock.web.MockMultipartFile(
+                "report", "", "application/json", "{\"title\":\"report\",\"message\":\"message\"}".getBytes());
+        var evidence = new org.springframework.mock.web.MockMultipartFile(
+                "files", "proof.png", "image/png", new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47});
+
+        mockMvc.perform(multipart("/api/v1/reports")
+                        .file(report).file(evidence)
+                        .with(jwt().jwt(token -> token.subject("7")).authorities(() -> "ROLE_USER")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.reportId").value(3));
+
+        verify(submissions).submit(org.mockito.ArgumentMatchers.eq(7L), any(), any());
     }
 
     @Test

@@ -12,10 +12,14 @@ import java.time.Clock;
 @Service
 public class AdminAccountService {
     private final AdminAccountRepository repository;
+    private final org.example.matcheat.domain.account.repository.AccountPenaltyRepository penalties;
     private final Clock clock;
 
-    public AdminAccountService(AdminAccountRepository repository, Clock accountClock) {
+    public AdminAccountService(AdminAccountRepository repository,
+            org.example.matcheat.domain.account.repository.AccountPenaltyRepository penalties,
+            Clock accountClock) {
         this.repository = repository;
+        this.penalties = penalties;
         this.clock = accountClock;
     }
 
@@ -47,6 +51,10 @@ public class AdminAccountService {
                 .orElseThrow(AdminAccountService::userNotFound);
         if (current.status() == UserStatus.WITHDRAWN) {
             throw validation("탈퇴한 계정의 상태는 변경할 수 없습니다.");
+        }
+        if (targetStatus == UserStatus.ACTIVE
+                && penalties.existsByUserIdAndReleasedAtIsNullAndExpiresAtAfter(userId, clock.instant())) {
+            throw validation("기간 제재가 남아 있는 계정은 활성화할 수 없습니다.");
         }
         return repository.changeUserStatus(userId, targetStatus)
                 .orElseThrow(AdminAccountService::userNotFound);

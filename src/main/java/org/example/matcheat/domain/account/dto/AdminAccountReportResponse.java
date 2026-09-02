@@ -12,10 +12,12 @@ public record AdminAccountReportResponse(
         Long reporterId,
         String reporterName,
         String reporterEmail,
+        Long reportedUserId,
         String title,
         String message,
         AccountReportTargetType targetType,
         Long targetId,
+        String targetSnapshot,
         AccountReportStatus status,
         String adminResponse,
         Long reviewedBy,
@@ -24,8 +26,8 @@ public record AdminAccountReportResponse(
         Instant reviewedAt) {
     public static AdminAccountReportResponse from(AccountReportEntity report, UserAccount reporter) {
         return new AdminAccountReportResponse(
-                report.getId(), report.getReporterId(), reporter.name(), reporter.email(),
-                report.getTitle(), report.getMessage(), report.getTargetType(), report.getTargetId(),
+                report.getId(), report.getReporterId(), reporter.name(), reporter.email(), report.getReportedUserId(),
+                report.getTitle(), report.getMessage(), report.getTargetType(), report.getTargetId(), report.getTargetSnapshot(),
                 report.getStatus(), report.getAdminResponse(),
                 report.getReviewedBy(), report.getCreatedAt(), report.getUpdatedAt(), report.getReviewedAt());
     }

@@ -115,8 +115,6 @@ function adaptRequest(record) {
     id ? `/requests/${encodeURIComponent(id)}` : '',
     '주문 보기',
     value(record, 'eventDateTime', 'createdAt', 'requestedAt'),
-    'ORDER_REQUEST',
-    id,
   );
 }
 

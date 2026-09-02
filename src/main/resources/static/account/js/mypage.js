@@ -69,13 +69,24 @@ async function configureReportView() {
   }
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const created = await submitJsonForm(form, '/api/v1/reports', 'POST', {
+    const report = {
       title: form.elements.title.value,
       message: form.elements.message.value,
       targetType: reportContext?.targetType ?? null,
       targetId: reportContext?.targetId ?? null,
-    });
-    if (!created) return;
+    };
+    const evidenceFiles = [...(form.elements.evidence?.files || [])].slice(0, 3);
+    const data = new FormData();
+    data.append('report', new Blob([JSON.stringify(report)], { type: 'application/json' }));
+    for (const file of evidenceFiles) {
+      data.append('files', file);
+    }
+    const response = await authFetch('/api/v1/reports', { method: 'POST', body: data });
+    const created = await readApiBody(response);
+    if (!response.ok) {
+      showFormMessage(form, created?.message || '신고를 접수하지 못했습니다.', false);
+      return;
+    }
     form.reset();
     showFormMessage(form, '관리자에게 신고 내용을 전달했습니다.', true);
     await loadReports(0);

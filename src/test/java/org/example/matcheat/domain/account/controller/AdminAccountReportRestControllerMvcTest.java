@@ -1,10 +1,13 @@
 package org.example.matcheat.domain.account.controller;
 
 import org.example.matcheat.config.SecurityConfig;
+import org.example.matcheat.domain.account.dto.AccountReportHistoryResponse;
 import org.example.matcheat.domain.account.dto.AdminAccountReportResponse;
 import org.example.matcheat.domain.account.enums.AccountReportStatus;
 import org.example.matcheat.domain.account.security.AccountSecurityErrorHandler;
 import org.example.matcheat.domain.account.service.AccountReportService;
+import org.example.matcheat.domain.account.service.AccountReportAttachmentService;
+import org.example.matcheat.domain.account.service.AccountPenaltyService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -21,6 +24,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -42,6 +46,12 @@ class AdminAccountReportRestControllerMvcTest {
 
     @MockitoBean
     private AccountReportService service;
+
+    @MockitoBean
+    private AccountReportAttachmentService attachments;
+
+    @MockitoBean
+    private AccountPenaltyService penalties;
 
     @Test
     void rejectsRegularMemberFromAdminReports() throws Exception {
@@ -66,11 +76,27 @@ class AdminAccountReportRestControllerMvcTest {
         verify(service).review(1L, 3L, AccountReportStatus.RESOLVED, "처리했습니다.");
     }
 
+    @Test
+    void adminReadsReportHistory() throws Exception {
+        Instant now = Instant.parse("2026-09-02T03:00:00Z");
+        when(service.history(3L)).thenReturn(List.of(new AccountReportHistoryResponse(
+                10L, AccountReportStatus.PENDING, AccountReportStatus.IN_REVIEW, 1L, null, now)));
+
+        mockMvc.perform(get("/api/v1/admin/reports/3/history")
+                        .with(jwt().jwt(token -> token.subject("1")).authorities(() -> "ROLE_ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].historyId").value(10L))
+                .andExpect(jsonPath("$[0].previousStatus").value("PENDING"))
+                .andExpect(jsonPath("$[0].newStatus").value("IN_REVIEW"));
+
+        verify(service).history(3L);
+    }
+
     private static AdminAccountReportResponse response() {
         Instant now = Instant.parse("2026-09-02T03:00:00Z");
         return new AdminAccountReportResponse(
-                3L, 7L, "사용자", "user@example.com", "신고", "내용",
-                null, null, AccountReportStatus.RESOLVED, "처리했습니다.", 1L, now, now, now);
+                3L, 7L, "사용자", "user@example.com", 9L, "신고", "내용",
+                null, null, null, AccountReportStatus.RESOLVED, "처리했습니다.", 1L, now, now, now);
     }
 
     @TestConfiguration(proxyBeanMethods = false)

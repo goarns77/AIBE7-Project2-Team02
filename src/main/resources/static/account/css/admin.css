@@ -107,6 +107,13 @@ th { color: #71808a; font-size: .7rem; letter-spacing: .06em; }
 .admin-report-form { display: grid; grid-template-columns: 150px minmax(220px, 1fr) auto; gap: 8px; margin-top: 18px; }
 .admin-report-form select, .admin-report-form textarea { padding: 10px 12px; border: 1px solid var(--admin-line); background: white; color: var(--admin-ink); font: inherit; }
 .admin-report-form textarea { min-height: 72px; resize: vertical; }
+.admin-history-button { margin-top: 16px; background: var(--admin-blue); }
+.admin-report-history { display: grid; gap: 10px; margin: 14px 0 0; padding: 14px 14px 14px 34px; background: #f2f6f7; }
+.admin-report-history[hidden] { display: none; }
+.admin-report-history li { padding-left: 4px; }
+.admin-report-history strong, .admin-report-history span { display: block; }
+.admin-report-history span { margin-top: 3px; color: #71808a; font-size: .7rem; }
+.admin-report-history p { margin: 8px 0 0; white-space: pre-wrap; color: #4d606d; }
 .empty-table { padding: 50px 10px; text-align: center; color: #77858d; }
 .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 24px; }
 .pagination button[aria-current="page"] { background: var(--admin-copper); }
