@@ -193,7 +193,7 @@ function renderRoomList() {
 
     state.rooms
         .slice()
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .sort((a, b) => new Date(b.lastMessageAt || b.createdAt) - new Date(a.lastMessageAt || a.createdAt))
         .forEach((room) => {
             const button = document.createElement('button');
             button.type = 'button';
@@ -217,7 +217,7 @@ function renderRoomList() {
 
             const sub = document.createElement('span');
             sub.className = 'chat-room-item-sub';
-            sub.textContent = originLabel(room.originType);
+            sub.textContent = room.lastMessage || originLabel(room.originType);
 
             button.append(top, sub);
             button.addEventListener('click', () => selectRoom(room.chatRoomId));
