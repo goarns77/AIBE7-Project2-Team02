@@ -70,7 +70,7 @@ class AdminAccountReportRestControllerMvcTest {
         Instant now = Instant.parse("2026-09-02T03:00:00Z");
         return new AdminAccountReportResponse(
                 3L, 7L, "사용자", "user@example.com", "신고", "내용",
-                AccountReportStatus.RESOLVED, "처리했습니다.", 1L, now, now, now);
+                null, null, AccountReportStatus.RESOLVED, "처리했습니다.", 1L, now, now, now);
     }
 
     @TestConfiguration(proxyBeanMethods = false)

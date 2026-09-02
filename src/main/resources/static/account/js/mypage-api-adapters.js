@@ -115,6 +115,8 @@ function adaptRequest(record) {
     id ? `/requests/${encodeURIComponent(id)}` : '',
     '주문 보기',
     value(record, 'eventDateTime', 'createdAt', 'requestedAt'),
+    'ORDER_REQUEST',
+    id,
   );
 }
 
@@ -151,6 +153,8 @@ function adaptTradeActivity(record, perspective) {
     href,
     href ? '거래 보기' : '',
     value(record, 'paidAt', 'createdAt', 'eventDateTime'),
+    sourceType,
+    sourceId,
   );
 }
 
@@ -210,6 +214,8 @@ function adaptOffer(record, direction) {
     requestId ? `/requests/${encodeURIComponent(requestId)}` : '/proposals',
     requestId ? '주문 보기' : '제안 보기',
     value(record, 'createdAt', 'proposedAt'),
+    'PROPOSAL',
+    id,
   );
 }
 
@@ -229,6 +235,8 @@ function adaptEstimate(record, direction) {
     id ? `/estimates/${encodeURIComponent(id)}` : '/estimates',
     '견적 보기',
     value(record, 'createdAt', 'eventDateTime'),
+    'ESTIMATE',
+    id,
   );
 }
 
@@ -250,10 +258,23 @@ function adaptChatRoom(record) {
     id ? `/chat?roomId=${encodeURIComponent(id)}` : '/chat',
     '채팅 열기',
     value(record, 'lastMessageAt', 'updatedAt', 'createdAt'),
+    'CHAT_ROOM',
+    id,
   );
 }
 
-function viewRecord(key, title, status, detail, meta, href = '', actionLabel = '', sortValue = '') {
+function viewRecord(
+  key,
+  title,
+  status,
+  detail,
+  meta,
+  href = '',
+  actionLabel = '',
+  sortValue = '',
+  reportTargetType = null,
+  reportTargetId = null,
+) {
   const statusCode = status || 'ACTIVE';
   return {
     key,
@@ -264,6 +285,8 @@ function viewRecord(key, title, status, detail, meta, href = '', actionLabel = '
     meta: meta || '',
     href,
     actionLabel,
+    reportTargetType,
+    reportTargetId,
     sortAt: timestamp(sortValue),
   };
 }

@@ -189,6 +189,7 @@ body {
 .report-compose input, .report-compose textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); font: inherit; }
 .report-compose textarea { min-height: 170px; resize: vertical; }
 .report-compose small { min-height: 16px; color: #a43d2d; }
+.report-context { margin: 0 0 8px; padding: 10px 12px; border-left: 3px solid var(--orange); background: var(--cream); color: #5f675f; font-size: .82rem; font-weight: 800; }
 .report-compose button, .report-section-heading button, .pagination button { width: fit-content; padding: 10px 14px; border: 0; border-radius: 3px; background: var(--forest); color: white; font: inherit; font-weight: 800; cursor: pointer; }
 .report-compose button:disabled { opacity: .55; cursor: wait; }
 .report-history { padding-top: 26px; border-top: 2px solid var(--ink); }
@@ -200,6 +201,10 @@ body {
 .report-card small { color: #8a928b; }
 .report-card blockquote { margin: 16px 0 0; padding: 14px 16px; border-left: 3px solid var(--orange); background: var(--cream); white-space: pre-wrap; color: #4f5e54; }
 .report-empty { padding: 38px 0; text-align: center; color: #7a837c; }
+.report-load-error { margin-top: 18px; padding: 16px; border-left: 3px solid #a43d2d; background: rgba(164, 61, 45, .07); color: #8f3328; }
+.report-load-error[hidden] { display: none; }
+.report-load-error p { margin: 0 0 10px; }
+.report-load-error button { padding: 8px 12px; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
 .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 20px; }
 .pagination button[aria-current='page'] { background: var(--orange); }
 .status-chip[data-status='PENDING'] { background: #f1e5c8; color: #795f1f; }
@@ -306,6 +311,8 @@ body {
     font-size: 0.82rem;
     font-weight: 800;
 }
+.record-report-link { padding-bottom: 2px; border-bottom: 1px solid currentColor; color: #9a4530; font-size: .78rem; font-weight: 800; }
+.record-report-link[hidden] { display: none; }
 .partial-state {
     display: flex;
     align-items: center;

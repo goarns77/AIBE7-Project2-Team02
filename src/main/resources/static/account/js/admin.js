@@ -24,6 +24,8 @@ if (profile.role !== 'ADMIN') {
   throw new Error('Administrator role required');
 }
 
+await loadPendingReportBadge();
+
 document.querySelector('[data-admin-identity]').textContent = `${profile.name} · ${profile.email}`;
 document.querySelector(`[data-admin-view="${viewKey}"]`)?.setAttribute('aria-current', 'page');
 document.querySelector('[data-view-kicker]').textContent = viewLabels[viewKey][0];
@@ -207,6 +209,11 @@ function reportCard(report) {
   const meta = paragraph(`접수 ${formatDateTime(report.createdAt)}`);
   meta.className = 'admin-report-meta';
   card.append(heading, message, meta);
+  if (report.targetType && report.targetId) {
+    const target = paragraph(`신고 대상: ${reportTargetLabel(report.targetType)} #${report.targetId}`);
+    target.className = 'admin-report-target';
+    card.append(target);
+  }
 
   if (report.adminResponse) {
     const previous = paragraph(`관리자 답변: ${report.adminResponse}`);
@@ -234,11 +241,39 @@ function reportCard(report) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: select.value, adminResponse: textarea.value }),
       });
-      if (changed) await loadReports(0);
+      if (changed) {
+        await loadPendingReportBadge();
+        await loadReports(0);
+      }
     });
     card.append(form);
   }
   return card;
+}
+
+async function loadPendingReportBadge() {
+  try {
+    const response = await authFetch('/api/v1/admin/reports?status=PENDING&page=0&size=1');
+    if (!response.ok) return;
+    const result = await response.json();
+    const count = Number(result.totalElements) || 0;
+    const badge = document.querySelector('[data-report-badge]');
+    badge.textContent = count > 99 ? '99+' : String(count);
+    badge.hidden = count === 0;
+  } catch {
+    // The badge is supplemental; the reports page keeps its own error handling.
+  }
+}
+
+function reportTargetLabel(targetType) {
+  return {
+    ORDER_REQUEST: '구매 요청',
+    PROPOSAL: '제안',
+    ESTIMATE: '견적 요청',
+    QUOTE: '견적 거래',
+    CHAT_ROOM: '채팅방',
+    PRODUCT: '상품',
+  }[targetType] || targetType;
 }
 
 async function request(url, options) {

@@ -131,6 +131,7 @@
                     <p>서비스 이용 중 확인이 필요한 내용을 작성하면 관리자 신고함으로 전달됩니다.</p>
                 </div>
                 <form data-report-form novalidate>
+                    <p class="report-context" data-report-context hidden></p>
                     <label for="report-title">제목</label>
                     <input id="report-title" name="title" maxlength="100" required>
                     <small data-field-error="title" aria-live="polite"></small>
@@ -148,6 +149,10 @@
                 </div>
                 <div class="report-list" data-report-list></div>
                 <p class="report-empty" data-report-empty hidden>아직 작성한 신고가 없습니다.</p>
+                <div class="report-load-error" data-report-load-error hidden role="alert">
+                    <p>신고 내역을 불러오지 못했습니다.</p>
+                    <button type="button" data-report-retry>다시 시도</button>
+                </div>
                 <div class="pagination" data-report-pagination></div>
             </section>
         </div>

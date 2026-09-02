@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import org.example.matcheat.domain.account.enums.AccountReportStatus;
+import org.example.matcheat.domain.account.enums.AccountReportTargetType;
 
 import java.time.Instant;
 
@@ -34,6 +35,13 @@ public class AccountReportEntity {
     private String message;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "target_type", length = 30)
+    private AccountReportTargetType targetType;
+
+    @Column(name = "target_id")
+    private Long targetId;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AccountReportStatus status;
 
@@ -55,17 +63,31 @@ public class AccountReportEntity {
     protected AccountReportEntity() {
     }
 
-    private AccountReportEntity(Long reporterId, String title, String message, Instant now) {
+    private AccountReportEntity(
+            Long reporterId,
+            String title,
+            String message,
+            AccountReportTargetType targetType,
+            Long targetId,
+            Instant now) {
         this.reporterId = reporterId;
         this.title = title;
         this.message = message;
+        this.targetType = targetType;
+        this.targetId = targetId;
         this.status = AccountReportStatus.PENDING;
         this.createdAt = now;
         this.updatedAt = now;
     }
 
-    public static AccountReportEntity create(Long reporterId, String title, String message, Instant now) {
-        return new AccountReportEntity(reporterId, title, message, now);
+    public static AccountReportEntity create(
+            Long reporterId,
+            String title,
+            String message,
+            AccountReportTargetType targetType,
+            Long targetId,
+            Instant now) {
+        return new AccountReportEntity(reporterId, title, message, targetType, targetId, now);
     }
 
     public void review(AccountReportStatus targetStatus, String response, Long adminId, Instant now) {
@@ -96,6 +118,14 @@ public class AccountReportEntity {
 
     public String getMessage() {
         return message;
+    }
+
+    public AccountReportTargetType getTargetType() {
+        return targetType;
+    }
+
+    public Long getTargetId() {
+        return targetId;
     }
 
     public AccountReportStatus getStatus() {

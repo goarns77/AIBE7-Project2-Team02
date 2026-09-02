@@ -59,11 +59,21 @@ async function configureReportView() {
   document.querySelector('[data-loading-state]').hidden = true;
   document.querySelector('[data-report-panel]').hidden = false;
   const form = document.querySelector('[data-report-form]');
+  const reportContext = reportContextFromLocation();
+  if (reportContext) {
+    const contextLabel = reportTargetLabel(reportContext.targetType);
+    const context = document.querySelector('[data-report-context]');
+    context.textContent = `신고 대상: ${contextLabel} #${reportContext.targetId}`;
+    context.hidden = false;
+    form.elements.title.value = `${contextLabel} 신고`;
+  }
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const created = await submitJsonForm(form, '/api/v1/reports', 'POST', {
       title: form.elements.title.value,
       message: form.elements.message.value,
+      targetType: reportContext?.targetType ?? null,
+      targetId: reportContext?.targetId ?? null,
     });
     if (!created) return;
     form.reset();
@@ -71,22 +81,27 @@ async function configureReportView() {
     await loadReports(0);
   });
   document.querySelector('[data-report-refresh]').addEventListener('click', () => loadReports(0));
+  document.querySelector('[data-report-retry]').addEventListener('click', () => loadReports(0));
   await loadReports(0);
 }
 
 async function loadReports(page) {
-  const response = await authFetch(`/api/v1/reports/mine?page=${page}&size=10`);
-  if (response.status === 401) redirectToLogin();
-  const body = await readApiBody(response);
-  if (!response.ok) {
-    document.querySelector('[data-report-list]').replaceChildren();
-    document.querySelector('[data-report-empty]').hidden = false;
-    return;
+  const error = document.querySelector('[data-report-load-error]');
+  error.hidden = true;
+  try {
+    const response = await authFetch(`/api/v1/reports/mine?page=${page}&size=10`);
+    if (response.status === 401) redirectToLogin();
+    const body = await readApiBody(response);
+    if (!response.ok) throw new Error(body?.message || '신고 내역을 불러오지 못했습니다.');
+    const list = document.querySelector('[data-report-list]');
+    list.replaceChildren(...body.content.map(reportCard));
+    document.querySelector('[data-report-empty]').hidden = body.content.length !== 0;
+    renderReportPagination(body);
+  } catch (failure) {
+    document.querySelector('[data-report-empty]').hidden = true;
+    error.querySelector('p').textContent = failure.message || '네트워크 연결을 확인해 주세요.';
+    error.hidden = false;
   }
-  const list = document.querySelector('[data-report-list]');
-  list.replaceChildren(...body.content.map(reportCard));
-  document.querySelector('[data-report-empty]').hidden = body.content.length !== 0;
-  renderReportPagination(body);
 }
 
 function reportCard(report) {
@@ -106,6 +121,11 @@ function reportCard(report) {
   date.textContent = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })
     .format(new Date(report.createdAt));
   card.append(heading, message, date);
+  if (report.targetType && report.targetId) {
+    const target = document.createElement('small');
+    target.textContent = `대상: ${reportTargetLabel(report.targetType)} #${report.targetId}`;
+    card.append(target);
+  }
   if (report.adminResponse) {
     const response = document.createElement('blockquote');
     response.textContent = `관리자 답변: ${report.adminResponse}`;
@@ -129,6 +149,32 @@ function renderReportPagination(page) {
 
 function reportStatusLabel(status) {
   return { PENDING: '접수', IN_REVIEW: '검토 중', RESOLVED: '처리 완료', REJECTED: '반려' }[status] || status;
+}
+
+function reportContextFromLocation() {
+  const query = new URLSearchParams(location.search);
+  const targetType = query.get('targetType');
+  const targetId = Number(query.get('targetId'));
+  const allowed = new Set(['ORDER_REQUEST', 'PROPOSAL', 'ESTIMATE', 'QUOTE', 'CHAT_ROOM', 'PRODUCT']);
+  return allowed.has(targetType) && Number.isSafeInteger(targetId) && targetId > 0
+    ? { targetType, targetId }
+    : null;
+}
+
+function reportTargetLabel(targetType) {
+  return {
+    ORDER_REQUEST: '구매 요청',
+    PROPOSAL: '제안',
+    ESTIMATE: '견적 요청',
+    QUOTE: '견적 거래',
+    CHAT_ROOM: '채팅방',
+    PRODUCT: '상품',
+  }[targetType] || '서비스 이용';
+}
+
+function reportUrl(targetType, targetId) {
+  const query = new URLSearchParams({ targetType, targetId });
+  return `/mypage/reports?${query}`;
 }
 
 async function loadRecords(sources) {
@@ -457,6 +503,7 @@ function renderRecords(records) {
       <div class="record-card-actions">
         <span class="status-chip"></span>
         <a class="record-link" hidden></a>
+        <a class="record-report-link" hidden>신고</a>
       </div>`;
     article.querySelector('.record-source').textContent = record.sourceLabel;
     article.querySelector('h2').textContent = record.title;
@@ -484,6 +531,11 @@ function renderRecords(records) {
       article.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') window.location.assign(record.href);
       });
+    }
+    if (record.reportTargetType && record.reportTargetId) {
+      const reportLink = article.querySelector('.record-report-link');
+      reportLink.href = reportUrl(record.reportTargetType, record.reportTargetId);
+      reportLink.hidden = false;
     }
     list.append(article);
   });

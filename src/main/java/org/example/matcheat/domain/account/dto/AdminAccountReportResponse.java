@@ -3,6 +3,7 @@ package org.example.matcheat.domain.account.dto;
 import org.example.matcheat.domain.account.entity.AccountReportEntity;
 import org.example.matcheat.domain.account.entity.UserAccount;
 import org.example.matcheat.domain.account.enums.AccountReportStatus;
+import org.example.matcheat.domain.account.enums.AccountReportTargetType;
 
 import java.time.Instant;
 
@@ -13,6 +14,8 @@ public record AdminAccountReportResponse(
         String reporterEmail,
         String title,
         String message,
+        AccountReportTargetType targetType,
+        Long targetId,
         AccountReportStatus status,
         String adminResponse,
         Long reviewedBy,
@@ -22,7 +25,8 @@ public record AdminAccountReportResponse(
     public static AdminAccountReportResponse from(AccountReportEntity report, UserAccount reporter) {
         return new AdminAccountReportResponse(
                 report.getId(), report.getReporterId(), reporter.name(), reporter.email(),
-                report.getTitle(), report.getMessage(), report.getStatus(), report.getAdminResponse(),
+                report.getTitle(), report.getMessage(), report.getTargetType(), report.getTargetId(),
+                report.getStatus(), report.getAdminResponse(),
                 report.getReviewedBy(), report.getCreatedAt(), report.getUpdatedAt(), report.getReviewedAt());
     }
 }

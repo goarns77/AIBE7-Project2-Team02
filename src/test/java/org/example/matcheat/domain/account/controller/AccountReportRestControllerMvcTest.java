@@ -52,7 +52,7 @@ class AccountReportRestControllerMvcTest {
     @Test
     void createsReportUsingJwtSubject() throws Exception {
         when(service.create(org.mockito.ArgumentMatchers.eq(7L), any())).thenReturn(new AccountReportResponse(
-                3L, "신고", "확인해 주세요.", AccountReportStatus.PENDING, null,
+                3L, "신고", "확인해 주세요.", null, null, AccountReportStatus.PENDING, null,
                 Instant.parse("2026-09-02T03:00:00Z"), Instant.parse("2026-09-02T03:00:00Z"), null));
 
         mockMvc.perform(post("/api/v1/reports")
@@ -75,6 +75,19 @@ class AccountReportRestControllerMvcTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.title").exists())
                 .andExpect(jsonPath("$.fieldErrors.message").exists());
+    }
+
+    @Test
+    void validatesPositiveReportTargetId() throws Exception {
+        mockMvc.perform(post("/api/v1/reports")
+                        .with(jwt().jwt(token -> token.subject("7")).authorities(() -> "ROLE_USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"채팅 신고","message":"확인해 주세요.",
+                                 "targetType":"CHAT_ROOM","targetId":0}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.targetId").exists());
     }
 
     @TestConfiguration(proxyBeanMethods = false)

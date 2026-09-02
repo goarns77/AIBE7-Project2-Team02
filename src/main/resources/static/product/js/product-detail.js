@@ -11,6 +11,7 @@ const imageHolder = document.getElementById('imageHolder');
 const estimateButton = document.getElementById('estimateButton');
 const editButton = document.getElementById('editButton');
 const chatButton = document.getElementById('chatButton'); // [추가]
+const reportButton = document.getElementById('reportButton');
 
 const dayOfWeekMap = {
     MONDAY: '월요일',
@@ -148,6 +149,10 @@ async function loadDetail() {
             productId: product.id
         });
         estimateButton.href = `/estimates/new?${params.toString()}`;
+        reportButton.href = `/mypage/reports?${new URLSearchParams({
+            targetType: 'PRODUCT',
+            targetId: product.id,
+        })}`;
 
         // [수정] isOwnedProduct를 한 번만 호출해서 editButton/chatButton 둘 다에 사용
         const owned = await isOwnedProduct(product.id);
@@ -156,6 +161,7 @@ async function loadDetail() {
             editButton.href = `/product/update?id=${product.id}`;
             editButton.style.display = '';
             chatButton.style.display = 'none'; // [추가] 본인 상품과는 채팅할 수 없음
+            reportButton.style.display = 'none';
         } else {
             chatButton.addEventListener('click', () => startChatWithSeller(product.id)); // [추가]
         }

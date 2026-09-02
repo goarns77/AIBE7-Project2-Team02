@@ -4,6 +4,7 @@ import org.example.matcheat.domain.account.dto.AccountReportCreateRequest;
 import org.example.matcheat.domain.account.entity.AccountReportEntity;
 import org.example.matcheat.domain.account.entity.UserAccount;
 import org.example.matcheat.domain.account.enums.AccountReportStatus;
+import org.example.matcheat.domain.account.enums.AccountReportTargetType;
 import org.example.matcheat.domain.account.enums.UserRole;
 import org.example.matcheat.domain.account.enums.UserStatus;
 import org.example.matcheat.domain.account.repository.AccountReportRepository;
@@ -43,7 +44,8 @@ class AccountReportServiceTest {
         when(users.findById(7L)).thenReturn(Optional.of(user(7L)));
         when(reports.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        var response = service.create(7L, new AccountReportCreateRequest("  거래 문의  ", "  확인해 주세요.  "));
+        var response = service.create(7L, new AccountReportCreateRequest(
+                "  거래 문의  ", "  확인해 주세요.  ", null, null));
 
         ArgumentCaptor<AccountReportEntity> captor = ArgumentCaptor.forClass(AccountReportEntity.class);
         verify(reports).save(captor.capture());
@@ -54,8 +56,30 @@ class AccountReportServiceTest {
     }
 
     @Test
+    void storesOptionalReportTarget() {
+        when(users.findById(7L)).thenReturn(Optional.of(user(7L)));
+        when(reports.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = service.create(7L, new AccountReportCreateRequest(
+                "채팅 신고", "확인해 주세요.", AccountReportTargetType.CHAT_ROOM, 12L));
+
+        assertThat(response.targetType()).isEqualTo(AccountReportTargetType.CHAT_ROOM);
+        assertThat(response.targetId()).isEqualTo(12L);
+    }
+
+    @Test
+    void rejectsIncompleteReportTarget() {
+        when(users.findById(7L)).thenReturn(Optional.of(user(7L)));
+
+        assertThatThrownBy(() -> service.create(7L, new AccountReportCreateRequest(
+                "채팅 신고", "확인해 주세요.", AccountReportTargetType.CHAT_ROOM, null)))
+                .isInstanceOfSatisfying(AccountApplicationException.class,
+                        exception -> assertThat(exception.code()).isEqualTo(AccountErrorCode.VALIDATION_FAILED));
+    }
+
+    @Test
     void requiresAdminResponseWhenClosingReport() {
-        AccountReportEntity report = AccountReportEntity.create(7L, "신고", "내용", NOW);
+        AccountReportEntity report = AccountReportEntity.create(7L, "신고", "내용", null, null, NOW);
         when(reports.findById(3L)).thenReturn(Optional.of(report));
 
         assertThatThrownBy(() -> service.review(1L, 3L, AccountReportStatus.RESOLVED, " "))
@@ -65,7 +89,7 @@ class AccountReportServiceTest {
 
     @Test
     void preventsChangingTerminalReport() {
-        AccountReportEntity report = AccountReportEntity.create(7L, "신고", "내용", NOW);
+        AccountReportEntity report = AccountReportEntity.create(7L, "신고", "내용", null, null, NOW);
         report.review(AccountReportStatus.RESOLVED, "처리했습니다.", 1L, NOW);
         when(reports.findById(3L)).thenReturn(Optional.of(report));
 

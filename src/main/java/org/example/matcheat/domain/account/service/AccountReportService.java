@@ -34,8 +34,13 @@ public class AccountReportService {
     @Transactional
     public AccountReportResponse create(long reporterId, AccountReportCreateRequest request) {
         requireUser(reporterId);
+        if ((request.targetType() == null) != (request.targetId() == null)) {
+            throw new AccountApplicationException(
+                    AccountErrorCode.VALIDATION_FAILED, "신고 대상 유형과 ID를 함께 입력해 주세요.");
+        }
         AccountReportEntity report = AccountReportEntity.create(
-                reporterId, request.title().trim(), request.message().trim(), clock.instant());
+                reporterId, request.title().trim(), request.message().trim(),
+                request.targetType(), request.targetId(), clock.instant());
         return AccountReportResponse.from(reports.save(report));
     }
 

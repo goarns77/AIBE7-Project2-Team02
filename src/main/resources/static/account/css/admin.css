@@ -34,6 +34,8 @@
 .admin-navigation a { padding: 12px 14px; border-left: 3px solid transparent; color: #607180; }
 .admin-navigation a:hover,
 .admin-navigation a[aria-current="page"] { border-left-color: var(--admin-copper); color: var(--admin-ink); background: rgba(255, 255, 255, .65); }
+.admin-nav-badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 6px; padding: 0 5px; border-radius: 10px; background: var(--admin-copper); color: white; font-size: .65rem; font-weight: 900; }
+.admin-nav-badge[hidden] { display: none; }
 .admin-future { margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--admin-line); color: #7a878f; font-size: .75rem; }
 .admin-future span { font-weight: 800; color: var(--admin-blue); }
 
@@ -100,6 +102,7 @@ th { color: #71808a; font-size: .7rem; letter-spacing: .06em; }
 .admin-report-card h3 { margin: 0 0 8px; }
 .admin-report-message { margin: 18px 0 8px; white-space: pre-wrap; color: #425766; line-height: 1.65; }
 .admin-report-meta { color: #7a8790; font-size: .72rem; }
+.admin-report-target { margin: 8px 0; color: var(--admin-copper); font-size: .75rem; font-weight: 800; }
 .admin-report-response { padding: 12px 14px; border-left: 3px solid var(--admin-green); background: #eef5ef; white-space: pre-wrap; }
 .admin-report-form { display: grid; grid-template-columns: 150px minmax(220px, 1fr) auto; gap: 8px; margin-top: 18px; }
 .admin-report-form select, .admin-report-form textarea { padding: 10px 12px; border: 1px solid var(--admin-line); background: white; color: var(--admin-ink); font: inherit; }
