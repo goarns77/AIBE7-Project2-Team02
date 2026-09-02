@@ -115,13 +115,14 @@ Estimate의 `requestId`는 이름과 달리 `OrderRequest.id`가 아니라 구�
 
 **문제**
 
-활성 거래가 있으면 탈퇴를 막는 정책과 포트는 이미 구현되어 있다. 다만 현재 `JpaAccountTradeActivityAdapter` 판정에는 다음 불일치가 있다.
+활성 거래가 있으면 탈퇴를 막는 정책과 포트는 이미 구현되어 있다. 다만 현재 `JpaAccountTradeActivityAdapter` 판정에는 다음 문제가 있다.
 
 - 구매자가 보낸 Estimate를 조회하지 않는다.
-- 판매자 Estimate 활성 상태 집합에 `IN_TALK`가 없다.
 - Quote는 결제 완료 후에도 `ACCEPTED`이므로 완료 거래가 계속 활성으로 계산된다.
-- QuoteNegotiation은 상태 조건 없이 존재 여부만 확인하므로 `LOCKED`도 계속 활성으로 계산된다.
+- QuoteNegotiation은 상태 조건 없이 존재 여부만 확인하므로 하위 거래가 종료된 뒤 남은 협상도 계속 활성으로 계산된다.
 - Proposal과 Estimate에 종료 전이가 없어 생성 후 계속 활성으로 남을 수 있다.
+
+`EstimateStatus.IN_TALK`가 활성 상태 집합에 없는 점은 현재 상태 변경 기능이 없어 당장 재현되는 결함은 아니다. Proposal·Estimate 상태 전이를 추가할 경우 함께 보정해야 하는 잠재 누락이다.
 
 **프로젝트 영향**
 
