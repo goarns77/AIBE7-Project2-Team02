@@ -105,13 +105,14 @@ public class ChatService {
 	@Transactional(readOnly = true)
 	public ChatRoomResponse getChatRoom(Long chatRoomId, Long currentUserId) {
 		ChatRoom chatRoom = getChatRoomEntity(chatRoomId);
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		return ChatRoomResponse.from(chatRoom);
 	}
 
 	@Transactional(readOnly = true)
 	public List<ChatRoomResponse> getChatRooms(Long currentUserId) {
-		return chatRoomRepository.findAllByParticipant(currentUserId).stream()
+		Long sellerProfileId = accounts.sellerIdForUserOrNull(currentUserId);
+		return chatRoomRepository.findAllByParticipant(currentUserId, sellerProfileId).stream()
 				.map(ChatRoomResponse::from)
 				.toList();
 	}

@@ -28,10 +28,14 @@ class OrderRequestServiceTest {
     private final GeocodingService geocodingService =
             mock(GeocodingService.class);
 
+    private final OrderRequestImageStorageService orderRequestImageStorageService =
+            mock(OrderRequestImageStorageService.class);
+
     private final OrderRequestService orderRequestService =
             new OrderRequestService(
                     orderRequestRepository,
-                    geocodingService
+                    geocodingService,
+                    orderRequestImageStorageService
             );
 
     @Test

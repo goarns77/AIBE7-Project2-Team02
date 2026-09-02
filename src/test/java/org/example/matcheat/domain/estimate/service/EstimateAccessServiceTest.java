@@ -1,9 +1,9 @@
 package org.example.matcheat.domain.estimate.service;
 
+import org.example.matcheat.common.location.GeocodingService;
 import org.example.matcheat.domain.account.enums.SellerVerificationStatus;
 import org.example.matcheat.domain.account.repository.SellerApplicationRepository;
 import org.example.matcheat.domain.estimate.dto.EstimateResponseDTO;
-import org.example.matcheat.domain.order.repository.OrderRequestRepository;
 import org.example.matcheat.domain.product.service.ProductService;
 import org.junit.jupiter.api.Test;
 
@@ -17,29 +17,36 @@ import static org.mockito.Mockito.when;
 
 class EstimateAccessServiceTest {
     private final EstimateService estimates = mock(EstimateService.class);
-    private final OrderRequestRepository orders = mock(OrderRequestRepository.class);
     private final SellerApplicationRepository sellers = mock(SellerApplicationRepository.class);
     private final ProductService products = mock(ProductService.class);
-    private final EstimateAccessService service = new EstimateAccessService(estimates, orders, sellers, products);
+    private final GeocodingService geocoding = mock(GeocodingService.class);
+    private final EstimateAccessService service = new EstimateAccessService(estimates, sellers, products, geocoding);
 
     @Test
     void mapsAuthenticatedSellerAccountToSellerProfileForReceivedList() {
         var seller = new SellerApplicationRepository.SellerApplication(33L, SellerVerificationStatus.APPROVED);
-        List<EstimateResponseDTO> expected = List.of(mock(EstimateResponseDTO.class));
+        EstimateResponseDTO dto = EstimateResponseDTO.builder().id(1L).sellerId(33L).build();
         when(sellers.findByUserId(7L)).thenReturn(Optional.of(seller));
-        when(estimates.findBySellerId(33L)).thenReturn(expected);
+        when(estimates.findBySellerId(33L)).thenReturn(List.of(dto));
 
-        assertThat(service.findReceivedByMe(7L)).isSameAs(expected);
+        List<EstimateResponseDTO> result = service.findReceivedByMe(7L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).isSeller()).isTrue();
+        assertThat(result.get(0).isBuyer()).isFalse();
         verify(estimates).findBySellerId(33L);
     }
 
     @Test
     void mapsStoredSellerProfileToAccountWhenCheckingDetailAccess() {
-        EstimateResponseDTO estimate = mock(EstimateResponseDTO.class);
-        when(estimate.getSellerId()).thenReturn(33L);
+        EstimateResponseDTO estimate = EstimateResponseDTO.builder().id(5L).sellerId(33L).requestId(999L).build();
         when(estimates.findById(5L)).thenReturn(estimate);
         when(sellers.findUserIdBySellerId(33L)).thenReturn(Optional.of(7L));
 
-        assertThat(service.findById(5L, 7L)).isSameAs(estimate);
+        EstimateResponseDTO result = service.findById(5L, 7L);
+
+        assertThat(result.getId()).isEqualTo(5L);
+        assertThat(result.isSeller()).isTrue();
+        assertThat(result.isBuyer()).isFalse();
     }
 }

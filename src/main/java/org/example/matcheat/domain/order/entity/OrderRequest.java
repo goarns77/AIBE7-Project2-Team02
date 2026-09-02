@@ -39,6 +39,12 @@ public class OrderRequest {
     @Column(length = 1000)
     private String description;
 
+    /**
+     * 구매자가 주문 이해를 돕기 위해 등록한 참고 이미지
+     */
+    @Column(name = "reference_image_url", columnDefinition = "TEXT")
+    private String referenceImageUrl;
+
     // 행사/배송 예정 일시
     @Column(nullable = false) // DB 필수값으로 지정
     private LocalDateTime eventDateTime;
@@ -90,7 +96,8 @@ public class OrderRequest {
             String category,
             String deliveryAddress,
             Double latitude,
-            Double longitude
+            Double longitude,
+            String referenceImageUrl
     ) {
         this.buyerId = buyerId;
         this.title = title;
@@ -103,6 +110,7 @@ public class OrderRequest {
         this.deliveryAddress = deliveryAddress;
         this.latitude = latitude;
         this.longitude = longitude;
+        this.referenceImageUrl = referenceImageUrl;
         this.status = RequestStatus.MATCHING;
     }
 
@@ -122,6 +130,40 @@ public class OrderRequest {
             Double latitude,
             Double longitude
     ) {
+        return
+                new OrderRequest(
+                        buyerId,
+                        title,
+                        description,
+                        eventDateTime,
+                        quantity,
+                        budgetType,
+                        budget,
+                        category,
+                        deliveryAddress,
+                        latitude,
+                        longitude,
+                        null
+                );
+    }
+
+    /**
+     * 참고 이미지를 포함한 새로운 주문 요청 Entity를 생성
+     */
+    public static OrderRequest create(
+            Long buyerId,
+            String title,
+            String description,
+            LocalDateTime eventDateTime,
+            Integer quantity,
+            BudgetType budgetType,
+            BigDecimal budget,
+            String category,
+            String deliveryAddress,
+            Double latitude,
+            Double longitude,
+            String referenceImageUrl
+    ) {
         return new OrderRequest(
                 buyerId,
                 title,
@@ -133,7 +175,8 @@ public class OrderRequest {
                 category,
                 deliveryAddress,
                 latitude,
-                longitude
+                longitude,
+                referenceImageUrl
         );
     }
 
@@ -151,6 +194,37 @@ public class OrderRequest {
             String deliveryAddress,
             Double latitude,
             Double longitude
+    ) {
+        update(
+                title,
+                description,
+                eventDateTime,
+                quantity,
+                budgetType,
+                budget,
+                category,
+                deliveryAddress,
+                latitude,
+                longitude,
+                this.referenceImageUrl
+        );
+    }
+
+    /**
+     * 참고 이미지를 포함해 전달된 주문 요청 정보를 수정
+     */
+    public void update(
+            String title,
+            String description,
+            LocalDateTime eventDateTime,
+            Integer quantity,
+            BudgetType budgetType,
+            BigDecimal budget,
+            String category,
+            String deliveryAddress,
+            Double latitude,
+            Double longitude,
+            String referenceImageUrl
     ) {
         if (title != null && !title.isBlank()) {
             this.title = title;
@@ -191,7 +265,10 @@ public class OrderRequest {
         if (longitude != null) {
             this.longitude = longitude;
         }
+
+        this.referenceImageUrl = referenceImageUrl;
     }
+
 
     /**
      * MATCHING 상태의 주문 요청을 취소 상태로 변경

@@ -71,7 +71,7 @@ public class ProductService {
 
         ProductEntity savedProduct = productRepository.save(product);
 
-        return ProductResponseDTO.from(savedProduct);
+        return ProductResponseDTO.from(savedProduct, ownerAccountId);
     }
 
     /**
@@ -79,29 +79,44 @@ public class ProductService {
      */
     private void requireApprovedSeller(Long ownerAccountId) {
         if (ownerAccountId == null) {
-            throw new IllegalArgumentException("로그인이 필요합니다.");
+            throw new AccessDeniedException("로그인이 필요합니다.");
         }
 
         SellerVerificationStatus status = sellerApplicationRepository.findStatusByUserId(ownerAccountId)
                 .orElseThrow(() -> new IllegalArgumentException("판매자 신청 정보가 없습니다."));
 
         if (status != SellerVerificationStatus.APPROVED) {
-            throw new IllegalArgumentException("승인된 판매자만 판매 조건을 등록할 수 있습니다.");
+            throw new AccessDeniedException("승인된 판매자만 판매 조건을 등록할 수 있습니다.");
         }
     }
 
 
     /**
-     * 판매 조건 ID로 단건을 조회한다.
+     * 판매 조건 ID로 단건을 조회한다. viewerAccountId는 조회하는 사용자의 계정 ID(비로그인이면 null)로,
+     * 응답의 owner 여부를 계산하는 데만 쓰인다.
      */
     @Transactional(readOnly = true)
-    public ProductResponseDTO findById(Long id) {
+    public ProductResponseDTO findById(Long id, Long viewerAccountId) {
         ProductEntity product = productRepository.findByIdAndHiddenFalse(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
                 ));
 
-        return ProductResponseDTO.from(product);
+        return ProductResponseDTO.from(product, viewerAccountId);
+    }
+
+    /**
+     * 상품의 소유자 계정 ID를 그대로 반환한다. 다른 도메인(견적 등)이 상품으로부터
+     * 판매자 계정을 알아내야 할 때만 내부적으로 쓰는 메소드이며, 어떤 응답 DTO에도 담기지 않는다.
+     */
+    @Transactional(readOnly = true)
+    public Long findOwnerAccountId(Long id) {
+        ProductEntity product = productRepository.findByIdAndHiddenFalse(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
+                ));
+
+        return product.getOwnerAccountId();
     }
 
     /**
@@ -125,7 +140,7 @@ public class ProductService {
             );
         }
 
-        return ProductResponseDTO.from(product);
+        return ProductResponseDTO.from(product, ownerAccountId);
     }
 
     /**
@@ -138,31 +153,39 @@ public class ProductService {
                         ownerAccountId
                 )
                 .stream()
-                .map(ProductResponseDTO::from)
+                .map(product -> ProductResponseDTO.from(product, ownerAccountId))
                 .toList();
     }
 
     /**
-     * 모든 판매 조건을 목록으로 조회한다.
+     * 모든 판매 조건을 목록으로 조회한다. (비로그인/뷰어 무관 조회용 하위호환 오버로드)
      */
     @Transactional(readOnly = true)
     public List<ProductResponseDTO> findAll() {
+        return findAll(null);
+    }
+
+    /**
+     * 모든 판매 조건을 목록으로 조회한다. viewerAccountId는 조회하는 사용자의 계정 ID(비로그인이면 null)이다.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductResponseDTO> findAll(Long viewerAccountId) {
         return productRepository.findAllByHiddenFalseOrderByUpdatedAtDescIdDesc().stream()
-                .map(ProductResponseDTO::from)
+                .map(product -> ProductResponseDTO.from(product, viewerAccountId))
                 .toList();
     }
 
     /**
-     * 선택한 조건에 맞는 판매 조건만 조회한다.
+     * 선택한 조건에 맞는 판매 조건만 조회한다. viewerAccountId는 조회하는 사용자의 계정 ID(비로그인이면 null)이다.
      */
     @Transactional(readOnly = true)
-    public List<ProductResponseDTO> search(String quantity, String category, String servingPrice) {
+    public List<ProductResponseDTO> search(String quantity, String category, String servingPrice, Long viewerAccountId) {
         Integer parsedQuantity = parseNullableInteger(quantity);
         String normalizedCategory = normalizeText(category);
         Integer parsedServingPrice = parseNullableInteger(servingPrice);
 
         if (parsedQuantity == null && normalizedCategory == null && parsedServingPrice == null) {
-            return findAll();
+            return findAll(viewerAccountId);
         }
 
         return productRepository.findAllByHiddenFalseOrderByUpdatedAtDescIdDesc().stream()
@@ -177,24 +200,38 @@ public class ProductService {
 
                     return Long.compare(right.getId(), left.getId());
                 })
-                .map(ProductResponseDTO::from)
+                .map(product -> ProductResponseDTO.from(product, viewerAccountId))
                 .toList();
     }
 
     /**
-     * 기존 판매 조건을 전달받은 값으로 부분 수정한다.
+     * 기존 판매 조건을 전달받은 값으로 부분 수정한다. (일반 사용자용 하위호환 오버로드)
      */
     @Transactional
     public ProductResponseDTO update(Long id, @Valid ProductUpdateDTO dto, Long ownerAccountId) {
-        return update(id, dto, null, ownerAccountId);
+        return update(id, dto, null, ownerAccountId, false);
     }
 
     /**
-     * 이미지 변경이 포함된 수정 요청도 동일한 수정 로직으로 처리한다.
+     * 이미지 변경이 포함된 수정 요청도 동일한 수정 로직으로 처리한다. (일반 사용자용 하위호환 오버로드)
      * 요청자가 소유자인지 확인한 뒤에만 반영한다.
      */
     @Transactional
     public ProductResponseDTO update(Long id, @Valid ProductUpdateDTO dto, MultipartFile imageFile, Long ownerAccountId) {
+        return update(id, dto, imageFile, ownerAccountId, false);
+    }
+
+    /**
+     * 이미지 변경이 포함된 수정 요청을 처리한다. 관리자가 아니라면 요청자가 소유자인지 확인한 뒤에만 반영한다.
+     */
+    @Transactional
+    public ProductResponseDTO update(
+            Long id,
+            @Valid ProductUpdateDTO dto,
+            MultipartFile imageFile,
+            Long ownerAccountId,
+            boolean requesterIsAdmin
+    ) {
         ProductEntity product = productRepository.findByIdAndHiddenFalse(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 판매 조건입니다. id=%s".formatted(id)
@@ -222,6 +259,7 @@ public class ProductService {
 
         product.update(
                 ownerAccountId,
+                requesterIsAdmin,
                 dto.getProductName(),
                 dto.getMinHeadcount(),
                 dto.getMaxHeadcount(),
@@ -237,7 +275,7 @@ public class ProductService {
                 imageUrl
         );
 
-        return ProductResponseDTO.from(product);
+        return ProductResponseDTO.from(product, ownerAccountId);
     }
 
     /**
@@ -252,7 +290,7 @@ public class ProductService {
 
         product.softDelete(ownerAccountId, requesterIsAdmin);
 
-        return ProductResponseDTO.from(product);
+        return ProductResponseDTO.from(product, ownerAccountId);
     }
 
     /**

@@ -1,6 +1,7 @@
 package org.example.matcheat.domain.chat.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.domain.account.service.TradeAccountValidationService;
 import org.example.matcheat.domain.chat.dto.ChatMessageCreateRequest;
 import org.example.matcheat.domain.chat.dto.ChatMessageResponse;
 import org.example.matcheat.domain.chat.entity.ChatFile;
@@ -23,6 +24,7 @@ public class ChatMessageService {
 	private final ChatMessageRepository chatMessageRepository;
 	private final ChatFileRepository chatFileRepository;
 	private final ChatRoomRepository chatRoomRepository;
+	private final TradeAccountValidationService accounts;
 
 	/**
 	 * 웹소켓 메시지 저장.
@@ -33,8 +35,7 @@ public class ChatMessageService {
 	public ChatMessageResponse saveMessage(ChatMessageCreateRequest request, Long currentUserId) {
 		ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다. ID: " + request.getChatRoomId()));
-
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		ChatFile chatFile = null;
 		if (request.getFileId() != null) {
@@ -62,8 +63,7 @@ public class ChatMessageService {
 	public List<ChatMessageResponse> getChatHistory(Long chatRoomId, Long currentUserId) {
 		ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다. ID: " + chatRoomId));
-
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		List<ChatMessage> messages = chatMessageRepository.findHistoryWithFilesByChatRoomId(chatRoomId);
 		return messages.stream()

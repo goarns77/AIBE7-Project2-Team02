@@ -45,15 +45,13 @@
             <th>예산</th>
             <th>예산 유형</th>
             <th>행사 일시</th>
-            <th>판매자 ID</th>
-            <th>주문 요청 ID</th>
             <th>상태</th>
             <th>작성일</th>
             <th>관리</th>
         </tr>
         </thead>
         <tbody id="sentList">
-        <tr><td colspan="10" class="empty">불러오는 중...</td></tr>
+        <tr><td colspan="8" class="empty">불러오는 중...</td></tr>
         </tbody>
     </table>
 
@@ -66,14 +64,13 @@
             <th>예산</th>
             <th>예산 유형</th>
             <th>행사 일시</th>
-            <th>구매자 주문 요청 ID</th>
             <th>상태</th>
             <th>작성일</th>
             <th>관리</th>
         </tr>
         </thead>
         <tbody id="receivedList">
-        <tr><td colspan="9" class="empty">불러오는 중...</td></tr>
+        <tr><td colspan="8" class="empty">불러오는 중...</td></tr>
         </tbody>
     </table>
 </div>
@@ -107,9 +104,10 @@
 
     const STATUS_LABELS = {
         REQUESTED: "요청됨",
+        IN_TALK: "협의 중",
         ACCEPTED: "수락됨",
         REJECTED: "거절됨",
-        CANCELED: "취소됨"
+        WITHDRAWN: "취소됨"
     };
 
     function formatStatus(value) {
@@ -118,7 +116,7 @@
 
     function renderSentRows(items) {
         if (!items.length) {
-            sentList.innerHTML = '<tr><td colspan="10" class="empty">보낸 견적 요청이 없습니다.</td></tr>';
+            sentList.innerHTML = '<tr><td colspan="8" class="empty">보낸 견적 요청이 없습니다.</td></tr>';
             return;
         }
 
@@ -134,8 +132,6 @@
                 <td>${formatMoney(item.budget)}</td>
                 <td>${item.budgetType ?? "-"}</td>
                 <td>${formatDateTime(item.eventDateTime)}</td>
-                <td>${item.sellerId ?? "-"}</td>
-                <td>${item.requestId ?? "-"}</td>
                 <td>${formatStatus(item.status)}</td>
                 <td>${formatDateTime(item.createdAt)}</td>
                 <td><a class="btn btn-secondary" href="/estimates/${item.id}">상세</a></td>
@@ -146,7 +142,7 @@
 
     function renderReceivedRows(items) {
         if (!items.length) {
-            receivedList.innerHTML = '<tr><td colspan="9" class="empty">받은 견적 요청이 없습니다.</td></tr>';
+            receivedList.innerHTML = '<tr><td colspan="8" class="empty">받은 견적 요청이 없습니다.</td></tr>';
             return;
         }
 
@@ -162,7 +158,6 @@
                 <td>${formatMoney(item.budget)}</td>
                 <td>${item.budgetType ?? "-"}</td>
                 <td>${formatDateTime(item.eventDateTime)}</td>
-                <td>${item.requestId ?? "-"}</td>
                 <td>${formatStatus(item.status)}</td>
                 <td>${formatDateTime(item.createdAt)}</td>
                 <td><a class="btn btn-secondary" href="/estimates/${item.id}">상세</a></td>
@@ -184,12 +179,12 @@
     }
 
     async function fetchEstimates() {
-        sentList.innerHTML = '<tr><td colspan="10" class="empty">불러오는 중...</td></tr>';
-        receivedList.innerHTML = '<tr><td colspan="9" class="empty">불러오는 중...</td></tr>';
+        sentList.innerHTML = '<tr><td colspan="8" class="empty">불러오는 중...</td></tr>';
+        receivedList.innerHTML = '<tr><td colspan="8" class="empty">불러오는 중...</td></tr>';
 
         await Promise.all([
-            fetchSection("/api/v1/estimates/sent", renderSentRows, sentList, 10),
-            fetchSection("/api/v1/estimates/received", renderReceivedRows, receivedList, 9)
+            fetchSection("/api/v1/estimates/sent", renderSentRows, sentList, 8),
+            fetchSection("/api/v1/estimates/received", renderReceivedRows, receivedList, 8)
         ]);
     }
 

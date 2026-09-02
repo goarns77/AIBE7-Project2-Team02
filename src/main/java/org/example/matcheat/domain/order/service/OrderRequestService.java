@@ -8,9 +8,13 @@ import org.example.matcheat.domain.order.dto.OrderRequestUpdateDTO;
 import org.example.matcheat.domain.order.entity.OrderRequest;
 import org.example.matcheat.domain.order.enums.RequestStatus;
 import org.example.matcheat.domain.order.repository.OrderRequestRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -21,6 +25,7 @@ import java.util.List;
 public class OrderRequestService {
     private final OrderRequestRepository orderRequestRepository;
     private final GeocodingService geocodingService;
+    private final OrderRequestImageStorageService orderRequestImageStorageService;
 
     /**
      * {@code @Transactional}: 이 메서드의 DB 작업을 하나의 트랜잭션으로 처리
@@ -34,10 +39,25 @@ public class OrderRequestService {
             Long buyerId,
             OrderRequestCreateDTO dto
     ) {
+        return create(buyerId, dto, null);
+    }
+
+    /**
+     * 참고 이미지를 포함한 주문 요청을 등록한다.
+     */
+    @Transactional
+    public OrderRequestResponseDTO create(
+            Long buyerId,
+            OrderRequestCreateDTO dto,
+            MultipartFile imageFile
+    ) {
         GeocodingService.Coordinates coordinates =
                 geocodingService.geocode(
                         dto.getDeliveryAddress()
                 );
+
+        String referenceImageUrl =
+                storeImageOrNull(imageFile);
 
         OrderRequest orderRequest =
                 OrderRequest.create(
@@ -51,7 +71,8 @@ public class OrderRequestService {
                         dto.getCategory(),
                         dto.getDeliveryAddress(),
                         coordinates.latitude(),
-                        coordinates.longitude()
+                        coordinates.longitude(),
+                        referenceImageUrl
                 );
 
         OrderRequest savedOrderRequest =
@@ -101,14 +122,45 @@ public class OrderRequestService {
     }
 
     /**
+     * 전체 주문 요청을 페이지 단위로 조회한다.
+     */
+    @Transactional(readOnly = true)
+    public Page<OrderRequestResponseDTO> findAll(Pageable pageable) {
+        return orderRequestRepository
+                .findAll(pageable)
+                .map(OrderRequestResponseDTO::from);
+    }
+
+    /**
      * MATCHING 상태의 주문 요청 정보를 수정
      */
     @Transactional
-    public OrderRequestResponseDTO update(Long id, Long buyerId, OrderRequestUpdateDTO dto) {
-        OrderRequest orderRequest = orderRequestRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "존재하지 않는 주문 요청입니다. id=%s".formatted(id)
-                ));
+    public OrderRequestResponseDTO update(
+            Long id,
+            Long buyerId,
+            OrderRequestUpdateDTO dto
+    ) {
+        return update(id, buyerId, dto, null);
+    }
+
+    /**
+     * 참고 이미지 변경을 포함해 MATCHING 상태의 주문 요청을 수정한다.
+     */
+    @Transactional
+    public OrderRequestResponseDTO update(
+            Long id,
+            Long buyerId,
+            OrderRequestUpdateDTO dto,
+            MultipartFile imageFile
+    ) {
+        OrderRequest orderRequest =
+                orderRequestRepository.findById(id)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "존재하지 않는 주문 요청입니다. id=%s"
+                                                .formatted(id)
+                                )
+                        );
 
         if (!orderRequest.getBuyerId().equals(buyerId)) {
             throw new org.springframework.security.access.AccessDeniedException(
@@ -137,6 +189,14 @@ public class OrderRequestService {
             longitude = coordinates.longitude();
         }
 
+        String referenceImageUrl =
+                orderRequest.getReferenceImageUrl();
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            referenceImageUrl =
+                    storeImageOrNull(imageFile);
+        }
+
         orderRequest.update(
                 dto.getTitle(),
                 dto.getDescription(),
@@ -147,10 +207,13 @@ public class OrderRequestService {
                 dto.getCategory(),
                 dto.getDeliveryAddress(),
                 latitude,
-                longitude
+                longitude,
+                referenceImageUrl
         );
 
-        return OrderRequestResponseDTO.from(orderRequest);
+        return OrderRequestResponseDTO.from(
+                orderRequest
+        );
     }
 
     /**
@@ -183,5 +246,37 @@ public class OrderRequestService {
                 .stream()
                 .map(OrderRequestResponseDTO::from)
                 .toList();
+    }
+
+    /**
+     * 제목 또는 음식 카테고리 검색 결과를 페이지 단위로 조회한다.
+     */
+    @Transactional(readOnly = true)
+    public Page<OrderRequestResponseDTO> searchByKeyword(
+            String keyword,
+            Pageable pageable
+    ) {
+        return orderRequestRepository
+                .searchByKeyword(keyword, pageable)
+                .map(OrderRequestResponseDTO::from);
+    }
+
+    /**
+     * 참고 이미지가 있으면 저장하고, 없으면 null을 반환한다.
+     */
+    private String storeImageOrNull(MultipartFile imageFile) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            return null;
+        }
+
+        try {
+            return orderRequestImageStorageService
+                    .storeImage(imageFile);
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "주문 참고 이미지를 저장하지 못했습니다.",
+                    e
+            );
+        }
     }
 }

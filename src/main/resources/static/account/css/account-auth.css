@@ -1,244 +1,299 @@
-:root {
-  --account-ink: #132238;
-  --account-blue: #0d4c92;
-  --account-sky: #dcecff;
-  --account-cream: #f7f2e8;
-  --account-paper: #fffdfa;
-  --account-line: #c8d2df;
-  --account-error: #b42318;
-  --account-success: #157347;
-}
+/* 로그인과 회원가입 화면의 공통 스타일 */
 
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 body.account-page {
-  min-height: 100vh;
-  margin: 0;
-  color: var(--account-ink);
-  background:
-    linear-gradient(135deg, rgba(13, 76, 146, 0.12) 0 1px, transparent 1px 22px),
-    var(--account-cream);
-  font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    min-height: 100vh;
+    margin: 0;
+
+    background-color: var(--color-background, #FCF8F6);
+    color: var(--color-text-primary, #1F2937);
 }
 
-.account-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
-  width: min(1080px, calc(100% - 40px));
-  min-height: 680px;
-  margin: 48px auto;
-  overflow: hidden;
-  border: 1px solid rgba(19, 34, 56, 0.16);
-  border-radius: 24px;
-  background: var(--account-paper);
-  box-shadow: 0 24px 70px rgba(19, 34, 56, 0.16);
+
+/* 인증 화면 상단 */
+
+.account-header {
+    border-bottom: 1px solid var(--color-border, #E8DDD8);
+    background-color: var(--color-surface, #FFFFFF);
 }
 
-.account-brand {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 64px;
-  overflow: hidden;
-  color: white;
-  background: linear-gradient(145deg, #082f5c, var(--account-blue) 62%, #2b78c5);
+.account-header-inner {
+    width: min(1180px, calc(100% - 40px));
+    height: 64px;
+
+    margin: 0 auto;
+
+    display: flex;
+    align-items: center;
 }
 
-.account-wordmark {
-  position: absolute;
-  top: 36px;
-  left: 48px;
-  color: white;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 26px;
-  font-weight: 700;
-  text-decoration: none;
+.account-logo {
+    color: var(--color-primary, #E85D3F);
+
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+
+    text-decoration: none;
 }
 
-.account-wordmark span {
-  color: #ffcc66;
+
+/* 인증 화면 본문 */
+
+.account-main {
+    width: min(460px, calc(100% - 40px));
+
+    margin: 0 auto;
+    padding: 72px 0 96px;
 }
 
-.account-kicker,
-.account-step {
-  margin: 0 0 18px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-}
-
-.account-brand h1 {
-  margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(38px, 4.2vw, 58px);
-  line-height: 1.12;
-  letter-spacing: -0.045em;
-}
-
-.account-intro {
-  max-width: 430px;
-  margin: 26px 0 0;
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 15px;
-  line-height: 1.8;
-  word-break: keep-all;
-}
-
-.account-brand-mark {
-  position: absolute;
-  right: -22px;
-  bottom: -74px;
-  color: rgba(255, 255, 255, 0.08);
-  font-family: Georgia, serif;
-  font-size: 260px;
-  line-height: 1;
+.account-main > section {
+    margin-bottom: 0;
 }
 
 .account-card {
-  align-self: center;
-  padding: 56px clamp(32px, 5vw, 72px);
+    padding: 32px;
+
+    border: 1px solid var(--color-border, #E8DDD8);
+    border-radius: 12px;
+
+    background-color: var(--color-surface, #FFFFFF);
 }
 
-.account-step {
-  color: var(--account-blue);
+.account-card-signup {
+    padding-bottom: 34px;
 }
 
-.account-card h2 {
-  margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 34px;
-  letter-spacing: -0.04em;
+
+/* 제목 */
+
+.account-card-header {
+    margin-bottom: 28px;
 }
 
-.account-muted {
-  margin: 10px 0 34px;
-  color: #687588;
-  font-size: 14px;
+.account-card-header h1 {
+    margin: 0;
+
+    font-size: 28px;
+    line-height: 1.4;
+    letter-spacing: -0.035em;
 }
+
+.account-card-header p {
+    margin: 8px 0 0;
+
+    font-size: 14px;
+    line-height: 1.6;
+
+    color: var(--color-text-secondary, #6B7280);
+}
+
+
+/* 폼 */
 
 .account-form {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
 }
 
-.account-form label {
-  margin: 14px 0 8px;
-  font-size: 13px;
-  font-weight: 700;
+.account-field {
+    display: flex;
+    flex-direction: column;
 }
 
-.account-form input {
-  width: 100%;
-  height: 48px;
-  padding: 0 14px;
-  border: 1px solid var(--account-line);
-  border-radius: 10px;
-  background: white;
-  color: var(--account-ink);
-  font: inherit;
-  outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+.account-field label {
+    margin-bottom: 7px;
+
+    font-size: 13px;
+    font-weight: 700;
 }
 
-.account-form input:focus {
-  border-color: var(--account-blue);
-  box-shadow: 0 0 0 3px rgba(13, 76, 146, 0.12);
+.account-field input {
+    width: 100%;
+    height: 46px;
+
+    padding: 0 13px;
+
+    border: 1px solid var(--color-border-strong, #CFC1BA);
+    border-radius: 8px;
+
+    background-color: #FFFFFF;
+    color: var(--color-text-primary, #1F2937);
+
+    font: inherit;
+    font-size: 14px;
+
+    outline: none;
+
+    transition: border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
-.account-form input[aria-invalid='true'] {
-  border-color: var(--account-error);
-  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.1);
+.account-field input::placeholder {
+    color: var(--color-text-disabled, #9CA3AF);
 }
+
+.account-field input:focus {
+    border-color: var(--color-primary, #E85D3F);
+    box-shadow: 0 0 0 3px rgba(232, 93, 63, 0.10);
+}
+
+.account-field input[aria-invalid='true'] {
+    border-color: var(--color-danger, #DC2626);
+}
+
+
+/* 이메일 중복 확인 */
 
 .account-inline-field {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
 }
 
 .account-inline-field button {
-  padding: 0 14px;
-  border: 1px solid var(--account-blue);
-  border-radius: 10px;
-  background: white;
-  color: var(--account-blue);
-  font-weight: 700;
-  cursor: pointer;
+    min-width: 86px;
+
+    padding: 0 14px;
+
+    border: 1px solid var(--color-primary, #E85D3F);
+    border-radius: 8px;
+
+    background-color: #FFFFFF;
+    color: var(--color-primary, #E85D3F);
+
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
 }
+
+.account-inline-field button:hover {
+    background-color: var(--color-primary-soft, #FFF2ED);
+}
+
+
+/* 검증 안내 */
 
 .account-hint,
 .account-field-message {
-  min-height: 18px;
-  margin: 6px 0 0;
-  color: #778396;
-  font-size: 11px;
+    min-height: 12px;
+
+    margin: 4px 0 0;
+
+    font-size: 11px;
+    line-height: 1.4;
+
+    color: var(--color-text-secondary, #6B7280);
+}
+
+.account-field-message:not(.is-success) {
+    color: var(--color-danger, #DC2626);
 }
 
 .account-message {
-  min-height: 22px;
-  margin: 18px 0 4px;
-  color: var(--account-error);
-  font-size: 13px;
+    min-height: 18px;
+
+    margin: 0;
+
+    font-size: 12px;
+    line-height: 1.5;
+
+    color: var(--color-danger, #DC2626);
 }
 
 .account-message.is-success,
 .account-field-message.is-success {
-  color: var(--account-success);
+    color: var(--color-positive, #2F855A);
 }
 
-.account-field-message:not(.is-success) {
-  color: var(--account-error);
-}
+
+/* 주요 버튼 */
 
 .account-submit {
-  height: 50px;
-  border: 0;
-  border-radius: 10px;
-  color: white;
-  background: var(--account-ink);
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
+    width: 100%;
+    height: 48px;
+
+    border: 1px solid var(--color-primary, #E85D3F);
+    border-radius: 8px;
+
+    background-color: var(--color-primary, #E85D3F);
+    color: #FFFFFF;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.account-submit:hover {
+    border-color: var(--color-primary-hover, #C94A30);
+    background-color: var(--color-primary-hover, #C94A30);
 }
 
 .account-submit:disabled,
 .account-inline-field button:disabled {
-  cursor: wait;
-  opacity: 0.6;
+    cursor: wait;
+    opacity: 0.6;
 }
 
+
+/* 로그인 / 회원가입 전환 */
+
 .account-switch {
-  margin: 26px 0 0;
-  color: #687588;
-  font-size: 13px;
-  text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    margin-top: 24px;
+
+    font-size: 13px;
+    color: var(--color-text-secondary, #6B7280);
 }
 
 .account-switch a {
-  color: var(--account-blue);
-  font-weight: 800;
+    color: var(--color-primary, #E85D3F);
+
+    font-weight: 700;
+    text-decoration: none;
 }
 
-@media (max-width: 800px) {
-  .account-shell {
-    grid-template-columns: 1fr;
-    margin: 20px auto;
-  }
+.account-switch a:hover {
+    text-decoration: underline;
+}
 
-  .account-brand {
-    min-height: 300px;
-    padding: 84px 34px 42px;
-  }
 
-  .account-wordmark {
-    top: 28px;
-    left: 34px;
-  }
+/* 반응형 */
 
-  .account-card {
-    padding: 42px 28px 50px;
-  }
+@media (max-width: 520px) {
+
+    .account-header-inner {
+        width: calc(100% - 28px);
+    }
+
+    .account-main {
+        width: calc(100% - 28px);
+        padding: 40px 0 64px;
+    }
+
+    .account-card {
+        padding: 26px 22px;
+    }
+
+    .account-card-header h1 {
+        font-size: 25px;
+    }
+
+    .account-inline-field {
+        grid-template-columns: 1fr;
+    }
+
+    .account-inline-field button {
+        height: 42px;
+    }
 }

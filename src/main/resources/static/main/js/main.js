@@ -78,7 +78,8 @@ function createMatchCard(match, index) {
     const product = match.product;
 
     const card = document.createElement('article');
-    card.className = 'main-match-card';
+    card.className =
+        'main-match-card main-buyer-match-card';
 
     const heading = document.createElement('div');
     heading.className = 'main-match-heading';
@@ -334,7 +335,8 @@ function createSellerMatchCard(match, index) {
     const product = match.sourceProduct;
 
     const card = document.createElement('article');
-    card.className = 'main-match-card';
+    card.className =
+        'main-match-card main-seller-match-card';
 
     const heading = document.createElement('div');
     heading.className = 'main-match-heading';
@@ -592,7 +594,7 @@ async function loadSellerMatchingSection() {
         const profile =
             await readApiBody(response);
 
-        if (profile?.sellerStatus !== 'APPROVED') {
+        if (profile?.role !== 'SELLER') {
             return;
         }
 

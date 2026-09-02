@@ -18,6 +18,7 @@
         .btn-secondary { background: #e2e8f0; color: #0f172a; }
         pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 12px; overflow: auto; }
         .hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .notice { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; display: none; }
     </style>
 </head>
 <body>
@@ -29,39 +30,26 @@
 
     <div class="card">
         <h1 style="margin-top:0;">견적 작성</h1>
-        <p style="color:#64748b;">구매 조건을 직접 입력하거나 주문 요청 정보를 기준으로 작성할 수 있습니다.</p>
+        <p style="color:#64748b;">원하는 판매자에게 견적을 요청합니다. 아래 내용을 직접 입력해주세요.</p>
+
+        <div id="missingSellerNotice" class="notice">
+            상품 정보가 없습니다. 상품 상세 페이지에서 "견적 요청하기" 버튼으로 들어와주세요.
+        </div>
 
         <form id="estimateForm">
             <div class="field">
-                <label for="orderId">주문 요청 ID</label>
-                <input type="number" id="orderId" min="1" placeholder="필수" required>
-                <div class="hint">이 견적 요청이 근거로 삼을 내 주문 요청 ID입니다. (필수)</div>
-            </div>
-
-            <div class="field">
-                <label for="sellerId">판매자 ID</label>
-                <input type="number" id="sellerId" min="1" placeholder="필수" required>
-            </div>
-
-            <div class="field">
-                <label for="productId">상품 ID</label>
-                <input type="number" id="productId" min="1" placeholder="선택">
-                <div class="hint">등록된 상품을 근거로 요청하는 경우에만 입력하세요.</div>
-            </div>
-
-            <div class="field">
                 <label for="itemName">상품명</label>
-                <input type="text" id="itemName" placeholder="예: 한우 도시락">
+                <input type="text" id="itemName" placeholder="예: 한우 도시락" required>
             </div>
 
             <div class="field">
                 <label for="eventDateTime">행사/이용 일시</label>
-                <input type="datetime-local" id="eventDateTime">
+                <input type="datetime-local" id="eventDateTime" required>
             </div>
 
             <div class="field">
                 <label for="budgetType">예산 유형</label>
-                <select id="budgetType">
+                <select id="budgetType" required>
                     <option value="">선택</option>
                     <option value="PER_PERSON">1인당 예산</option>
                     <option value="TOTAL">총 예산</option>
@@ -70,12 +58,24 @@
 
             <div class="field">
                 <label for="budget">예산</label>
-                <input type="number" id="budget" min="0" step="0.01" placeholder="예: 50000">
+                <input type="number" id="budget" min="0" step="0.01" placeholder="예: 50000" required>
+            </div>
+
+            <div class="field">
+                <label for="quantity">수량(인분)</label>
+                <input type="number" id="quantity" min="1" step="1" placeholder="예: 20" required>
+                <div class="hint">예산 유형이 "총 예산"이면 이 수량으로 1인당 금액을 계산합니다.</div>
+            </div>
+
+            <div class="field">
+                <label for="deliveryAddress">배송(행사) 주소</label>
+                <input type="text" id="deliveryAddress" placeholder="예: 서울특별시 강남구 테헤란로 152" required>
+                <div class="hint">주소를 입력하면 위경도가 자동으로 계산됩니다.</div>
             </div>
 
             <div class="field">
                 <label for="description">상세 설명</label>
-                <textarea id="description" placeholder="주문 조건, 요청 사항, 전달할 내용을 적어주세요."></textarea>
+                <textarea id="description" placeholder="요청 사항, 전달할 내용을 적어주세요."></textarea>
             </div>
 
             <div class="field">
@@ -84,7 +84,7 @@
             </div>
 
             <div class="actions">
-                <button type="submit" class="btn btn-primary">견적 저장</button>
+                <button type="submit" class="btn btn-primary">견적 요청 보내기</button>
                 <a class="btn btn-secondary" href="/estimates">취소</a>
             </div>
         </form>
@@ -94,97 +94,71 @@
     <pre id="result">아직 저장하지 않았습니다.</pre>
 </div>
 
-<script>
+<script type="module">
+    import { authFetch, readApiBody, readCurrentUserId } from "/account/js/auth-client.js";
+
     const estimateForm = document.getElementById("estimateForm");
     const result = document.getElementById("result");
-    const ACCESS_TOKEN_KEY = "matcheat.accessToken";
+    const missingSellerNotice = document.getElementById("missingSellerNotice");
 
-    function readAccessToken() {
-        return sessionStorage.getItem(ACCESS_TOKEN_KEY);
+    if (readCurrentUserId() === null) {
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login?redirect=${redirect}`;
     }
 
-    async function authFetch(url, options = {}) {
-        const headers = new Headers(options.headers || {});
-        const token = readAccessToken();
-        if (token) {
-            headers.set("Authorization", `Bearer ${token}`);
-        }
-        return fetch(url, { ...options, headers });
+    // 상품 상세 페이지에서 넘어온 값. 화면에는 표시하지 않고 폼 제출에만 사용한다.
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get("productId") ? Number(params.get("productId")) : null;
+    const itemName = params.get("itemName");
+
+    if (!productId) {
+        missingSellerNotice.style.display = "block";
+        estimateForm.querySelector("button[type=submit]").disabled = true;
     }
 
-    function toLocalDateTimeValue(value) {
-        if (!value) {
-            return "";
-        }
-
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-            return "";
-        }
-
-        const pad = (n) => String(n).padStart(2, "0");
-        return [
-            date.getFullYear(),
-            pad(date.getMonth() + 1),
-            pad(date.getDate())
-        ].join("-") + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-    }
-
-    function applyQueryDefaults() {
-        const params = new URLSearchParams(window.location.search);
-        const orderId = params.get("orderId");
-        const sellerId = params.get("sellerId");
-        const productId = params.get("productId");
-        const itemName = params.get("itemName");
-        const eventDateTime = params.get("eventDateTime");
-
-        if (orderId) document.getElementById("orderId").value = orderId;
-        if (sellerId) document.getElementById("sellerId").value = sellerId;
-        if (productId) document.getElementById("productId").value = productId;
-        if (itemName) document.getElementById("itemName").value = itemName;
-        if (eventDateTime) document.getElementById("eventDateTime").value = toLocalDateTimeValue(eventDateTime);
+    if (itemName) {
+        document.getElementById("itemName").value = itemName;
     }
 
     estimateForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        const requestId = document.getElementById("orderId").value;
-        if (!requestId) {
-            result.textContent = "주문 요청 ID는 필수입니다.";
+        if (!productId) {
+            result.textContent = "상품 정보가 없어 견적을 요청할 수 없습니다.";
             return;
         }
 
         const requestData = {
             description: document.getElementById("description").value || null,
-            budget: document.getElementById("budget").value ? Number(document.getElementById("budget").value) : null,
-            budgetType: document.getElementById("budgetType").value || null,
-            itemName: document.getElementById("itemName").value || null,
-            eventDateTime: document.getElementById("eventDateTime").value || null,
-            sellerId: document.getElementById("sellerId").value ? Number(document.getElementById("sellerId").value) : null,
-            productId: document.getElementById("productId").value ? Number(document.getElementById("productId").value) : null,
+            budget: Number(document.getElementById("budget").value),
+            budgetType: document.getElementById("budgetType").value,
+            itemName: document.getElementById("itemName").value,
+            quantity: Number(document.getElementById("quantity").value),
+            eventDateTime: document.getElementById("eventDateTime").value,
+            productId: productId,
+            deliveryAddress: document.getElementById("deliveryAddress").value,
             estimateImage: document.getElementById("estimateImage").value || null
         };
 
         try {
             result.textContent = "전송 중...";
-            const response = await authFetch(`/api/v1/requests/${Number(requestId)}/estimates`, {
+            const response = await authFetch("/api/v1/estimates", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(requestData)
             });
 
-            const data = await response.json().catch(() => ({}));
+            const data = await readApiBody(response);
             if (!response.ok) {
-                throw new Error(data.message || "견적 저장에 실패했습니다.");
+                throw new Error(data?.message ?? "견적 저장에 실패했습니다.");
             }
 
-            result.textContent = JSON.stringify(data, null, 2);
+            alert("견적 요청이 정상적으로 작성되었습니다.");
+            window.location.href = "/";
         } catch (error) {
             result.textContent = error.message;
         }
     });
-
-    applyQueryDefaults();
 </script>
 </body>
 </html>
