@@ -1,52 +1,233 @@
 /* MatchEAT 메인페이지 전용 스타일 */
 
-.matching-preview-section {
-    padding: 28px;
-    border-radius: 16px;
-    background-color: #ffffff;
+.main-home {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.matching-preview-context {
-    margin: 20px 0 12px;
+.main-home > section {
+    margin-bottom: 0;
+}
+
+/* 메인 소개 */
+
+.main-hero {
+    padding: 32px 0 20px;
+}
+
+.main-hero-content {
+    max-width: 680px;
+}
+
+.main-hero-kicker,
+.main-section-kicker {
+    margin: 0 0 8px;
+
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-primary, #E85D3F);
+}
+
+.main-hero h1 {
+    margin: 0;
+
+    font-size: clamp(30px, 4vw, 42px);
+    line-height: 1.25;
+    letter-spacing: -0.04em;
+    color: var(--color-text-primary, #1F2937);
+}
+
+.main-hero-description {
+    max-width: 720px;
+
+    margin: 16px 0 0;
+
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--color-text-secondary, #6B7280);
+}
+
+.main-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    margin-top: 24px;
+}
+
+.main-secondary-link,
+.main-section-link {
+    font-size: 14px;
     font-weight: 600;
+    color: var(--color-text-secondary, #6B7280);
+    text-decoration: none;
+}
+
+/* 섹션 우측의 더보기형 이동 링크 */
+
+.main-section-more {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.main-section-more .main-section-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    padding: 4px 0;
+
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary, #6B7280);
+    text-decoration: none;
+}
+
+.main-section-more .main-section-link::after {
+    content: "›";
+
+    font-size: 16px;
+    line-height: 1;
+}
+
+.main-section-more .main-section-link:hover {
+    color: var(--color-primary, #E85D3F);
+}
+
+.main-secondary-link:hover,
+.main-section-link:hover {
+    color: var(--color-primary, #E85D3F);
+}
+
+/* 메인 소개 영역의 보조 버튼 */
+
+.main-outline-button {
+    border: 1px solid var(--color-primary, #E85D3F);
+    background-color: var(--color-surface, #FFFFFF);
+    color: var(--color-primary, #E85D3F);
+}
+
+.main-outline-button:hover {
+    background-color: var(--color-primary-soft, #FFF2ED);
+    opacity: 1;
+}
+
+/* 공통 메인 섹션 */
+
+.main-section {
+    padding: 28px 30px;
+
+    border: 1px solid var(--color-border, #E8DDD8);
+    border-radius: 12px;
+    background-color: var(--color-surface, #FFFFFF);
+}
+
+.main-section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.main-section-header h2 {
+    margin: 0;
+
+    font-size: 22px;
+    line-height: 1.4;
+    color: var(--color-text-primary, #1F2937);
+}
+
+.main-section-description {
+    margin: 8px 0 0;
+
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-text-secondary, #6B7280);
+}
+
+.main-section-kicker-seller {
+    color: var(--color-primary, #2F855A);
+}
+
+/* 매칭 상태 */
+
+.matching-preview-context {
+    margin: 20px 0 0;
+
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary, #1F2937);
 }
 
 .matching-preview-state {
-    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 96px;
+    padding: 24px;
     margin-top: 20px;
 
     text-align: center;
 
-    border: 1px solid #dddddd;
-    border-radius: 12px;
-    background-color: #fafafa;
+    border: 1px dashed var(--color-border-strong, #CFC1BA);
+    border-radius: 8px;
+
+    font-size: 14px;
+    color: var(--color-text-secondary, #6B7280);
+
+    background-color: var(--color-surface-subtle, #FAF7F5);
 }
 
 .matching-preview-state p {
-    margin: 8px 0 0;
+    margin: 0 0 12px;
 }
+
+.matching-preview-state .button {
+    margin-top: 4px;
+}
+
+/* 매칭 카드 */
 
 .matching-preview-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
 
     margin-top: 20px;
 }
 
 .main-match-card {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
     padding: 20px;
 
-    border: 1px solid #dddddd;
-    border-radius: 12px;
-    background-color: #ffffff;
+    border: 1px solid var(--color-border, #E8DDD8);
+    border-radius: 8px;
+    background-color: var(--color-surface, #FFFFFF);
+}
+
+.main-buyer-match-card {
+    border-top: 3px solid var(--color-primary, #E85D3F);
+}
+
+.main-seller-match-card {
+    border-top: 3px solid var(--color-positive, #2F855A);
 }
 
 .main-match-heading {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    gap: 16px;
+}
+
+.main-match-heading > div {
+    min-width: 0;
 }
 
 .main-match-rank {
@@ -54,36 +235,51 @@
 
     margin-bottom: 6px;
 
-    font-size: 13px;
-    color: #666666;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary, #6B7280);
 }
 
 .main-match-title {
     margin: 0;
 
-    font-size: 18px;
+    overflow: hidden;
+
+    font-size: 17px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: var(--color-text-primary, #1F2937);
 }
 
 .main-match-score {
     flex-shrink: 0;
 
     font-size: 20px;
+    line-height: 1.3;
+    color: var(--color-primary, #E85D3F);
+}
+
+.main-seller-match-card .main-match-score {
+    color: var(--color-positive, #2F855A);
 }
 
 .main-match-meta {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 7px;
 
     margin-top: 16px;
 
-    font-size: 14px;
-    color: #555555;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text-secondary, #6B7280);
 }
 
 .main-match-price {
     font-weight: 600;
-    color: #222222;
+    color: var(--color-text-primary, #1F2937);
 }
 
 .main-match-tags {
@@ -95,31 +291,44 @@
 }
 
 .main-match-tag {
-    padding: 6px 9px;
+    padding: 5px 8px;
+
+    border: 1px solid var(--color-border, #E8DDD8);
+    border-radius: 6px;
 
     font-size: 12px;
+    line-height: 1.3;
+    color: var(--color-text-secondary, #6B7280);
 
-    border-radius: 999px;
-    background-color: #f0f0f0;
+    background-color: var(--color-surface-subtle, #FAF7F5);
 }
 
-.matching-preview-actions {
-    margin-top: 20px;
+.main-seller-match-footer {
+    margin-top: auto;
+    padding-top: 20px;
+
     text-align: right;
 }
 
+.main-seller-match-footer .button {
+    display: inline-flex;
+}
+
+/* 상품 카드 */
+
 .product-preview-section {
-    padding: 28px;
-    border-radius: 16px;
-    background-color: #ffffff;
+    padding: 28px 30px;
 }
 
 .main-product-card {
     overflow: hidden;
 
-    border: 1px solid #dddddd;
-    border-radius: 12px;
-    background-color: #ffffff;
+    min-width: 0;
+
+    border: 1px solid var(--color-border, #E8DDD8);
+    border-radius: 8px;
+
+    background-color: var(--color-surface, #FFFFFF);
 }
 
 .main-product-image {
@@ -127,21 +336,23 @@
     align-items: center;
     justify-content: center;
 
-    height: 150px;
+    height: 168px;
 
-    background-color: #f3f3f3;
+    border-bottom: 1px solid var(--color-border, #E8DDD8);
+    background-color: var(--color-surface-subtle, #FAF7F5);
 }
 
 .main-product-image img {
     width: 100%;
     height: 100%;
+
     object-fit: cover;
 }
 
 .main-product-placeholder {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
-    color: #999999;
+    color: var(--color-text-disabled, #9CA3AF);
 }
 
 .main-product-content {
@@ -151,7 +362,14 @@
 .main-product-title {
     margin: 0 0 10px;
 
-    font-size: 18px;
+    overflow: hidden;
+
+    font-size: 17px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: var(--color-text-primary, #1F2937);
 }
 
 .main-product-meta {
@@ -159,28 +377,91 @@
     flex-direction: column;
     gap: 6px;
 
-    font-size: 14px;
-    color: #555555;
+    font-size: 13px;
+    color: var(--color-text-secondary, #6B7280);
 }
 
 .main-product-price {
-    font-weight: 600;
-    color: #222222;
+    font-weight: 700;
+    color: var(--color-text-primary, #1F2937);
 }
 
 .main-product-rating {
     margin-top: 12px;
 
-    font-size: 13px;
-    color: #666666;
+    font-size: 12px;
+    color: var(--color-text-secondary, #6B7280);
 }
 
-@media (max-width: 800px) {
+/* Footer */
+
+.main-footer {
+    margin-top: 56px;
+
+    border-top: 1px solid var(--color-border, #E8DDD8);
+    background-color: var(--color-surface, #FFFFFF);
+}
+
+.main-footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 20px;
+
+    font-size: 13px;
+    color: var(--color-text-secondary, #6B7280);
+}
+
+.main-footer-inner strong {
+    color: var(--color-text-primary, #1F2937);
+}
+
+/* 반응형 */
+
+@media (max-width: 900px) {
+    .matching-preview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+
+    .main-home {
+        gap: 24px;
+    }
+
+    .main-hero {
+        padding-top: 28px;
+    }
+
+    .main-hero h1 {
+        font-size: 30px;
+    }
+
+    .main-hero-actions {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .main-section {
+        padding: 22px 18px;
+    }
+
+    .main-section-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
     .matching-preview-grid {
         grid-template-columns: 1fr;
     }
 
-    .matching-preview-actions {
-        text-align: left;
+    .main-footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }

@@ -12,6 +12,17 @@ const actions = document.getElementById('matchingPreviewActions');
 const allLink = document.getElementById('matchingAllLink');
 const sellerMatchingSection =
     document.getElementById('sellerMatchingSection');
+const sellerMatchingLoading =
+    document.getElementById('sellerMatchingLoading');
+
+const sellerMatchingMessage =
+    document.getElementById('sellerMatchingMessage');
+
+const sellerMatchingCards =
+    document.getElementById('sellerMatchingCards');
+
+const sellerMatchingActions =
+    document.getElementById('sellerMatchingActions');
 const productLoading =
     document.getElementById('productPreviewLoading');
 
@@ -67,7 +78,8 @@ function createMatchCard(match, index) {
     const product = match.product;
 
     const card = document.createElement('article');
-    card.className = 'main-match-card';
+    card.className =
+        'main-match-card main-buyer-match-card';
 
     const heading = document.createElement('div');
     heading.className = 'main-match-heading';
@@ -264,6 +276,310 @@ async function loadMatchingPreview() {
 }
 
 /**
+ * 주문 행사 일시를 화면 표시 형식으로 변환한다.
+ */
+function formatEventDateTime(value) {
+    if (!value) {
+        return '행사 일시 미정';
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(date);
+}
+
+/**
+ * 주문의 예산 조건을 화면 표시 형식으로 변환한다.
+ */
+function formatOrderBudget(order) {
+    if (order?.budget == null) {
+        return '예산 미정';
+    }
+
+    const label =
+        order.budgetType === 'PER_PERSON'
+            ? '1인 예산'
+            : '총 예산';
+
+    return `${label} ${formatMoney(order.budget)}원`;
+}
+
+/**
+ * 판매자 맞춤 주문 영역에 안내 메시지를 표시한다.
+ */
+function showSellerMatchingMessage(text) {
+    sellerMatchingLoading.hidden = true;
+    sellerMatchingCards.hidden = true;
+
+    sellerMatchingMessage.textContent = text;
+    sellerMatchingMessage.hidden = false;
+
+    sellerMatchingActions.hidden = false;
+}
+
+/**
+ * 판매자 맞춤 주문 카드 한 건을 생성한다.
+ */
+function createSellerMatchCard(match, index) {
+    const order = match.orderRequest;
+    const product = match.sourceProduct;
+
+    const card = document.createElement('article');
+    card.className =
+        'main-match-card main-seller-match-card';
+
+    const heading = document.createElement('div');
+    heading.className = 'main-match-heading';
+
+    const titleArea = document.createElement('div');
+
+    const rank = document.createElement('span');
+    rank.className = 'main-match-rank';
+    rank.textContent = `${index + 1}위`;
+
+    const title = document.createElement('h3');
+    title.className = 'main-match-title';
+    title.textContent =
+        order?.title ?? '주문 제목 없음';
+
+    const score = document.createElement('strong');
+    score.className = 'main-match-score';
+    score.textContent =
+        `${Number(match.totalScore ?? 0).toFixed(1)}점`;
+
+    titleArea.append(rank, title);
+    heading.append(titleArea, score);
+
+    const meta = document.createElement('div');
+    meta.className = 'main-match-meta';
+
+    const sourceProduct = document.createElement('span');
+    sourceProduct.className = 'main-match-price';
+    sourceProduct.textContent =
+        `판매 조건: ${product?.productName ?? '상품명 없음'}`;
+
+    const quantity = document.createElement('span');
+    quantity.textContent =
+        `수량 ${Number(order?.quantity ?? 0).toLocaleString('ko-KR')}명`;
+
+    const budget = document.createElement('span');
+    budget.textContent =
+        formatOrderBudget(order);
+
+    const category = document.createElement('span');
+    category.textContent =
+        `카테고리 ${order?.category ?? '미지정'}`;
+
+    const eventDate = document.createElement('span');
+    eventDate.textContent =
+        formatEventDateTime(order?.eventDateTime);
+
+    meta.append(
+        sourceProduct,
+        quantity,
+        budget,
+        category,
+        eventDate
+    );
+
+    const tags = document.createElement('div');
+    tags.className = 'main-match-tags';
+
+    [...(match.scoreItems ?? [])]
+        .sort(
+            (left, right) =>
+                Number(right.contribution ?? 0)
+                - Number(left.contribution ?? 0)
+        )
+        .slice(0, 3)
+        .forEach(item => {
+            const tag = document.createElement('span');
+
+            tag.className = 'main-match-tag';
+            tag.textContent =
+                item.label ?? '매칭 조건';
+
+            tags.appendChild(tag);
+        });
+
+    const footer = document.createElement('div');
+    footer.className = 'main-seller-match-footer';
+
+    const detailLink = document.createElement('a');
+    detailLink.className = 'button';
+    detailLink.href = `/requests/${order.id}`;
+    detailLink.textContent = '주문 보기';
+
+    footer.appendChild(detailLink);
+
+    card.append(
+        heading,
+        meta,
+        tags,
+        footer
+    );
+
+    return card;
+}
+
+/**
+ * 상품별 추천 결과에서 주문별 최고 점수 결과만 남긴다.
+ */
+function mergeSellerRecommendations(matches) {
+    const bestByOrderId = new Map();
+
+    matches.forEach(match => {
+        const orderId = match.orderRequest?.id;
+
+        if (orderId == null) {
+            return;
+        }
+
+        const existing =
+            bestByOrderId.get(orderId);
+
+        if (
+            !existing
+            || Number(match.totalScore ?? 0)
+            > Number(existing.totalScore ?? 0)
+        ) {
+            bestByOrderId.set(orderId, match);
+        }
+    });
+
+    return [...bestByOrderId.values()]
+        .sort(
+            (left, right) =>
+                Number(right.totalScore ?? 0)
+                - Number(left.totalScore ?? 0)
+        );
+}
+
+/**
+ * 판매자의 상품 한 건에 대한 추천 주문 목록을 조회한다.
+ */
+async function fetchSellerRecommendations(product) {
+    const response =
+        await authFetch(
+            `/api/products/${product.id}`
+            + '/order-requests/recommendations'
+        );
+
+    const result =
+        await readApiBody(response);
+
+    if (!response.ok) {
+        throw new Error(
+            result?.message
+            ?? '상품의 맞춤 주문을 불러오지 못했습니다.'
+        );
+    }
+
+    if (!Array.isArray(result)) {
+        return [];
+    }
+
+    return result.map(match => ({
+        ...match,
+        sourceProduct: product
+    }));
+}
+
+/**
+ * 승인 판매자의 상품을 기준으로 맞춤 주문 미리보기를 조회한다.
+ */
+async function loadSellerRecommendations() {
+    try {
+        const productResponse =
+            await authFetch('/api/v1/products/mine');
+
+        const products =
+            await readApiBody(productResponse);
+
+        if (!productResponse.ok) {
+            throw new Error(
+                products?.message
+                ?? '내 상품을 불러오지 못했습니다.'
+            );
+        }
+
+        const activeProducts =
+            Array.isArray(products)
+                ? products.filter(product => !product.hidden)
+                : [];
+
+        if (activeProducts.length === 0) {
+            showSellerMatchingMessage(
+                '등록된 판매 조건이 없습니다.'
+            );
+            return;
+        }
+
+        // 한 상품의 추천 조회 실패가 전체 메인페이지를 막지 않도록 개별 처리한다.
+        const recommendationResults =
+            await Promise.allSettled(
+                activeProducts.map(
+                    fetchSellerRecommendations
+                )
+            );
+
+        const allMatches =
+            recommendationResults
+                .filter(
+                    result =>
+                        result.status === 'fulfilled'
+                )
+                .flatMap(result => result.value);
+
+        const recommendations =
+            mergeSellerRecommendations(allMatches)
+                .slice(0, 3);
+
+        sellerMatchingLoading.hidden = true;
+
+        if (recommendations.length === 0) {
+            showSellerMatchingMessage(
+                '현재 판매 조건에 맞는 주문이 없습니다.'
+            );
+            return;
+        }
+
+        sellerMatchingCards.replaceChildren();
+
+        recommendations.forEach(
+            (match, index) => {
+                sellerMatchingCards.appendChild(
+                    createSellerMatchCard(
+                        match,
+                        index
+                    )
+                );
+            }
+        );
+
+        sellerMatchingMessage.hidden = true;
+        sellerMatchingCards.hidden = false;
+        sellerMatchingActions.hidden = false;
+
+    } catch (error) {
+        showSellerMatchingMessage(
+            error.message
+            ?? '판매자 맞춤 주문을 불러오지 못했습니다.'
+        );
+    }
+}
+
+/**
  * 승인 판매자에게 판매자 맞춤 주문 영역을 표시한다.
  */
 async function loadSellerMatchingSection() {
@@ -278,9 +594,14 @@ async function loadSellerMatchingSection() {
         const profile =
             await readApiBody(response);
 
-        if (profile?.sellerStatus === 'APPROVED') {
-            sellerMatchingSection.hidden = false;
+        if (profile?.role !== 'SELLER') {
+            return;
         }
+
+        sellerMatchingSection.hidden = false;
+
+        await loadSellerRecommendations();
+
     } catch {
         // 판매자 영역 조회 실패는 구매자 맞춤 매칭에 영향을 주지 않는다.
     }

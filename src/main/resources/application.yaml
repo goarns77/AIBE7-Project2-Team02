@@ -3,9 +3,17 @@ spring:
     name: MatchEAT
   profiles:
     include: db, ai, account
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
 app:
   kakao:
     rest-api-key: ${KAKAO_REST_API_KEY:}
+  websocket:
+    allowed-origin-patterns: ${WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:http://localhost:*}
+
+
 ---
 spring:
   config:

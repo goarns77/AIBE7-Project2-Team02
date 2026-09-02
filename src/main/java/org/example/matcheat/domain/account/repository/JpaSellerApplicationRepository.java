@@ -36,6 +36,11 @@ public class JpaSellerApplicationRepository implements SellerApplicationReposito
     }
 
     @Override
+    public Optional<Long> findUserIdBySellerId(long sellerId) {
+        return sellerProfiles.findById(sellerId).map(SellerProfileEntity::userId);
+    }
+
+    @Override
     public boolean existsByUserId(long userId) {
         return sellerProfiles.existsByUser_Id(userId);
     }

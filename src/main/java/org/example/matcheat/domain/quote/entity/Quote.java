@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -37,6 +38,12 @@ public class Quote {
 	private Long deliveryFee;
 	private Long totalAmount;
 
+	// [추가] QuoteNegotiation(협상형) 결과를 확정할 때, 수량/단가/배송비로
+	// 표현 안 되는 조건(배송시간대, 알레르기 등)을 잃지 않기 위해 추가.
+	// 기존 "제안형" 생성 경로(direct/to-buyer/to-seller 등)는 이 필드를 안 채워도 됨.
+	@Column(columnDefinition = "TEXT")
+	private String additionalNotes;
+
 	@Enumerated(EnumType.STRING)
 	private QuoteStatus status;
 
@@ -58,7 +65,8 @@ public class Quote {
 
 	@Builder
 	public Quote(Long chatRoomId, Long buyerId, Long sellerId, SenderRole senderRole,
-	             Integer quantity, Long unitPrice, Long deliveryFee, Long totalAmount, QuoteStatus status) {
+	             Integer quantity, Long unitPrice, Long deliveryFee, Long totalAmount,
+	             String additionalNotes, QuoteStatus status) {
 		if (buyerId == null || sellerId == null) {
 			throw new IllegalArgumentException("buyerId와 sellerId는 필수입니다.");
 		}
@@ -73,6 +81,7 @@ public class Quote {
 		this.unitPrice = unitPrice;
 		this.deliveryFee = deliveryFee;
 		this.totalAmount = totalAmount;
+		this.additionalNotes = additionalNotes;
 		this.status = status != null ? status : QuoteStatus.SENT;
 	}
 
@@ -95,40 +104,43 @@ public class Quote {
 	// ---------------------------------------------------------------
 
 	/** 이 견적서의 구매자 또는 판매자인지 (조회 권한) */
-	public boolean isParticipant(Long userId) {
+	public boolean isParticipant(Long userId, Long sellerProfileId) {
 		if (userId == null) return false;
-		return userId.equals(this.buyerId) || userId.equals(this.sellerId);
+		if (userId.equals(this.buyerId)) return true;
+		return sellerProfileId != null && sellerProfileId.equals(this.sellerId);
 	}
 
-	public void validateParticipant(Long userId) {
-		if (!isParticipant(userId)) {
-			throw new IllegalArgumentException("해당 견적서에 접근 권한이 없습니다.");
+	public void validateParticipant(Long userId, Long sellerProfileId) {
+		if (!isParticipant(userId, sellerProfileId)) {
+			throw new AccessDeniedException("해당 견적서에 접근 권한이 없습니다.");
 		}
 	}
 
-	/** 이 견적서를 보낸 당사자인지 (내용 수정 권한 / 자진 철회 권한) */
-	public boolean isSender(Long userId) {
+	public boolean isSender(Long userId, Long sellerProfileId) {
 		if (userId == null) return false;
-		Long senderId = (this.senderRole == SenderRole.SELLER) ? this.sellerId : this.buyerId;
-		return senderId.equals(userId);
+		if (this.senderRole == SenderRole.SELLER) {
+			return sellerProfileId != null && sellerProfileId.equals(this.sellerId);
+		}
+		return userId.equals(this.buyerId);
 	}
 
-	public void validateSenderOnly(Long userId) {
-		if (!isSender(userId)) {
-			throw new IllegalArgumentException("견적서를 보낸 당사자만 수행할 수 있습니다.");
+	public void validateSenderOnly(Long userId, Long sellerProfileId) {
+		if (!isSender(userId, sellerProfileId)) {
+			throw new AccessDeniedException("견적서를 보낸 당사자만 수행할 수 있습니다.");
 		}
 	}
 
-	/** 이 견적서를 받은 상대방인지 (수락/거절 권한) */
-	public boolean isCounterparty(Long userId) {
+	public boolean isCounterparty(Long userId, Long sellerProfileId) {
 		if (userId == null) return false;
-		Long counterpartyId = (this.senderRole == SenderRole.SELLER) ? this.buyerId : this.sellerId;
-		return counterpartyId.equals(userId);
+		if (this.senderRole == SenderRole.SELLER) {
+			return userId.equals(this.buyerId);
+		}
+		return sellerProfileId != null && sellerProfileId.equals(this.sellerId);
 	}
 
-	public void validateCounterpartyOnly(Long userId) {
-		if (!isCounterparty(userId)) {
-			throw new IllegalArgumentException("견적서를 받은 상대방만 수행할 수 있습니다.");
+	public void validateCounterpartyOnly(Long userId, Long sellerProfileId) {
+		if (!isCounterparty(userId, sellerProfileId)) {
+			throw new AccessDeniedException("견적서를 받은 상대방만 수행할 수 있습니다.");
 		}
 	}
 

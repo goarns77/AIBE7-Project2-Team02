@@ -28,6 +28,9 @@ public class MatchScoreCalculator {
 
     private final TextSimilarityCalculator textSimilarityCalculator;
 
+    /**
+     * 텍스트 유사도 계산기를 주입받는 생성자이다.
+     */
     public MatchScoreCalculator(TextSimilarityCalculator textSimilarityCalculator) {
         this.textSimilarityCalculator = textSimilarityCalculator;
     }
@@ -105,6 +108,9 @@ public class MatchScoreCalculator {
         return Optional.of(clamp((1 - ratio) * 100));
     }
 
+    /**
+     * 거리 점수에 대한 근거 문구를 만든다.
+     */
     private String distanceReason(double score) {
         return "배송 반경 대비 근접도 %.0f%%".formatted(score);
     }
@@ -140,10 +146,13 @@ public class MatchScoreCalculator {
 
         return switch (orderRequest.getBudgetType()) {
             case PER_PERSON -> servingPrice;
-            case TOTAL -> servingPrice * orderRequest.getQuantity();
+            case TOTAL -> servingPrice * (orderRequest.getQuantity() != null ? orderRequest.getQuantity() : 1);
         };
     }
 
+    /**
+     * 예산 적합도 점수에 대한 근거 문구를 만든다.
+     */
     private String budgetReason(ProductEntity product, OrderRequest orderRequest) {
         return "예산 적합도 %.0f%%".formatted(budgetScore(product, orderRequest));
     }
@@ -163,6 +172,9 @@ public class MatchScoreCalculator {
         return productCategory.equals(orderCategory) ? 100 : 65;
     }
 
+    /**
+     * 카테고리 점수에 대한 근거 문구를 만든다.
+     */
     private String categoryReason(ProductEntity product, OrderRequest orderRequest) {
         return categoryScore(product, orderRequest) == 100 ? "카테고리 완전 일치" : "카테고리 부분 일치";
     }
@@ -178,6 +190,9 @@ public class MatchScoreCalculator {
         return Optional.of(clamp(product.getRatingAvg() / 5.0 * 100));
     }
 
+    /**
+     * 평점 점수에 대한 근거 문구를 만든다.
+     */
     private String ratingReason(ProductEntity product) {
         return "평점 %.1f/5.0".formatted(product.getRatingAvg());
     }
@@ -189,6 +204,9 @@ public class MatchScoreCalculator {
         return "설명 내용 유사도 %.0f%%".formatted(score);
     }
 
+    /**
+     * 점수를 0~100 범위로 잘라낸다.
+     */
     private double clamp(double score) {
         return Math.max(0, Math.min(100, score));
     }
@@ -209,6 +227,9 @@ public class MatchScoreCalculator {
         return earthRadiusKm * c;
     }
 
+    /**
+     * 항목 하나의 점수·가중치·근거를 임시로 담아두는 내부 레코드이다.
+     */
     private record WeightedScore(String label, double score, double weight, String reason) {
     }
 }

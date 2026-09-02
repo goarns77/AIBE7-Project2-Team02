@@ -31,30 +31,17 @@ public class EstimateController {
     private final EstimateAccessService estimateAccessService;
 
     /**
-     * 구매자가 자신의 주문 요청(requestId)을 근거로 특정 판매자에게 견적을 요청한다.
+     * 구매자가 특정 판매자에게 견적을 요청한다. request_id에는 요청자(구매자) 본인의
+     * 계정 ID가 그대로 저장된다.
      */
-    @PostMapping("/requests/{requestId}/estimates")
+    @PostMapping("/estimates")
     public ResponseEntity<EstimateResponseDTO> create(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long requestId,
             @Valid @RequestBody EstimateCreateDTO dto
     ) {
         Long userId = Long.valueOf(jwt.getSubject());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(estimateAccessService.create(requestId, dto, userId));
-    }
-
-    /**
-     * 구매자 본인의 주문 요청(requestId)에 달린 견적 목록을 조회한다.
-     */
-    @GetMapping("/requests/{requestId}/estimates")
-    public ResponseEntity<List<EstimateResponseDTO>> findByRequestId(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long requestId
-    ) {
-        Long userId = Long.valueOf(jwt.getSubject());
-
-        return ResponseEntity.ok(estimateAccessService.findByRequestId(requestId, userId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(estimateAccessService.create(dto, userId));
     }
 
     /**

@@ -26,9 +26,7 @@
           class="order-form-card"
           th:object="${orderRequest}"
           data-mode="edit"
-          th:attr="
-          data-request-id=${requestId},
-          data-buyer-id=${buyerId}"
+          th:attr="data-request-id=${requestId}"
           hidden>
 
         <!-- 주문 제목과 행사/배송 일시 수정 영역 -->
@@ -138,6 +136,28 @@
                       placeholder="메뉴 구성, 포장 방식, 알레르기 등 필요한 요청사항을 입력해주세요"></textarea>
         </div>
 
+        <!-- 참고 이미지 수정 영역 -->
+        <div class="order-form-field order-form-full">
+            <label for="imageFile">참고 이미지</label>
+
+            <input type="file"
+                   id="imageFile"
+                   accept="image/*">
+
+            <p class="order-image-help">
+                새 이미지를 선택하면 기존 참고 이미지가 교체됩니다.
+            </p>
+
+            <div id="imagePreviewArea"
+                 class="order-image-preview-area"
+                 hidden>
+
+                <img id="imagePreview"
+                     class="order-image-preview"
+                     alt="참고 이미지 미리보기">
+            </div>
+        </div>
+
         <!-- 주문 수정 취소 및 저장 액션 영역 -->
         <div class="order-form-actions">
 
@@ -154,8 +174,10 @@
         </div>
     </form>
 </main>
+
 <script type="module"
         th:src="@{/order/js/order-request-form.js}">
 </script>
+
 </body>
 </html>

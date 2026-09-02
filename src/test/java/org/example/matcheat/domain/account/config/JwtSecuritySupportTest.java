@@ -53,6 +53,24 @@ class JwtSecuritySupportTest {
     }
 
     @Test
+    void mapsSellerRoleToJwtAuthority() {
+        AccountProperties properties = propertiesWithSecret("01234567890123456789012345678901");
+        AccountSecuritySupportConfiguration configuration = new AccountSecuritySupportConfiguration();
+        SecretKey key = configuration.accountJwtSecretKey(properties);
+        UserAccount seller = account(UserRole.SELLER, UserStatus.ACTIVE, 1);
+        NimbusAccessTokenIssuer issuer = new NimbusAccessTokenIssuer(
+                configuration.accountJwtEncoder(key), properties, Clock.systemUTC());
+
+        Jwt jwt = configuration.accountJwtDecoder(key, properties, validatorFor(seller))
+                .decode(issuer.issue(seller).value());
+
+        assertThat(jwt.getClaimAsString("role")).isEqualTo("SELLER");
+        assertThat(configuration.accountJwtAuthenticationConverter().convert(jwt).getAuthorities())
+                .extracting("authority")
+                .contains("ROLE_USER", "ROLE_SELLER");
+    }
+
+    @Test
     void rejectsWrongAudienceAndTamperedToken() {
         AccountProperties issuerProperties = propertiesWithSecret("01234567890123456789012345678901");
         AccountSecuritySupportConfiguration configuration = new AccountSecuritySupportConfiguration();
@@ -72,7 +90,9 @@ class JwtSecuritySupportTest {
         wrongIssuer.getJwt().setIssuer("https://other.local");
         assertThatThrownBy(() -> configuration.accountJwtDecoder(key, wrongIssuer, validator).decode(issued.value()))
                 .isInstanceOf(JwtException.class);
-        String tampered = issued.value().substring(0, issued.value().length() - 2) + "aa";
+        String[] segments = issued.value().split("\\.");
+        char replacement = segments[2].charAt(0) == 'a' ? 'b' : 'a';
+        String tampered = segments[0] + "." + segments[1] + "." + replacement + segments[2].substring(1);
         assertThatThrownBy(() -> configuration.accountJwtDecoder(key, issuerProperties, validator).decode(tampered))
                 .isInstanceOf(JwtException.class);
     }

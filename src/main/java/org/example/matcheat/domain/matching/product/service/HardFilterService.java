@@ -54,14 +54,33 @@ public class HardFilterService {
     }
 
     /**
-     * 주문 예산(budget)이 판매자의 1인분 가격(servingPrice) 이상인지 확인한다.
+     * 주문 예산(budget)이 필요 금액(1인분 가격 × budgetType에 따른 산정) 이상인지 확인한다.
+     * budgetType이 PER_PERSON이면 1인분 가격 그대로, TOTAL이면 1인분 가격 × 수량을 필요 금액으로 본다.
+     * (MatchScoreCalculator.requiredAmount()와 동일한 규칙)
      */
     private boolean matchesBudget(ProductEntity product, OrderRequest orderRequest) {
         if (orderRequest.getBudget() == null) {
             return false;
         }
 
-        return orderRequest.getBudget().doubleValue() >= product.getServingPrice();
+        return orderRequest.getBudget().doubleValue() >= requiredAmount(product, orderRequest);
+    }
+
+    /**
+     * budgetType에 따라 실제로 필요한 금액을 계산한다.
+     * PER_PERSON: 1인분 가격 그대로. TOTAL: 1인분 가격 × 주문 수량.
+     */
+    private double requiredAmount(ProductEntity product, OrderRequest orderRequest) {
+        double servingPrice = product.getServingPrice();
+
+        if (orderRequest.getBudgetType() == null) {
+            return servingPrice;
+        }
+
+        return switch (orderRequest.getBudgetType()) {
+            case PER_PERSON -> servingPrice;
+            case TOTAL -> servingPrice * (orderRequest.getQuantity() != null ? orderRequest.getQuantity() : 1);
+        };
     }
 
     /**

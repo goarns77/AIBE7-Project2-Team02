@@ -49,6 +49,43 @@
 
         </div>
 
+        <!-- 받은 제안 비교 선택 영역 -->
+        <div id="proposalCompareToolbar"
+             class="proposal-compare-toolbar"
+             hidden>
+
+            <div class="proposal-compare-summary">
+                <strong>제안 비교</strong>
+
+                <span id="proposalCompareCount">
+                    0개 선택
+                </span>
+
+                <span class="proposal-compare-hint">
+                    같은 주문의 제안을 최대 3개까지 비교할 수 있습니다.
+                </span>
+            </div>
+
+            <div class="proposal-compare-actions">
+
+                <button id="proposalCompareResetButton"
+                        type="button"
+                        class="proposal-compare-reset-button"
+                        disabled>
+                    선택 초기화
+                </button>
+
+                <button id="proposalCompareButton"
+                        type="button"
+                        class="proposal-compare-button"
+                        disabled>
+                    선택한 제안 비교
+                </button>
+
+            </div>
+
+        </div>
+
         <div id="proposalList"
              class="proposal-list">
 
@@ -57,6 +94,35 @@
             </div>
 
         </div>
+
+        <!-- 선택한 제안 비교 결과 -->
+        <section id="proposalComparison"
+                 class="proposal-comparison"
+                 hidden>
+
+            <div class="proposal-comparison-header">
+
+                <div>
+                    <h2>제안 비교</h2>
+
+                    <p>
+                        선택한 제안의 주요 조건을 한눈에 비교해보세요.
+                    </p>
+                </div>
+
+                <button id="proposalComparisonCloseButton"
+                        type="button"
+                        class="proposal-comparison-close-button">
+                    닫기
+                </button>
+
+            </div>
+
+            <div id="proposalComparisonTable"
+                 class="proposal-comparison-table-wrap">
+            </div>
+
+        </section>
 
     </section>
 

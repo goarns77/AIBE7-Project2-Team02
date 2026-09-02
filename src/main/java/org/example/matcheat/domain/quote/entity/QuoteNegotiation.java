@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -15,9 +16,13 @@ import java.time.LocalDateTime;
  * 기존 Quote(제안형: SENT→ACCEPTED/REJECTED)와는 의도적으로 분리했다.
  * - Quote: 한쪽이 보내고 상대가 수락/거절 (다건 가능)
  * - QuoteNegotiation: 채팅방 1개당 1건, 양쪽이 같이 편집하다가 AI 요약 → 잠금
+ *
+ * 잠긴(LOCKED) 뒤에는 QuoteService.createFromLockedNegotiation()이 이 결과를
+ * 별도의 확정 Quote(status=ACCEPTED)로 발행한다 — 이후 Order 생성/조회는
+ * 제안형이든 협상형이든 항상 Quote 하나만 기준으로 삼는다.
  */
 @Entity
-@Table(name = "quote_negotiations")
+@Table(name = "quote_negotiations", uniqueConstraints = @UniqueConstraint(columnNames = "chat_room_id"))
 @Getter
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -72,6 +77,11 @@ public class QuoteNegotiation {
 
 	private LocalDateTime lockedAt;
 
+	// [추가] 잠금 시 QuoteService.createFromLockedNegotiation()이 만든
+	// 확정 Quote의 ID. LOCKED 이전에는 null이다. 이후 이 협상 건이
+	// 어떤 Quote/Order로 이어졌는지 추적하는 용도.
+	private Long resultingQuoteId;
+
 	public enum NegotiationStatus {
 		NEGOTIATING,    // 양쪽 다 자유 수정 가능
 		AI_SUMMARIZED,  // AI 요약 완료 — 마지막 1회 수정만 가능
@@ -97,8 +107,23 @@ public class QuoteNegotiation {
 		this.status = NegotiationStatus.NEGOTIATING;
 	}
 
-	/** AI 요약 결과를 반영한다. AI 요약은 협상 중(NEGOTIATING)일 때만 적용 가능 —
-	 *  적용 후 markAiSummaryUsed()가 상태를 AI_SUMMARIZED로 바꾼다. */
+	/**
+	 * [수정] AI 요약 실제 호출(비용 발생) 이전에 먼저 부르는 검증.
+	 * 기존에는 이 상태/사용여부 체크가 applyAiSummaryResult/markAiSummaryUsed
+	 * 안에만 있어서, 이미 AI_SUMMARIZED인 상태에서 다시 호출해도 예외가 나기
+	 * 전에 실제 AI 호출이 먼저 나가는 순서 버그가 있었다 (테스트로 확인됨).
+	 */
+	public void validateBeforeAiSummary(Long userId, Long sellerProfileId) {
+		validateParticipant(userId, sellerProfileId);
+		if (status != NegotiationStatus.NEGOTIATING) {
+			throw new IllegalStateException("AI 요약은 협상 중 상태에서만 실행할 수 있습니다. 현재 상태: " + status);
+		}
+		if (this.aiSummaryUsed) {
+			throw new IllegalStateException("AI 요약은 이미 1회 사용되었습니다.");
+		}
+	}
+
+	/** AI 요약 결과를 반영한다. (validateBeforeAiSummary를 먼저 통과했다는 전제) */
 	public void applyAiSummaryResult(Integer quantity, Long unitPrice, Long deliveryFee, String additionalNotes) {
 		if (status != NegotiationStatus.NEGOTIATING) {
 			throw new IllegalStateException("AI 요약은 협상 중 상태에서만 적용할 수 있습니다. 현재 상태: " + status);
@@ -114,28 +139,30 @@ public class QuoteNegotiation {
 	// 자율 검증 (Quote와 동일한 패턴 유지)
 	// ---------------------------------------------------------------
 
-	public boolean isParticipant(Long userId) {
+	public boolean isParticipant(Long userId, Long sellerProfileId) {
 		if (userId == null) return false;
-		return userId.equals(buyerId) || userId.equals(sellerId);
+		if (userId.equals(buyerId)) return true;
+		return sellerProfileId != null && sellerProfileId.equals(sellerId);
 	}
 
-	public void validateParticipant(Long userId) {
-		if (!isParticipant(userId)) {
-			throw new IllegalArgumentException("해당 견적 협상에 접근 권한이 없습니다.");
+	public void validateParticipant(Long userId, Long sellerProfileId) {
+		if (!isParticipant(userId, sellerProfileId)) {
+			throw new AccessDeniedException("해당 견적 협상에 접근 권한이 없습니다.");
 		}
 	}
 
 	/** 요구사항 3: 협상 중(NEGOTIATING)에는 양쪽 다 자유 수정 가능 */
-	public void validateFreeEdit(Long userId) {
-		validateParticipant(userId);
+	public void validateFreeEdit(Long userId, Long sellerProfileId) {
+		validateParticipant(userId, sellerProfileId);
 		if (status != NegotiationStatus.NEGOTIATING) {
 			throw new IllegalStateException("협상 중 상태에서만 자유롭게 수정할 수 있습니다. 현재 상태: " + status);
 		}
 	}
 
-	/** 요구사항 5: AI 요약 이후 "마지막 한 번" 수정 — 누가 할 수 있는지는 미정, 우선 참여자 둘 다로 열어둠 */
-	public void validateFinalEdit(Long userId) {
-		validateParticipant(userId);
+	/** 요구사항 5: AI 요약 이후 "마지막 한 번" 수정 — 테스트 결과에 따라 지금은
+	 *  상태 기반 자유수정(횟수 제한 없음)으로 유지하기로 결정됨. */
+	public void validateFinalEdit(Long userId, Long sellerProfileId) {
+		validateParticipant(userId, sellerProfileId);
 		if (status != NegotiationStatus.AI_SUMMARIZED) {
 			throw new IllegalStateException("AI 요약 이후에만 마지막 수정이 가능합니다. 현재 상태: " + status);
 		}
@@ -159,12 +186,17 @@ public class QuoteNegotiation {
 	}
 
 	/** 요구사항 5: 최종 확인 → 잠금, 이후 수정 완전 불가 */
-	public void lock(Long userId) {
-		validateParticipant(userId);
+	public void lock(Long userId, Long sellerProfileId) {
+		validateParticipant(userId, sellerProfileId);
 		if (status != NegotiationStatus.AI_SUMMARIZED) {
 			throw new IllegalStateException("AI 요약 완료 상태에서만 잠글 수 있습니다. 현재 상태: " + status);
 		}
 		this.status = NegotiationStatus.LOCKED;
 		this.lockedAt = LocalDateTime.now();
+	}
+  
+	/** lock() 직후, 확정 Quote가 발행되면 그 ID를 기록해둔다. */
+	public void markQuoteCreated(Long quoteId) {
+		this.resultingQuoteId = quoteId;
 	}
 }

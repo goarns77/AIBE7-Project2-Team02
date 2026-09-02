@@ -1,89 +1,334 @@
 import {authFetch, readApiBody, readCurrentUserId} from '/account/js/auth-client.js';
 
-/**
- * 주문 상세 화면에서 소유자 전용 액션과 주문 취소를 처리한다.
- */
-const ownerActions = document.getElementById('orderOwnerActions');
-const cancelButton = document.getElementById('cancelOrderButton');
-const sellerActions =
-    document.getElementById('orderSellerActions');
+const page =
+    document.getElementById(
+        'orderDetailPage'
+    );
 
-const currentUserId = readCurrentUserId();
+const requestId =
+    page?.dataset.requestId;
+
+const currentUserId =
+    readCurrentUserId();
+
+if (currentUserId === null) {
+    redirectToLogin();
+}
+
+const response =
+    await authFetch(
+        `/api/v1/requests/${requestId}`
+    );
+
+if (response.status === 401) {
+    redirectToLogin();
+}
+
+if (!response.ok) {
+    const body =
+        await readApiBody(
+            response
+        );
+
+    showError(
+        body?.message
+        || '주문 정보를 불러올 수 없습니다.'
+    );
+} else {
+    const order =
+        await response.json();
+
+    renderOrder(order);
+
+    await configureActions(
+        order
+    );
+}
 
 /**
- * 주문 상세에서 현재 사용자의 역할에 맞는 액션을 표시한다.
+ * 조회한 주문 정보를 상세 화면에 표시한다.
  */
-async function initializeOrderActions() {
-    if (currentUserId === null) {
+function renderOrder(order) {
+    document.getElementById(
+        'orderLoading'
+    ).hidden = true;
+
+    document.getElementById(
+        'orderContent'
+    ).hidden = false;
+
+    document.getElementById(
+        'orderStatus'
+    ).textContent =
+        statusLabel(order.status);
+
+    setField(
+        'title',
+        order.title
+        || '제목 없음'
+    );
+
+    setField(
+        'eventDateTime',
+        formatDateTime(
+            order.eventDateTime
+        )
+    );
+
+    setField(
+        'quantity',
+        order.quantity ?? '-'
+    );
+
+    setField(
+        'budget',
+        `${
+            order.budgetType
+            === 'PER_PERSON'
+                ? '1인당'
+                : '총'
+        } ${formatNumber(order.budget)}원`
+    );
+
+    setField(
+        'category',
+        order.category || '-'
+    );
+
+    setField(
+        'deliveryAddress',
+        order.deliveryAddress || '-'
+    );
+
+    setField(
+        'description',
+        order.description
+        || '등록된 상세 요청사항이 없습니다.'
+    );
+
+    renderReferenceImage(
+        order.referenceImageUrl
+    );
+}
+
+/**
+ * 참고 이미지가 있으면 주문 상세 화면에 표시한다.
+ */
+function renderReferenceImage(
+    referenceImageUrl
+) {
+    const section =
+        document.getElementById(
+            'referenceImageSection'
+        );
+
+    const image =
+        document.getElementById(
+            'referenceImage'
+        );
+
+    if (!referenceImageUrl) {
+        section.hidden = true;
+        image.removeAttribute('src');
         return;
     }
 
-    const buyerId = ownerActions
-        ? Number(ownerActions.dataset.buyerId)
-        : sellerActions
-            ? Number(sellerActions.dataset.buyerId)
-            : null;
+    image.src =
+        referenceImageUrl;
 
-    // 구매자는 자신의 주문 관리 버튼만 표시한다.
-    if (buyerId === currentUserId) {
-        if (ownerActions) {
-            ownerActions.hidden = false;
-        }
+    section.hidden =
+        false;
+}
+
+/**
+ * 주문 상태와 사용자 권한에 맞는 액션 버튼을 표시한다.
+ */
+async function configureActions(order) {
+    if (
+        order.status
+        !== 'MATCHING'
+    ) {
+        return;
+    }
+
+    if (
+        Number(order.buyerId)
+        === currentUserId
+    ) {
+        document.getElementById(
+            'orderOwnerActions'
+        ).hidden = false;
+
+        document.getElementById(
+            'matchingLink'
+        ).href =
+            `/requests/${requestId}/matches`;
+
+        document.getElementById(
+            'editLink'
+        ).href =
+            `/requests/${requestId}/edit`;
+
+        const cancelButton =
+            document.getElementById(
+                'cancelOrderButton'
+            );
+
+        cancelButton.addEventListener(
+            'click',
+            cancelOrder
+        );
 
         return;
     }
 
-    // 주문 소유자가 아니라면 승인 판매자인지 서버에서 확인한다.
-    if (sellerActions) {
-        const response =
-            await authFetch('/api/v1/proposals/eligibility');
+    const eligibility =
+        await authFetch(
+            '/api/v1/proposals/eligibility'
+        );
 
-        if (response.ok) {
-            sellerActions.hidden = false;
-        }
+    if (eligibility.ok) {
+        document.getElementById(
+            'orderSellerActions'
+        ).hidden = false;
+
+        document.getElementById(
+            'proposalLink'
+        ).href =
+            `/requests/${requestId}/proposals/new`;
     }
 }
 
-initializeOrderActions();
+/**
+ * 현재 주문을 취소한다.
+ */
+async function cancelOrder() {
+    if (
+        !confirm(
+            '이 주문을 취소하시겠습니까?'
+        )
+    ) {
+        return;
+    }
 
-if (cancelButton) {
-    cancelButton.addEventListener('click', async () => {
-        const requestId = cancelButton.dataset.requestId;
-
-        if (!confirm('이 주문을 취소하시겠습니까?')) {
-            return;
-        }
-
-        const response = await authFetch(
+    const response =
+        await authFetch(
             `/api/v1/requests/${requestId}/cancel`,
             {
                 method: 'PATCH'
             }
         );
 
-        if (response.status === 401) {
-            const redirect = encodeURIComponent(window.location.pathname);
-            window.location.href = `/login?redirect=${redirect}`;
-            return;
-        }
+    if (response.status === 401) {
+        redirectToLogin();
+    }
 
-        if (response.status === 403) {
-            alert('본인이 등록한 주문만 취소할 수 있습니다.');
-            window.location.reload();
-            return;
-        }
-
-        if (!response.ok) {
-            const body = await readApiBody(response);
-
-            alert(
-                body?.message ??
-                '주문 취소 중 문제가 발생했습니다.'
+    if (!response.ok) {
+        const body =
+            await readApiBody(
+                response
             );
 
-            return;
-        }
+        alert(
+            body?.message
+            || '주문 취소 중 문제가 발생했습니다.'
+        );
 
-        window.location.reload();
-    });
+        return;
+    }
+
+    window.location.reload();
+}
+
+/**
+ * 주문 상세 필드에 값을 표시한다.
+ */
+function setField(field, value) {
+    document.querySelector(
+        `[data-order-field="${field}"]`
+    ).textContent =
+        value;
+}
+
+/**
+ * 주문 조회 실패 메시지를 표시한다.
+ */
+function showError(message) {
+    document.getElementById(
+        'orderLoading'
+    ).hidden = true;
+
+    const error =
+        document.getElementById(
+            'orderError'
+        );
+
+    error.hidden = false;
+
+    error.querySelector(
+        'p'
+    ).textContent =
+        message;
+}
+
+/**
+ * 로그인 화면으로 이동한다.
+ */
+function redirectToLogin() {
+    const redirect =
+        encodeURIComponent(
+            location.pathname
+            + location.search
+        );
+
+    location.replace(
+        `/login?redirect=${redirect}`
+    );
+
+    throw new Error(
+        'Redirecting to login'
+    );
+}
+
+/**
+ * 숫자를 천 단위 구분 형식으로 변환한다.
+ */
+function formatNumber(value) {
+    return Number(
+        value || 0
+    ).toLocaleString(
+        'ko-KR'
+    );
+}
+
+/**
+ * 행사 일시를 화면 표시 형식으로 변환한다.
+ */
+function formatDateTime(value) {
+    if (!value) {
+        return '-';
+    }
+
+    return new Intl.DateTimeFormat(
+        'ko-KR',
+        {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+        }
+    ).format(
+        new Date(value)
+    );
+}
+
+/**
+ * 주문 상태 코드를 화면 표시 문구로 변환한다.
+ */
+function statusLabel(status) {
+    return {
+        MATCHING: '매칭 중',
+        IN_TALK: '협의 중',
+        CONFIRMED: '확정',
+        CANCELLED: '취소',
+        CLOSED: '종료'
+    }[status] || status;
 }

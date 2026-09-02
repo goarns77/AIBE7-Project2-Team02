@@ -147,6 +147,7 @@ public class SellerProfileEntity {
     }
 
     public void approve(UserAccountEntity reviewer, Instant reviewedAt) {
+        user.promoteToSeller();
         verificationStatus = SellerVerificationStatus.APPROVED;
         rejectionReason = null;
         reviewedBy = reviewer;

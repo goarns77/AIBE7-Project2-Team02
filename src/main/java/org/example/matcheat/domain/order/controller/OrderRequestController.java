@@ -5,12 +5,15 @@ import lombok.RequiredArgsConstructor;
 import org.example.matcheat.domain.order.dto.OrderRequestCreateDTO;
 import org.example.matcheat.domain.order.dto.OrderRequestResponseDTO;
 import org.example.matcheat.domain.order.dto.OrderRequestUpdateDTO;
+import org.example.matcheat.domain.order.service.OrderRequestAccessService;
 import org.example.matcheat.domain.order.service.OrderRequestService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -25,6 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderRequestController {
     private final OrderRequestService orderRequestService;
+    private final OrderRequestAccessService orderRequestAccessService;
 
     /**
      * 새로운 주문 요청을 등록
@@ -45,13 +49,40 @@ public class OrderRequestController {
     }
 
     /**
+     * 참고 이미지를 포함한 새로운 주문 요청을 등록
+     */
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<OrderRequestResponseDTO> createMultipart(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestPart("request") OrderRequestCreateDTO dto,
+            @RequestPart(value = "imageFile", required = false)
+            MultipartFile imageFile
+    ) {
+        Long userId =
+                Long.valueOf(jwt.getSubject());
+
+        OrderRequestResponseDTO response =
+                orderRequestService.create(
+                        userId,
+                        dto,
+                        imageFile
+                );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    /**
      * 주문 요청 ID로 상세 정보를 조회
      */
     @GetMapping("/{id}")
     public ResponseEntity<OrderRequestResponseDTO> findById(
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id
     ) {
-        OrderRequestResponseDTO response = orderRequestService.findById(id);
+        OrderRequestResponseDTO response = orderRequestAccessService.findAccessibleById(
+                id, Long.parseLong(jwt.getSubject()));
 
         return ResponseEntity.ok(response);
     }
@@ -93,6 +124,34 @@ public class OrderRequestController {
 
         OrderRequestResponseDTO response =
                 orderRequestService.update(id, userId, dto);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 참고 이미지 변경을 포함해 본인의 주문 요청을 수정
+     */
+    @PatchMapping(
+            value = "/{id}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<OrderRequestResponseDTO> updateMultipart(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id,
+            @Valid @RequestPart("request") OrderRequestUpdateDTO dto,
+            @RequestPart(value = "imageFile", required = false)
+            MultipartFile imageFile
+    ) {
+        Long userId =
+                Long.valueOf(jwt.getSubject());
+
+        OrderRequestResponseDTO response =
+                orderRequestService.update(
+                        id,
+                        userId,
+                        dto,
+                        imageFile
+                );
 
         return ResponseEntity.ok(response);
     }

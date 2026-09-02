@@ -4,12 +4,14 @@ package org.example.matcheat.domain.quote.service;
 import lombok.RequiredArgsConstructor;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.service.ChatService;
+import org.example.matcheat.domain.account.service.TradeAccountValidationService;
 import org.example.matcheat.domain.quote.dto.QuoteCreateRequest;
 import org.example.matcheat.domain.quote.dto.QuoteDirectRequestToBuyer;
 import org.example.matcheat.domain.quote.dto.QuoteDirectRequestToSeller;
 import org.example.matcheat.domain.quote.dto.QuoteResponse;
 import org.example.matcheat.domain.quote.dto.QuoteUpdateRequest;
 import org.example.matcheat.domain.quote.entity.Quote;
+import org.example.matcheat.domain.quote.entity.QuoteNegotiation;
 import org.example.matcheat.domain.quote.repository.QuoteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +22,12 @@ public class QuoteService {
 
 	private final QuoteRepository quoteRepository;
 	private final ChatService chatService;
+	private final TradeAccountValidationService accounts;
 
+	@Transactional(readOnly = true)
+	public Quote getQuoteEntity(Long quoteId) {
+		return findQuoteOrThrow(quoteId);
+	}
 	// -----------------------------------------------------------
 	// 생성 - 채팅방 자동 생성 (기존 흐름: 구매자가 판매자를 지정해 견적 요청)
 	// -----------------------------------------------------------
@@ -50,7 +57,7 @@ public class QuoteService {
 	@Transactional
 	public QuoteResponse createQuoteInChatRoom(Long chatRoomId, Long currentUserId, QuoteCreateRequest request) {
 		ChatRoom chatRoom = chatService.getChatRoomEntity(chatRoomId);
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		Quote.SenderRole senderRole = currentUserId.equals(chatRoom.getBuyerId())
 				? Quote.SenderRole.BUYER
@@ -71,7 +78,8 @@ public class QuoteService {
 	// -----------------------------------------------------------
 	@Transactional
 	public QuoteResponse createStandaloneQuoteToBuyer(Long currentSellerId, QuoteDirectRequestToBuyer request) {
-		// TODO: 회원 도메인 합류 후 targetBuyerId 존재 여부 검증 추가
+		currentSellerId = accounts.approvedSellerIdForUser(currentSellerId);
+		accounts.requireActiveUser(request.getTargetBuyerId());
 		Quote quote = buildStandaloneQuote(
 				request.getTargetBuyerId(), currentSellerId, Quote.SenderRole.SELLER,
 				request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee()
@@ -84,7 +92,8 @@ public class QuoteService {
 	// -----------------------------------------------------------
 	@Transactional
 	public QuoteResponse createStandaloneQuoteToSeller(Long currentBuyerId, QuoteDirectRequestToSeller request) {
-		// TODO: seller_profiles 도메인 합류 후 targetSellerId 존재/승인 여부 검증 추가
+		accounts.requireActiveUser(currentBuyerId);
+		accounts.requireApprovedSeller(request.getTargetSellerId());
 		Quote quote = buildStandaloneQuote(
 				currentBuyerId, request.getTargetSellerId(), Quote.SenderRole.BUYER,
 				request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee()
@@ -93,12 +102,52 @@ public class QuoteService {
 	}
 
 	// -----------------------------------------------------------
+	// 생성 - QuoteNegotiation(협상형) 잠금 시점에 확정 Quote로 "발행"
+	// -----------------------------------------------------------
+	/**
+	 * QuoteNegotiation이 잠긴(LOCKED) 직후 호출된다. 협상 결과를 별도의
+	 * 확정 Quote(status=ACCEPTED)로 만들어서, 제안형/협상형 어느 경로로
+	 * 끝난 거래든 이후 Order 생성·마이페이지 조회는 항상 Quote 하나만
+	 * 기준으로 삼을 수 있게 한다 (합의안 4장: orders.quote_id 필수).
+	 *
+	 * 참여자 검증은 이미 QuoteNegotiation.lock()에서 끝난 상태이므로
+	 * 여기서 다시 하지 않는다. senderRole은 이미 ACCEPTED로 확정된
+	 * Quote라 의미가 없다(모든 수정/상태변경 메서드가 SENT 상태만 허용하므로
+	 * 이 Quote에는 애초에 적용되지 않는다) — 값은 고정으로 SELLER를 둔다.
+	 */
+	@Transactional
+	public Quote createFromLockedNegotiation(QuoteNegotiation negotiation) {
+		ChatRoom chatRoom = chatService.getChatRoomEntity(negotiation.getChatRoomId());
+
+		long totalAmount = Quote.calculateTotalAmount(
+				negotiation.getQuantity(), negotiation.getUnitPrice(), negotiation.getDeliveryFee());
+
+		Quote quote = Quote.builder()
+				.chatRoomId(negotiation.getChatRoomId())
+				.buyerId(negotiation.getBuyerId())
+				.sellerId(negotiation.getSellerId())
+				.senderRole(Quote.SenderRole.SELLER) // 협상 결과 확정 발행 — 실질적 의미 없음 (위 설명 참고)
+				.quantity(negotiation.getQuantity())
+				.unitPrice(negotiation.getUnitPrice())
+				.deliveryFee(negotiation.getDeliveryFee())
+				.totalAmount(totalAmount)
+				.additionalNotes(negotiation.getAdditionalNotes())
+				.status(Quote.QuoteStatus.ACCEPTED)
+				.build();
+
+		Quote savedQuote = quoteRepository.save(quote);
+		chatRoom.updateQuoteId(savedQuote.getId());
+
+		return savedQuote;
+	}
+
+	// -----------------------------------------------------------
 	// 조회 - 참여자만 가능
 	// -----------------------------------------------------------
 	@Transactional(readOnly = true)
 	public QuoteResponse getQuote(Long quoteId, Long currentUserId) {
 		Quote quote = findQuoteOrThrow(quoteId);
-		quote.validateParticipant(currentUserId);
+		quote.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		return QuoteResponse.from(quote);
 	}
 
@@ -108,7 +157,7 @@ public class QuoteService {
 	@Transactional
 	public QuoteResponse updateQuote(Long quoteId, Long currentUserId, QuoteUpdateRequest request) {
 		Quote quote = findQuoteOrThrow(quoteId);
-		quote.validateSenderOnly(currentUserId);
+		quote.validateSenderOnly(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		long totalAmount = Quote.calculateTotalAmount(request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee());
 		quote.updateQuoteDetails(request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee(), totalAmount);
@@ -122,12 +171,12 @@ public class QuoteService {
 	@Transactional
 	public QuoteResponse updateQuoteStatus(Long quoteId, Long currentUserId, Quote.QuoteStatus status) {
 		Quote quote = findQuoteOrThrow(quoteId);
+		Long sellerProfileId = accounts.sellerIdForUserOrNull(currentUserId);
 
 		if (status == Quote.QuoteStatus.WITHDRAWN) {
-			quote.validateSenderOnly(currentUserId);
+			quote.validateSenderOnly(currentUserId, sellerProfileId);
 		} else {
-			// ACCEPTED, REJECTED
-			quote.validateCounterpartyOnly(currentUserId);
+			quote.validateCounterpartyOnly(currentUserId, sellerProfileId);
 		}
 
 		quote.updateStatus(status);
