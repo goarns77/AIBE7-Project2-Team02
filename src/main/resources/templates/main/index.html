@@ -4,6 +4,9 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
     <title>MatchEAT</title>
 
     <link rel="stylesheet" th:href="@{/css/common.css}">
@@ -13,30 +16,66 @@
 <body>
 
 <!-- MatchEAT의 주요 기능과 진입 경로를 제공하는 메인 Thymeleaf 페이지 -->
-<header th:replace="~{fragments/header::header}"></header>
+<header th:replace="~{fragments/header :: header}"></header>
 
-<main>
-    <!-- 메인 소개 영역 -->
-    <section>
-        <h2>조건에 맞는 주문을 찾아보세요</h2>
+<main class="main-home">
 
-        <p>
-            원하는 일정, 수량, 예산과 배송 조건을 입력하면
-            조건에 맞는 상품과 판매자를 찾을 수 있습니다.
-        </p>
+    <!-- 메인 소개 및 주문 등록 진입 영역 -->
+    <section class="main-hero">
 
-        <a th:href="@{/requests/new}" class="button">
-            주문하기
-        </a>
+        <div class="main-hero-content">
+            <p class="main-hero-kicker">
+                주문과 상품을 잇는 조건 매칭
+            </p>
+
+            <h1>
+                내 주문에 맞는 상품, 내 상품에 맞는 주문
+            </h1>
+
+            <p class="main-hero-description">
+                구매자는 원하는 조건에 맞는 상품을 찾고,
+                판매자는 등록한 상품에 맞는 주문을 확인할 수 있어요.
+            </p>
+
+            <div class="main-hero-actions">
+                <a th:href="@{/requests/new}"
+                   class="button">
+                    주문 등록하기
+                </a>
+
+                <a th:href="@{/product}"
+                   class="button main-outline-button">
+                    상품 둘러보기
+                </a>
+            </div>
+        </div>
     </section>
 
-    <!-- 맞춤 매칭 미리보기 영역 -->
-    <section class="matching-preview-section">
-        <h2>맞춤 매칭</h2>
+    <!-- 구매자 맞춤 매칭 미리보기 영역 -->
+    <section class="main-section matching-preview-section">
+        <div class="main-section-header">
+            <div>
+                <p class="main-section-kicker">
+                    구매자
+                </p>
 
-        <p>
-            최근 주문을 기준으로 조건에 잘 맞는 상품을 확인해보세요.
-        </p>
+                <h2>맞춤 매칭</h2>
+
+                <p class="main-section-description">
+                    조건이 맞는 주문과 상품을 찾고, 서로 제안하며 거래를 시작해보세요.
+                </p>
+            </div>
+
+            <div id="matchingPreviewActions"
+                 class="main-section-more"
+                 hidden>
+                <a id="matchingAllLink"
+                   class="main-section-link"
+                   href="#">
+                    전체 매칭 결과
+                </a>
+            </div>
+        </div>
 
         <p id="matchingPreviewContext"
            class="matching-preview-context"
@@ -60,30 +99,37 @@
                  class="matching-preview-grid"
                  hidden>
             </div>
+        </div>
 
-            <div id="matchingPreviewActions"
-                 class="matching-preview-actions"
+    </section>
+
+    <!-- 판매자 맞춤 주문 영역 -->
+    <section id="sellerMatchingSection"
+             class="main-section main-seller-section matching-preview-section"
+             hidden>
+
+        <div class="main-section-header">
+            <div>
+                <p class="main-section-kicker main-section-kicker-seller">
+                    판매자
+                </p>
+
+                <h2>판매자 맞춤 주문</h2>
+
+                <p class="main-section-description">
+                    등록한 판매 조건에 잘 맞는 주문을 확인해보세요.
+                </p>
+            </div>
+
+            <div id="sellerMatchingActions"
+                 class="main-section-more"
                  hidden>
-
-                <a id="matchingAllLink"
-                   class="button"
-                   href="#">
-                    전체 매칭 결과 보기
+                <a th:href="@{/requests}"
+                   class="main-section-link">
+                    전체 주문
                 </a>
             </div>
         </div>
-    </section>
-
-    <!-- 승인 판매자용 맞춤 주문 영역 -->
-    <section id="sellerMatchingSection"
-             class="matching-preview-section"
-             hidden>
-
-        <h2>판매자 맞춤 주문</h2>
-
-        <p>
-            판매 조건에 잘 맞는 주문을 확인해보세요.
-        </p>
 
         <div id="sellerMatchingLoading"
              class="matching-preview-state">
@@ -99,27 +145,33 @@
              class="matching-preview-grid"
              hidden>
         </div>
-
-        <div id="sellerMatchingActions"
-             class="matching-preview-actions"
-             hidden>
-
-            <a th:href="@{/product}"
-               class="button">
-                내 상품 보기
-            </a>
-
-        </div>
-
     </section>
 
-    <!-- 인기 / 최근 상품 영역 -->
-    <section class="product-preview-section">
-        <h2>인기 / 최근 상품</h2>
+    <!-- 인기 및 최근 상품 영역 -->
+    <section class="main-section product-preview-section">
 
-        <p>
-            현재 등록된 상품을 둘러보세요.
-        </p>
+        <div class="main-section-header">
+            <div>
+                <p class="main-section-kicker">
+                    상품
+                </p>
+
+                <h2>인기 / 최근 상품</h2>
+
+                <p class="main-section-description">
+                    현재 등록된 상품을 둘러보세요.
+                </p>
+            </div>
+
+            <div id="productPreviewActions"
+                 class="main-section-more"
+                 hidden>
+                <a th:href="@{/product}"
+                   class="main-section-link">
+                    전체 상품
+                </a>
+            </div>
+        </div>
 
         <div id="productPreviewLoading"
              class="matching-preview-state">
@@ -135,22 +187,15 @@
              class="matching-preview-grid"
              hidden>
         </div>
-
-        <div id="productPreviewActions"
-             class="matching-preview-actions"
-             hidden>
-
-            <a th:href="@{/product}"
-               class="button">
-                전체 상품 보기
-            </a>
-        </div>
     </section>
 
 </main>
 
-<footer>
-    <p>MatchEAT</p>
+<footer class="main-footer">
+    <div class="main-footer-inner">
+        <strong>MatchEAT</strong>
+        <span>조건에 맞는 단체 식사 주문을 연결합니다.</span>
+    </div>
 </footer>
 
 <script type="module"

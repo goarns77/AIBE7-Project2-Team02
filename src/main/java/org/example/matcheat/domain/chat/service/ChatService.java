@@ -3,35 +3,45 @@ package org.example.matcheat.domain.chat.service;
 import lombok.RequiredArgsConstructor;
 import org.example.matcheat.domain.chat.dto.ChatRoomCreateRequest;
 import org.example.matcheat.domain.chat.dto.ChatRoomResponse;
+import org.example.matcheat.domain.chat.entity.ChatMessage;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
+import org.example.matcheat.domain.chat.repository.ChatMessageRepository;
 import org.example.matcheat.domain.chat.repository.ChatRoomRepository;
 import org.example.matcheat.domain.account.service.TradeAccountValidationService;
+import org.example.matcheat.domain.chat.support.ProductOwnerLookup;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ChatService {
 
 	private final ChatRoomRepository chatRoomRepository;
+	private final ChatMessageRepository chatMessageRepository;
 	private final TradeAccountValidationService accounts;
+	private final ProductOwnerLookup productOwnerLookup;
 
 	@Transactional
 	public ChatRoomResponse createChatRoom(ChatRoomCreateRequest request, Long currentUserId) {
 		accounts.requireActiveUser(currentUserId);
-		accounts.requireApprovedSeller(request.getSellerId());
-		if (request.getProposalId() == null && request.getOriginType() == ChatRoom.OriginType.PROPOSAL) {
-			throw new IllegalArgumentException("proposalId 없이 PROPOSAL 타입의 채팅방을 생성할 수 없습니다.");
+
+		Long resolvedSellerId;
+		if (request.getProductId() != null) {
+			Long ownerAccountId = productOwnerLookup.findOwnerAccountId(request.getProductId());
+			// 상품 등록자가 실제 "승인된 판매자"인지 검증 + seller_id 획득을 한 번에 처리
+			resolvedSellerId = accounts.approvedSellerIdForUser(ownerAccountId);
+		} else {
+			resolvedSellerId = request.getSellerId();
+			accounts.requireApprovedSeller(resolvedSellerId);
 		}
 
 		ChatRoom chatRoom = getOrCreateChatRoomEntity(
-				request.getProposalId(),
-				request.getOriginType(),
-				currentUserId,
-				request.getSellerId()
-		);
+				request.getProposalId(), request.getOriginType(), currentUserId, resolvedSellerId);
 		return ChatRoomResponse.from(chatRoom);
 	}
 
@@ -105,14 +115,39 @@ public class ChatService {
 	@Transactional(readOnly = true)
 	public ChatRoomResponse getChatRoom(Long chatRoomId, Long currentUserId) {
 		ChatRoom chatRoom = getChatRoomEntity(chatRoomId);
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		return ChatRoomResponse.from(chatRoom);
 	}
 
 	@Transactional(readOnly = true)
 	public List<ChatRoomResponse> getChatRooms(Long currentUserId) {
-		return chatRoomRepository.findAllByParticipant(currentUserId).stream()
-				.map(ChatRoomResponse::from)
+		Long sellerProfileId = accounts.sellerIdForUserOrNull(currentUserId);
+		List<ChatRoom> chatRooms = chatRoomRepository.findAllByParticipant(currentUserId, sellerProfileId);
+		if (chatRooms.isEmpty()) {
+			return List.of();
+		}
+
+		List<Long> chatRoomIds = chatRooms.stream().map(ChatRoom::getId).toList();
+		Map<Long, ChatMessage> latestMessages = chatMessageRepository.findLatestByChatRoomIds(chatRoomIds).stream()
+				.collect(Collectors.toMap(ChatMessage::getChatRoomId, Function.identity()));
+
+		return chatRooms.stream()
+				.map(chatRoom -> ChatRoomResponse.from(chatRoom, latestMessages.get(chatRoom.getId())))
+				.sorted((left, right) -> compareNewestFirst(sortAt(left), sortAt(right)))
 				.toList();
+	}
+
+	private static java.time.LocalDateTime sortAt(ChatRoomResponse room) {
+		return room.getLastMessageAt() != null ? room.getLastMessageAt() : room.getCreatedAt();
+	}
+
+	private static int compareNewestFirst(java.time.LocalDateTime left, java.time.LocalDateTime right) {
+		if (left == null) {
+			return right == null ? 0 : 1;
+		}
+		if (right == null) {
+			return -1;
+		}
+		return right.compareTo(left);
 	}
 }

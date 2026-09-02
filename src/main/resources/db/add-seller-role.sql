@@ -1,4 +1,5 @@
 -- Apply once to an existing PostgreSQL database before deploying SELLER role code.
+alter table users drop constraint if exists users_role_check;
 alter table users drop constraint if exists ck_users_role;
 alter table users
     add constraint ck_users_role check (role in ('USER', 'SELLER', 'ADMIN'));

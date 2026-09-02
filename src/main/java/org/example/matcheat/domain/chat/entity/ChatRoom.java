@@ -84,4 +84,17 @@ public class ChatRoom {
 	public void close() {
 		this.status = Status.CLOSED;
 	}
+
+	public boolean isParticipant(Long userId, Long sellerProfileId) {
+		if (userId == null) return false;
+		if (userId.equals(this.buyerId)) return true;
+		return sellerProfileId != null && sellerProfileId.equals(this.sellerId);
+	}
+
+	public void validateParticipant(Long userId, Long sellerProfileId) {
+		if (!isParticipant(userId, sellerProfileId)) {
+			throw new AccessDeniedException("해당 채팅방에 접근 권한이 없습니다.");
+		}
+	}
+
 }

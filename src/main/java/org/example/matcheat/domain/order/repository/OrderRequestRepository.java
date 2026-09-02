@@ -2,6 +2,8 @@ package org.example.matcheat.domain.order.repository;
 
 import org.example.matcheat.domain.order.entity.OrderRequest;
 import org.example.matcheat.domain.order.enums.RequestStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,5 +39,19 @@ public interface OrderRequestRepository extends JpaRepository<OrderRequest, Long
             """)
     List<OrderRequest> searchByKeyword(
             @Param("keyword") String keyword
+    );
+
+    /**
+     * 제목 또는 음식 카테고리 검색 결과를 페이지 단위로 조회한다.
+     */
+    @Query("""
+            SELECT o
+            FROM OrderRequest o
+            WHERE LOWER(o.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+               OR LOWER(o.category) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            """)
+    Page<OrderRequest> searchByKeyword(
+            @Param("keyword") String keyword,
+            Pageable pageable
     );
 }
