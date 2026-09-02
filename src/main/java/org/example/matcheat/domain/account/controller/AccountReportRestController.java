@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.example.matcheat.domain.account.dto.AccountReportCreateRequest;
 import org.example.matcheat.domain.account.dto.AccountReportResponse;
 import org.example.matcheat.domain.account.dto.AdminPageResponse;
+import org.example.matcheat.domain.account.dto.AccountReportResultResponse;
 import org.example.matcheat.domain.account.service.AccountReportService;
 import org.example.matcheat.domain.account.service.AccountReportAttachmentService;
 import org.example.matcheat.domain.account.service.AccountReportSubmissionService;
@@ -65,7 +66,7 @@ public class AccountReportRestController {
     }
 
     @GetMapping("/mine")
-    public AdminPageResponse<AccountReportResponse> mine(
+    public AdminPageResponse<AccountReportResultResponse> mine(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {

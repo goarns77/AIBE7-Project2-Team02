@@ -84,6 +84,11 @@ public class UserAccountEntity {
         this.name = name;
     }
 
+    public void changePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+        tokenVersion++;
+    }
+
     public void withdraw(Instant withdrawnAt) {
         status = UserStatus.WITHDRAWN;
         this.withdrawnAt = withdrawnAt;

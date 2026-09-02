@@ -55,6 +55,14 @@ public class JpaUserCredentialRepository implements UserCredentialRepository {
     }
 
     @Override
+    public Optional<UserAccount> updatePassword(long userId, String passwordHash) {
+        return repository.findById(userId).map(entity -> {
+            entity.changePassword(passwordHash);
+            return entity.toDomain();
+        });
+    }
+
+    @Override
     public Optional<UserAccount> withdraw(long userId, Instant withdrawnAt) {
         return repository.findById(userId).map(entity -> {
             entity.withdraw(withdrawnAt);

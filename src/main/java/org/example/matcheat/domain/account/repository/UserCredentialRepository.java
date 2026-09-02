@@ -19,5 +19,9 @@ public interface UserCredentialRepository {
 
     Optional<UserAccount> updateName(long userId, String name);
 
+    default Optional<UserAccount> updatePassword(long userId, String passwordHash) {
+        return Optional.empty();
+    }
+
     Optional<UserAccount> withdraw(long userId, Instant withdrawnAt);
 }

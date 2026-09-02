@@ -3,6 +3,7 @@ package org.example.matcheat.domain.account.service;
 import org.example.matcheat.domain.account.dto.AccountReportCreateRequest;
 import org.example.matcheat.domain.account.dto.AccountReportResponse;
 import org.example.matcheat.domain.account.dto.AccountReportHistoryResponse;
+import org.example.matcheat.domain.account.dto.AccountReportResultResponse;
 import org.example.matcheat.domain.account.dto.AdminAccountReportResponse;
 import org.example.matcheat.domain.account.dto.AdminPageResponse;
 import org.example.matcheat.domain.account.entity.AccountReportEntity;
@@ -95,9 +96,9 @@ public class AccountReportService {
     }
 
     @Transactional(readOnly = true)
-    public AdminPageResponse<AccountReportResponse> mine(long reporterId, int page, int size) {
+    public AdminPageResponse<AccountReportResultResponse> mine(long reporterId, int page, int size) {
         Page<AccountReportEntity> result = reports.findByReporterId(reporterId, pageRequest(page, size));
-        return pageResponse(result.map(AccountReportResponse::from));
+        return pageResponse(result.map(AccountReportResultResponse::from));
     }
 
     @Transactional(readOnly = true)

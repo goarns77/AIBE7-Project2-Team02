@@ -15,6 +15,11 @@ public class AccountPageController {
         return "account/signup";
     }
 
+    @GetMapping("/suspended")
+    public String suspended() {
+        return "account/suspended";
+    }
+
     @GetMapping({
             "/mypage",
             "/mypage/requests",

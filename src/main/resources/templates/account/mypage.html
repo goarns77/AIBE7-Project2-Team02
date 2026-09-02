@@ -116,6 +116,24 @@
                 </form>
             </section>
 
+            <section class="account-action-card" aria-labelledby="password-action-title">
+                <div><p class="action-index">03 / SECURITY</p><h2 id="password-action-title">비밀번호 변경</h2>
+                    <p>변경 후 현재 로그인 토큰은 즉시 만료됩니다.</p></div>
+                <form data-password-form novalidate>
+                    <label for="password-current">현재 비밀번호</label>
+                    <input id="password-current" name="currentPassword" type="password" autocomplete="current-password" required>
+                    <small data-field-error="currentPassword" aria-live="polite"></small>
+                    <label for="password-new">새 비밀번호</label>
+                    <input id="password-new" name="newPassword" type="password" autocomplete="new-password" required>
+                    <small data-field-error="newPassword" aria-live="polite"></small>
+                    <label for="password-confirm">새 비밀번호 확인</label>
+                    <input id="password-confirm" name="newPasswordConfirm" type="password" autocomplete="new-password" required>
+                    <small data-field-error="newPasswordConfirm" aria-live="polite"></small>
+                    <p class="action-message" data-form-message role="status"></p>
+                    <button type="submit">비밀번호 변경</button>
+                </form>
+            </section>
+
             <section class="account-action-card danger-card" aria-labelledby="withdraw-action-title">
                 <div>
                     <p class="action-index">03 / WITHDRAW</p>
@@ -159,7 +177,7 @@
                     <button type="submit">관리자에게 보내기</button>
                 </form>
             </section>
-            <section class="report-history" aria-labelledby="report-history-title">
+            <section class="report-history" aria-labelledby="report-history-title" hidden>
                 <div class="report-section-heading">
                     <div><p class="action-index">HISTORY</p><h2 id="report-history-title">내 신고 내역</h2></div>
                     <button type="button" data-report-refresh>새로고침</button>

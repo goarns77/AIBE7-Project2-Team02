@@ -10,4 +10,6 @@ public interface AccountPenaltyRepository extends JpaRepository<AccountPenaltyEn
     boolean existsByUserIdAndReleasedAtIsNullAndExpiresAtAfter(Long userId, Instant now);
     List<AccountPenaltyEntity> findByReleasedAtIsNullAndExpiresAtLessThanEqual(Instant now);
     List<AccountPenaltyEntity> findByUserIdOrderByIssuedAtDesc(Long userId);
+    java.util.Optional<AccountPenaltyEntity> findFirstByUserIdAndReleasedAtIsNullAndExpiresAtAfterOrderByExpiresAtDesc(
+            Long userId, Instant now);
 }

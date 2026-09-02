@@ -108,11 +108,7 @@ async function configureReportView() {
         }
         form.reset();
         showFormMessage(form, '관리자에게 신고 내용을 전달했습니다.', true);
-        await loadReports(0);
     });
-    document.querySelector('[data-report-refresh]').addEventListener('click', () => loadReports(0));
-    document.querySelector('[data-report-retry]').addEventListener('click', () => loadReports(0));
-    await loadReports(0);
 }
 
 async function loadReports(page) {
@@ -438,6 +434,19 @@ function configureAccountActions(profile) {
     });
 
     configureSellerAction(profile);
+    const passwordForm = document.querySelector('[data-password-form]');
+    passwordForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!validateRequiredFields(passwordForm)) return;
+        const response = await submitJsonForm(passwordForm, '/api/v1/account/me/password', 'PATCH', {
+            currentPassword: passwordForm.elements.currentPassword.value,
+            newPassword: passwordForm.elements.newPassword.value,
+            newPasswordConfirm: passwordForm.elements.newPasswordConfirm.value,
+        });
+        if (response === null) return;
+        clearAccessToken();
+        window.location.replace('/login?passwordChanged=success');
+    });
     const withdrawForm = document.querySelector('[data-withdraw-form]');
     withdrawForm.addEventListener('submit', async (event) => {
         event.preventDefault();
