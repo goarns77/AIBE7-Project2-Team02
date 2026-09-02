@@ -18,6 +18,7 @@ public class AccountPageController {
     @GetMapping({
             "/mypage",
             "/mypage/requests",
+            "/mypage/products",
             "/mypage/purchases",
             "/mypage/sales",
             "/mypage/offers",
