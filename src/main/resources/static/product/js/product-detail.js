@@ -1,4 +1,4 @@
-import { authFetch, readApiBody, readCurrentUserId } from '/account/js/auth-client.js';
+import {authFetch, readApiBody, readCurrentUserId} from '/account/js/auth-client.js';
 
 /**
  * 쿼리스트링의 id로 판매 조건 상세 정보를 조회해 화면에 채운다.
@@ -119,17 +119,25 @@ async function loadDetail() {
 
         const product = await readApiBody(response);
 
-        document.getElementById('productId').textContent = formatNumber(product.id);
         document.getElementById('productName').textContent = product.productName ?? '-';
-        document.getElementById('minHeadcount').textContent = formatNumber(product.minHeadcount);
-        document.getElementById('maxHeadcount').textContent = formatNumber(product.maxHeadcount);
+        document.getElementById('minHeadcount').textContent =
+            formatNumber(product.minHeadcount, '인분');
+
+        document.getElementById('maxHeadcount').textContent =
+            formatNumber(product.maxHeadcount, '인분');
         document.getElementById('servingPrice').textContent = formatMoney(product.servingPrice);
-        document.getElementById('deliveryRadiusKm').textContent = formatNumber(product.deliveryRadiusKm, 'km');
+        document.getElementById('deliveryRadiusKm').textContent =
+            product.deliveryRadiusKm != null
+                ? `최대 ${product.deliveryRadiusKm}km`
+                : '-';
         document.getElementById('storeAddress').textContent = product.storeAddress ?? '-';
         document.getElementById('category').textContent = product.category ?? '-';
         document.getElementById('description').textContent = product.description ?? '-';
         document.getElementById('dayOfWeek').textContent = dayOfWeekMap[product.dayOfWeek] ?? '없음';
-        document.getElementById('ratingAvg').textContent = product.ratingAvg != null ? product.ratingAvg.toFixed(1) : '평점 없음';
+        document.getElementById('ratingAvg').textContent =
+            product.ratingAvg != null
+                ? `★ ${product.ratingAvg.toFixed(1)}`
+                : '평점 없음';
         document.getElementById('unavailableDates').textContent = formatUnavailableDates(product.unavailableDates);
         document.getElementById('updatedAt').textContent = product.updatedAt ? new Date(product.updatedAt).toLocaleString() : '-';
 

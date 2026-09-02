@@ -16,6 +16,16 @@ if (form) {
     const requestId =
         form.dataset.requestId;
 
+    const addressInput =
+        document.getElementById(
+            'deliveryAddress'
+        );
+
+    const addressSearchButton =
+        document.getElementById(
+            'addressSearchButton'
+        );
+
     const imageFileInput =
         document.getElementById('imageFile');
 
@@ -159,6 +169,11 @@ if (form) {
                     '';
             }
         }
+    );
+
+    addressSearchButton.addEventListener(
+        'click',
+        openAddressSearch
     );
 
     imageFileInput.addEventListener(
@@ -338,6 +353,36 @@ if (form) {
             }
         }
     );
+
+    /**
+     * Kakao 우편번호 검색창을 열고 선택한 주소를 배송지에 입력한다.
+     */
+    function openAddressSearch() {
+        if (
+            typeof kakao === 'undefined'
+            || !kakao.Postcode
+        ) {
+            alert(
+                '주소 검색 서비스를 불러오지 못했습니다.'
+            );
+
+            return;
+        }
+
+        new kakao.Postcode({
+            oncomplete(data) {
+                const selectedAddress =
+                    data.roadAddress
+                    || data.jibunAddress
+                    || data.address;
+
+                addressInput.value =
+                    selectedAddress;
+
+                addressInput.focus();
+            }
+        }).open();
+    }
 
     /**
      * 기존 주문 정보를 수정 폼에 표시한다.

@@ -1,4 +1,4 @@
-import { authFetch, readApiBody, readCurrentUserId, readCurrentUserRole } from '/account/js/auth-client.js';
+import {authFetch, readApiBody, readCurrentUserId, readCurrentUserRole} from '/account/js/auth-client.js';
 
 /**
  * 판매 조건 목록을 검색·조회하고, 게시판형 카드로 렌더링한다.
@@ -11,6 +11,15 @@ const quantityInput = document.getElementById('quantity');
 const categoryInput = document.getElementById('category');
 const servingPriceInput = document.getElementById('servingPrice');
 const newProductButton = document.getElementById('newProductButton');
+const productCount =
+    document.getElementById('productCount');
+const productPagination =
+    document.getElementById('productPagination');
+
+const PAGE_SIZE = 9;
+
+let currentPage = 1;
+let currentProducts = [];
 
 const currentUserId = readCurrentUserId();
 const isAdmin = readCurrentUserRole() === 'ADMIN';
@@ -96,75 +105,159 @@ function renderEmpty(message) {
 }
 
 function renderItems(items) {
+    currentProducts = items;
+
+    const totalPages =
+        Math.ceil(items.length / PAGE_SIZE);
+
+    if (currentPage > totalPages) {
+        currentPage = totalPages || 1;
+    }
+
+    productCount.textContent =
+        `총 ${items.length}개의 상품`;
+
     if (!items.length) {
-        renderEmpty('조건에 맞는 판매 조건이 없습니다.');
+        renderEmpty(
+            '조건에 맞는 상품이 없습니다.'
+        );
+
+        productPagination.innerHTML = '';
         return;
     }
 
-    productList.innerHTML = items.map(product => `
-        <article class="product-item">
-            ${product.imageUrl
-                ? `<div class="product-item-thumb"><img src="${encodeURI(product.imageUrl)}" alt="${product.productName ?? '상품 이미지'}"></div>`
+    const start =
+        (currentPage - 1) * PAGE_SIZE;
+
+    const pageItems =
+        items.slice(start, start + PAGE_SIZE);
+
+    productList.innerHTML =
+        pageItems.map(product => `
+            <article class="product-item">
+                <a
+                    class="product-item-image"
+                    href="/product/detail?id=${product.id}"
+                >
+                    ${product.imageUrl
+            ? `
+                            <img
+                                src="${encodeURI(product.imageUrl)}"
+                                alt="${product.productName ?? '상품 이미지'}"
+                            >
+                        `
+            : `
+                            <div class="product-item-image-placeholder">
+                                <span>이미지 없음</span>
+                            </div>
+                        `
+        }
+                </a>
+
+                <div class="product-item-body">
+                    <div class="product-item-category">
+                        ${product.category ?? '카테고리 없음'}
+                    </div>
+
+                    <div class="product-item-title-row">
+                        <h2>
+                            <a href="/product/detail?id=${product.id}">
+                                ${product.productName ?? '(상품명 없음)'}
+                            </a>
+                        </h2>
+
+                        ${
+            product.ratingAvg != null
+                ? `
+                                    <span class="product-rating">
+                                        ★ ${product.ratingAvg.toFixed(1)}
+                                    </span>
+                                `
                 : ''
-            }
-            <div class="product-item-main">
-                <div class="product-item-title">
-                    <span class="product-rating">⭐ ${product.ratingAvg != null ? product.ratingAvg.toFixed(1) : '평점 없음'}</span>
-                    <h2>
-                        <a href="/product/detail?id=${product.id}">
-                            ${product.productName ?? '(상품명 없음)'}
-                        </a>
-                    </h2>
+        }
+                    </div>
+
+                    <div class="product-item-bottom">
+                        <div class="product-item-price">
+                            <strong>
+                                ${formatMoney(product.servingPrice)}
+                            </strong>
+                            <span>/인분</span>
+                        </div>
+
+                        <span class="product-min-order">
+                            최소 ${product.minHeadcount ?? '-'}인분
+                        </span>
+                    </div>
+
+                    ${(isAdmin
+            || ownedProductIds.has(
+                Number(product.id)
+            ))
+            ? `
+                            <button
+                                type="button"
+                                class="product-item-danger"
+                                data-product-id="${product.id}"
+                            >
+                                숨김 처리
+                            </button>
+                        `
+            : ''
+        }
                 </div>
+            </article>
+        `).join('');
 
-                <div class="product-item-summary">
-                    <div class="product-meta-item">
-                        <span class="product-meta-label">카테고리</span>
-                        <span class="product-meta-value">${product.category ?? '-'}</span>
-                    </div>
-                    <div class="product-meta-item">
-                        <span class="product-meta-label">수주 가능 수량</span>
-                        <span class="product-meta-value">${product.minHeadcount}~${product.maxHeadcount}인분</span>
-                    </div>
-                    <div class="product-meta-item">
-                        <span class="product-meta-label">1인분 가격</span>
-                        <span class="product-meta-value">${formatMoney(product.servingPrice)}</span>
-                    </div>
-                    <div class="product-meta-item">
-                        <span class="product-meta-label">배송 반경</span>
-                        <span class="product-meta-value">${product.deliveryRadiusKm}km</span>
-                    </div>
-                    <div class="product-meta-item">
-                        <span class="product-meta-label">정기 휴무</span>
-                        <span class="product-meta-value">${dayOfWeekMap[product.dayOfWeek] ?? '없음'}</span>
-                    </div>
+    renderPagination(totalPages);
+}
 
-                    <div class="product-meta-item product-meta-full">
-                        <span class="product-meta-label">가게 주소</span>
-                        <span class="product-meta-value">${product.storeAddress ?? '-'}</span>
-                    </div>
+/**
+ * 상품 목록의 페이지 이동 버튼을 렌더링한다.
+ */
+function renderPagination(totalPages) {
+    if (totalPages <= 1) {
+        productPagination.innerHTML = '';
+        return;
+    }
 
-                    <div class="product-meta-item product-meta-full">
-                        <span class="product-meta-label">설명</span>
-                        <span class="product-meta-value">${product.description ?? '-'}</span>
-                    </div>
+    let html = `
+        <button
+            type="button"
+            data-page="${currentPage - 1}"
+            ${currentPage === 1 ? 'disabled' : ''}
+        >
+            ‹
+        </button>
+    `;
 
-                    <div class="product-meta-item product-meta-full">
-                        <span class="product-meta-label">특정 불가 날짜</span>
-                        <span class="product-meta-value">${formatUnavailableDates(product.unavailableDates)}</span>
-                    </div>
-                </div>
-            </div>
+    for (
+        let page = 1;
+        page <= totalPages;
+        page++
+    ) {
+        html += `
+            <button
+                type="button"
+                class="${page === currentPage ? 'is-active' : ''}"
+                data-page="${page}"
+            >
+                ${page}
+            </button>
+        `;
+    }
 
-            <div class="product-item-actions">
-                <a href="/product/detail?id=${product.id}">상세 보기</a>
-                ${(isAdmin || ownedProductIds.has(Number(product.id)))
-                    ? `<button type="button" class="product-item-danger" data-product-id="${product.id}">숨김 처리</button>`
-                    : ''
-                }
-            </div>
-        </article>
-    `).join('');
+    html += `
+        <button
+            type="button"
+            data-page="${currentPage + 1}"
+            ${currentPage === totalPages ? 'disabled' : ''}
+        >
+            ›
+        </button>
+    `;
+
+    productPagination.innerHTML = html;
 }
 
 async function fetchProducts() {
@@ -180,6 +273,8 @@ async function fetchProducts() {
         }
 
         const data = await readApiBody(response);
+
+        currentPage = 1;
         renderItems(data ?? []);
     } catch (error) {
         renderEmpty(error.message);
@@ -226,6 +321,30 @@ resetBtn.addEventListener('click', () => {
     searchForm.reset();
     fetchProducts();
 });
+
+productPagination.addEventListener(
+    'click',
+    (event) => {
+        const button =
+            event.target.closest('[data-page]');
+
+        if (!button || button.disabled) {
+            return;
+        }
+
+        currentPage =
+            Number(button.dataset.page);
+
+        renderItems(currentProducts);
+
+        document.querySelector(
+            '.product-list-section'
+        )?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
+);
 
 async function initialize() {
     await Promise.all([
