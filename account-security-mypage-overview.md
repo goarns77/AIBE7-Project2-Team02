@@ -132,4 +132,3 @@ MatchEAT의 계정 영역은 다음 기능을 담당합니다.
 현재 구현은 기능과 보안 요구를 충족하며 기존 API와 화면 호환성을 유지합니다. 다만 마이페이지는 출처별 첫 100건을 받아 화면에서 나누므로 장기 운영 전 DB 커서 페이징, 서버 상태 필터 연결, 증분 상태 갱신이 필요합니다.
 
 상세 구현은 `final-account-mypage-implementation-spec.md`, 성능 개선 계획은 `mypage-long-term-optimization-report.md`에서 확인할 수 있습니다.
-
