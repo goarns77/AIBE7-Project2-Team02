@@ -8,6 +8,7 @@ import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.repository.ChatMessageRepository;
 import org.example.matcheat.domain.chat.repository.ChatRoomRepository;
 import org.example.matcheat.domain.account.service.TradeAccountValidationService;
+import org.example.matcheat.domain.chat.support.ProductOwnerLookup;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,21 +24,24 @@ public class ChatService {
 	private final ChatRoomRepository chatRoomRepository;
 	private final ChatMessageRepository chatMessageRepository;
 	private final TradeAccountValidationService accounts;
+	private final ProductOwnerLookup productOwnerLookup;
 
 	@Transactional
 	public ChatRoomResponse createChatRoom(ChatRoomCreateRequest request, Long currentUserId) {
 		accounts.requireActiveUser(currentUserId);
-		accounts.requireApprovedSeller(request.getSellerId());
-		if (request.getProposalId() == null && request.getOriginType() == ChatRoom.OriginType.PROPOSAL) {
-			throw new IllegalArgumentException("proposalId 없이 PROPOSAL 타입의 채팅방을 생성할 수 없습니다.");
+
+		Long resolvedSellerId;
+		if (request.getProductId() != null) {
+			Long ownerAccountId = productOwnerLookup.findOwnerAccountId(request.getProductId());
+			// 상품 등록자가 실제 "승인된 판매자"인지 검증 + seller_id 획득을 한 번에 처리
+			resolvedSellerId = accounts.approvedSellerIdForUser(ownerAccountId);
+		} else {
+			resolvedSellerId = request.getSellerId();
+			accounts.requireApprovedSeller(resolvedSellerId);
 		}
 
 		ChatRoom chatRoom = getOrCreateChatRoomEntity(
-				request.getProposalId(),
-				request.getOriginType(),
-				currentUserId,
-				request.getSellerId()
-		);
+				request.getProposalId(), request.getOriginType(), currentUserId, resolvedSellerId);
 		return ChatRoomResponse.from(chatRoom);
 	}
 
