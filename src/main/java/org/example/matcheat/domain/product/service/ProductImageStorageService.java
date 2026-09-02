@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.util.Base64;
 
 @Service
+/**
+ * 판매 조건 이미지 파일을 저장 가능한 형태(Base64 데이터 URL)로 변환하는 서비스이다.
+ */
 public class ProductImageStorageService {
 
     /**
