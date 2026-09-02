@@ -31,13 +31,15 @@ export const mypageViews = Object.freeze({
   purchases: {
     title: '구매 내역',
     kicker: 'PURCHASES',
-    pending: ['구매 내역 연결을 준비하고 있습니다.', '확정 거래 API가 제공되면 이 화면에서 구매 내역을 확인할 수 있습니다.'],
+    empty: ['구매 거래가 없습니다.', '제안이나 견적 거래가 시작되면 이곳에서 진행 상태를 확인할 수 있습니다.'],
+    pending: ['구매 내역을 불러올 수 없습니다.', '거래 조회 API 연결 상태를 확인해 주세요.'],
     sources: [{ key: 'purchases', label: '구매', endpoint: '/api/v1/orders/purchases' }],
   },
   sales: {
     title: '판매 내역',
     kicker: 'SALES',
-    pending: ['판매 내역 연결을 준비하고 있습니다.', '확정 거래 API가 제공되면 이 화면에서 판매 내역을 확인할 수 있습니다.'],
+    empty: ['판매 거래가 없습니다.', '제안이나 견적 거래가 시작되면 이곳에서 진행 상태를 확인할 수 있습니다.'],
+    pending: ['판매 내역을 불러올 수 없습니다.', '거래 조회 API 연결 상태를 확인해 주세요.'],
     sources: [{ key: 'sales', label: '판매', endpoint: '/api/v1/orders/sales', sellerOnly: true }],
   },
   offers: {
@@ -116,41 +118,77 @@ function adaptRequest(record) {
 }
 
 function adaptPurchase(record) {
-  const id = value(record, 'orderId', 'id');
-  return viewRecord(
-    `purchase-${id}`,
-    value(record, 'title', 'requestTitle', 'productName') || '구매 내역',
-    value(record, 'status', 'orderStatus'),
-    value(record, 'sellerName', 'businessName', 'deliveryAddress'),
-    joinMeta(
-      labeledDate('주문', value(record, 'orderedAt')),
-      labeledDate('행사', value(record, 'eventDate', 'eventDateTime')),
-      labeled('수량', value(record, 'quantity'), '명'),
-      labeledMoney('결제', value(record, 'totalAmount')),
-    ),
-    '',
-    '',
-    value(record, 'orderedAt', 'eventDate', 'eventDateTime'),
-  );
+  return adaptTradeActivity(record, 'purchase');
 }
 
 function adaptSale(record) {
-  const id = value(record, 'orderId', 'id');
+  return adaptTradeActivity(record, 'sale');
+}
+
+function adaptTradeActivity(record, perspective) {
+  const id = value(record, 'activityId', 'sourceId', 'id');
+  const sourceType = value(record, 'sourceType') || 'QUOTE';
+  const sourceId = value(record, 'sourceId', 'quoteId', 'id');
+  const state = tradeDisplayState(record);
+  const href = tradeActivityHref(record);
   return viewRecord(
-    `sale-${id}`,
-    value(record, 'title', 'requestTitle', 'productName') || '판매 내역',
-    value(record, 'status', 'orderStatus'),
-    value(record, 'buyerName', 'customerName', 'deliveryAddress'),
+    `${perspective}-${id}`,
+    value(record, 'itemName', 'title', 'requestTitle', 'productName')
+      || `${activityTypeLabel(sourceType)} #${sourceId}`,
+    state.code,
+    value(record, 'description', 'additionalNotes'),
     joinMeta(
-      labeledDate('주문', value(record, 'orderedAt')),
-      labeledDate('행사', value(record, 'eventDate', 'eventDateTime')),
+      activityTypeLabel(sourceType),
+      value(record, 'direction') === 'SENT' ? '내가 보냄' : '내가 받음',
+      labeled('상태', statusLabel(value(record, 'sourceStatus', 'status'))),
       labeled('수량', value(record, 'quantity'), '명'),
-      labeledMoney('정산', value(record, 'totalAmount')),
+      labeledMoney(perspective === 'purchase' ? '금액' : '예상 정산', value(record, 'totalAmount')),
+      labeledDate('행사', value(record, 'eventDateTime')),
+      labeledDate('등록', value(record, 'createdAt')),
+      labeledDate('결제', value(record, 'paidAt')),
     ),
-    '',
-    '',
-    value(record, 'orderedAt', 'eventDate', 'eventDateTime'),
+    href,
+    href ? '거래 보기' : '',
+    value(record, 'paidAt', 'createdAt', 'eventDateTime'),
   );
+}
+
+function tradeDisplayState(record) {
+  const paymentStatus = value(record, 'paymentStatus');
+  const sourceStatus = value(record, 'sourceStatus', 'status');
+  if (paymentStatus === 'COMPLETED') return {code: 'COMPLETED', label: '완료'};
+  if (paymentStatus === 'CANCELLED'
+      || ['REJECTED', 'WITHDRAWN', 'CANCELLED', 'CANCELED'].includes(sourceStatus)) {
+    return {code: 'CLOSED', label: '종료'};
+  }
+  if (paymentStatus || ['ACCEPTED', 'IN_TALK'].includes(sourceStatus)) {
+    return {code: 'IN_PROGRESS', label: '진행 중'};
+  }
+  return value(record, 'direction') === 'SENT'
+    ? {code: 'PROPOSED', label: '제안함'}
+    : {code: 'PROPOSED', label: '제안받음'};
+}
+
+function tradeActivityHref(record) {
+  const sourceType = value(record, 'sourceType');
+  if (sourceType === 'PROPOSAL' && value(record, 'requestId')) {
+    return `/requests/${encodeURIComponent(value(record, 'requestId'))}`;
+  }
+  if (sourceType === 'ESTIMATE' && value(record, 'sourceId')) {
+    return `/estimates/${encodeURIComponent(value(record, 'sourceId'))}`;
+  }
+  if (sourceType === 'QUOTE' && value(record, 'chatRoomId')) {
+    return `/chat?roomId=${encodeURIComponent(value(record, 'chatRoomId'))}`;
+  }
+  return '';
+}
+
+function activityTypeLabel(sourceType) {
+  return {
+    PROPOSAL: '주문 제안',
+    ESTIMATE: '견적 요청',
+    QUOTE: '견적 거래',
+  }[sourceType] || '거래';
 }
 
 function adaptOffer(record, direction) {
@@ -201,13 +239,15 @@ function adaptChatRoom(record) {
     value(record, 'requestTitle', 'title', 'counterpartName')
       || `${originLabel(originType)} 채팅방 #${id}`,
     value(record, 'status', 'chatStatus') || '진행 중',
-    value(record, 'lastMessage', 'message') || chatReference(record),
+    value(record, 'lastMessage', 'message') || '아직 메시지가 없습니다.',
     joinMeta(
       labeled('유형', originLabel(originType)),
+      chatReference(record),
+      labeledDate('최근 메시지', value(record, 'lastMessageAt')),
       labeledDate('개설', value(record, 'createdAt')),
     ),
-    '',
-    '',
+    id ? `/chat?roomId=${encodeURIComponent(id)}` : '/chat',
+    '채팅 열기',
     value(record, 'lastMessageAt', 'updatedAt', 'createdAt'),
   );
 }
@@ -275,6 +315,8 @@ function statusLabel(status) {
     REJECTED: '거절',
     WITHDRAWN: '철회',
     ACTIVE: '진행 중',
+    IN_PROGRESS: '진행 중',
+    PROPOSED: '제안',
     CLOSED: '종료',
     PENDING: '대기',
     FAILED: '실패',

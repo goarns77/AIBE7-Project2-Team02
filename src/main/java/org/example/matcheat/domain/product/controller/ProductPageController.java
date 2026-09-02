@@ -42,7 +42,7 @@ public class ProductPageController {
     }
 
     /**
-     * 추천 응답 JSON 샘플 페이지로 이동한다.
+     * 판매 추천 미리보기 페이지로 이동한다..
      */
     @GetMapping("/product/recommendations")
     public String recommendationPage() {

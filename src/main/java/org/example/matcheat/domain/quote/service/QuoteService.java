@@ -28,6 +28,12 @@ public class QuoteService {
 	public Quote getQuoteEntity(Long quoteId) {
 		return findQuoteOrThrow(quoteId);
 	}
+
+	@Transactional
+	public Quote getQuoteEntityForPayment(Long quoteId) {
+		return quoteRepository.findByIdForPayment(quoteId)
+				.orElseThrow(() -> new IllegalArgumentException("견적서를 찾을 수 없습니다. ID: " + quoteId));
+	}
 	// -----------------------------------------------------------
 	// 생성 - 채팅방 자동 생성 (기존 흐름: 구매자가 판매자를 지정해 견적 요청)
 	// -----------------------------------------------------------
@@ -57,7 +63,7 @@ public class QuoteService {
 	@Transactional
 	public QuoteResponse createQuoteInChatRoom(Long chatRoomId, Long currentUserId, QuoteCreateRequest request) {
 		ChatRoom chatRoom = chatService.getChatRoomEntity(chatRoomId);
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		Quote.SenderRole senderRole = currentUserId.equals(chatRoom.getBuyerId())
 				? Quote.SenderRole.BUYER
@@ -147,7 +153,7 @@ public class QuoteService {
 	@Transactional(readOnly = true)
 	public QuoteResponse getQuote(Long quoteId, Long currentUserId) {
 		Quote quote = findQuoteOrThrow(quoteId);
-		quote.validateParticipant(currentUserId);
+		quote.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		return QuoteResponse.from(quote);
 	}
 
@@ -157,7 +163,7 @@ public class QuoteService {
 	@Transactional
 	public QuoteResponse updateQuote(Long quoteId, Long currentUserId, QuoteUpdateRequest request) {
 		Quote quote = findQuoteOrThrow(quoteId);
-		quote.validateSenderOnly(currentUserId);
+		quote.validateSenderOnly(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		long totalAmount = Quote.calculateTotalAmount(request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee());
 		quote.updateQuoteDetails(request.getQuantity(), request.getUnitPrice(), request.getDeliveryFee(), totalAmount);
@@ -171,12 +177,12 @@ public class QuoteService {
 	@Transactional
 	public QuoteResponse updateQuoteStatus(Long quoteId, Long currentUserId, Quote.QuoteStatus status) {
 		Quote quote = findQuoteOrThrow(quoteId);
+		Long sellerProfileId = accounts.sellerIdForUserOrNull(currentUserId);
 
 		if (status == Quote.QuoteStatus.WITHDRAWN) {
-			quote.validateSenderOnly(currentUserId);
+			quote.validateSenderOnly(currentUserId, sellerProfileId);
 		} else {
-			// ACCEPTED, REJECTED
-			quote.validateCounterpartyOnly(currentUserId);
+			quote.validateCounterpartyOnly(currentUserId, sellerProfileId);
 		}
 
 		quote.updateStatus(status);

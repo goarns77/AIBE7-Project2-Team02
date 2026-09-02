@@ -20,6 +20,9 @@ public class TextSimilarityCalculator {
 
     private final EmbeddingModel embeddingModel;
 
+    /**
+     * Gemini 임베딩 모델을 주입받는 생성자이다.
+     */
     public TextSimilarityCalculator(EmbeddingModel embeddingModel) {
         this.embeddingModel = embeddingModel;
     }
@@ -73,10 +76,16 @@ public class TextSimilarityCalculator {
         return dotProduct / (Math.sqrt(leftNorm) * Math.sqrt(rightNorm));
     }
 
+    /**
+     * 문자열이 null이거나 공백뿐인지 확인한다.
+     */
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
 
+    /**
+     * 점수를 0~100 범위로 잘라낸다.
+     */
     private double clamp(double score) {
         return Math.max(0, Math.min(100, score));
     }

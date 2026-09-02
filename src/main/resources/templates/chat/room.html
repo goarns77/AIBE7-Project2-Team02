@@ -1,0 +1,239 @@
+<!--
+  배치 경로: src/main/resources/templates/chat/room.html
+  라우팅: GET /chat -> "chat/room" (아래 응답 마지막에 컨트롤러 예시 첨부)
+  연동 CSS: src/main/resources/static/css/chat.css
+  연동 JS : src/main/resources/static/chat/js/chat-room.js
+-->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>채팅 | MatchEAT</title>
+
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <link rel="stylesheet" th:href="@{/css/chat.css}">
+
+    <!-- 실시간 메시지 전송을 위한 STOMP / SockJS -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+</head>
+<body>
+
+<!-- 채팅방 목록(좌) + 선택한 채팅방(우)을 보여주는 Thymeleaf 페이지 -->
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="chat-page" id="chatPage" th:attr="data-initial-room=${roomId}">
+
+    <div class="chat-shell">
+
+        <!-- 좌측: 내 채팅방 목록 -->
+        <aside class="chat-list-panel">
+            <div class="chat-list-head">
+                <h1>채팅</h1>
+                <p>진행 중인 대화 목록입니다.</p>
+                <button type="button" id="newChatToggle" class="chat-btn chat-btn-primary chat-new-btn">
+                    새 대화 시작
+                </button>
+            </div>
+
+            <!-- 테스트/초기 진입용: 판매자 ID를 알고 있을 때 바로 채팅방을 개설한다 -->
+            <form id="newChatForm" class="chat-new-form" hidden>
+                <div class="chat-quote-field">
+                    <label for="newChatSellerId">상대 판매자 ID</label>
+                    <input type="number" id="newChatSellerId" min="1" required>
+                </div>
+
+                <div class="chat-quote-field">
+                    <label for="newChatOriginType">대화 유형</label>
+                    <select id="newChatOriginType">
+                        <option value="INQUIRY">문의 (제안 없이 바로 대화)</option>
+                        <option value="PROPOSAL">제안 관련</option>
+                    </select>
+                </div>
+
+                <div class="chat-quote-field" id="newChatProposalIdField" hidden>
+                    <label for="newChatProposalId">제안(Proposal) ID</label>
+                    <input type="number" id="newChatProposalId" min="1">
+                </div>
+
+                <div class="chat-quote-actions">
+                    <button type="submit" class="chat-btn chat-btn-primary">대화 시작</button>
+                    <button type="button" id="newChatCancel" class="chat-btn chat-btn-ghost">취소</button>
+                </div>
+            </form>
+
+            <div class="chat-room-list" id="chatRoomList">
+                <div class="chat-state-line" id="chatListLoading">채팅방을 불러오는 중입니다.</div>
+                <div class="chat-state-line" id="chatListError" hidden></div>
+                <div class="chat-state-line" id="chatListEmpty" hidden>
+                    아직 대화가 없습니다.<br>주문 또는 제안에서 대화를 시작해보세요.
+                </div>
+                <!-- 채팅방 항목은 JS가 채운다 -->
+            </div>
+        </aside>
+
+        <!-- 우측: 선택한 채팅방 -->
+        <section class="chat-room-panel">
+
+            <div class="chat-room-placeholder" id="chatRoomEmpty">
+                <p>왼쪽 목록에서 대화를 선택해주세요.</p>
+            </div>
+
+            <div class="chat-room-active" id="chatRoomActive" hidden>
+
+                <header class="chat-room-topbar">
+                    <div>
+                        <h2 id="chatPartnerLabel">-</h2>
+                        <p class="chat-room-meta" id="chatRoomMeta"></p>
+                    </div>
+                    <span class="chat-status-badge" id="chatRoomStatus">-</span>
+                </header>
+
+                <div class="chat-room-columns">
+
+                    <!-- 메시지 영역 -->
+                    <div class="chat-message-column">
+                        <div class="chat-message-list" id="chatMessageList"></div>
+
+                        <form class="chat-message-form" id="chatMessageForm">
+                            <label class="chat-file-trigger" for="chatFileInput" title="이미지/PDF 첨부">
+                                <span aria-hidden="true">📎</span>
+                                <input type="file" id="chatFileInput" accept="image/*,application/pdf" hidden>
+                            </label>
+                            <input type="text"
+                                   id="chatMessageInput"
+                                   placeholder="메시지를 입력하세요"
+                                   autocomplete="off"
+                                   maxlength="1000">
+                            <button type="submit">전송</button>
+                        </form>
+                        <p class="chat-upload-status" id="chatUploadStatus" hidden></p>
+                    </div>
+
+                    <!-- 견적 영역: 1차 협상 + 공식 견적서 -->
+                    <aside class="chat-quote-column" id="chatQuoteColumn">
+
+                        <!-- 1차 협상 견적 -->
+                        <section class="chat-quote-card">
+                            <div class="chat-quote-card-head">
+                                <h3>1차 협상 견적</h3>
+                                <span class="chat-negotiation-status" id="negotiationStatusBadge" hidden></span>
+                            </div>
+
+                            <div id="negotiationEmpty" class="chat-quote-empty">
+                                <p>아직 협상 견적서가 없습니다.</p>
+                                <button type="button" id="negotiationStartButton" class="chat-btn chat-btn-primary">
+                                    협상 견적서 시작하기
+                                </button>
+                            </div>
+
+                            <form id="negotiationForm" class="chat-quote-form" hidden>
+                                <div class="chat-quote-field">
+                                    <label for="negoQuantity">수량</label>
+                                    <input type="number" id="negoQuantity" min="1" required>
+                                </div>
+                                <div class="chat-quote-field">
+                                    <label for="negoUnitPrice">1인 단가</label>
+                                    <input type="number" id="negoUnitPrice" min="0" required>
+                                </div>
+                                <div class="chat-quote-field">
+                                    <label for="negoDeliveryFee">배송비</label>
+                                    <input type="number" id="negoDeliveryFee" min="0">
+                                </div>
+
+                                <div class="chat-quote-total">
+                                    <span>합계</span>
+                                    <strong id="negoTotalAmount">0원</strong>
+                                </div>
+
+                                <p class="chat-quote-notes" id="negoAdditionalNotes" hidden></p>
+
+                                <div class="chat-quote-actions">
+                                    <button type="submit" id="negotiationSaveButton" class="chat-btn">
+                                        수정 내용 저장
+                                    </button>
+                                    <button type="button" id="negotiationAiButton" class="chat-btn chat-btn-ghost">
+                                        AI 요약 실행
+                                    </button>
+                                    <button type="button" id="negotiationLockButton" class="chat-btn chat-btn-primary">
+                                        최종 확정(잠금)
+                                    </button>
+                                </div>
+
+                                <p class="chat-quote-hint" id="negotiationHint"></p>
+                            </form>
+                        </section>
+
+                        <!-- 공식 견적서 -->
+                        <section class="chat-quote-card">
+                            <div class="chat-quote-card-head">
+                                <h3>공식 견적서</h3>
+                                <span class="chat-quote-status-badge" id="quoteStatusBadge" hidden></span>
+                            </div>
+
+                            <div id="quoteEmpty" class="chat-quote-empty">
+                                <p>아직 발송된 견적서가 없습니다.</p>
+                                <button type="button" id="quoteComposeToggle" class="chat-btn chat-btn-primary">
+                                    견적서 보내기
+                                </button>
+                            </div>
+
+                            <form id="quoteComposeForm" class="chat-quote-form" hidden>
+                                <div class="chat-quote-field">
+                                    <label for="quoteQuantity">수량</label>
+                                    <input type="number" id="quoteQuantity" min="1" required>
+                                </div>
+                                <div class="chat-quote-field">
+                                    <label for="quoteUnitPrice">1인 단가</label>
+                                    <input type="number" id="quoteUnitPrice" min="1" required>
+                                </div>
+                                <div class="chat-quote-field">
+                                    <label for="quoteDeliveryFee">배송비</label>
+                                    <input type="number" id="quoteDeliveryFee" min="0">
+                                </div>
+                                <div class="chat-quote-actions">
+                                    <button type="submit" class="chat-btn chat-btn-primary">보내기</button>
+                                    <button type="button" id="quoteComposeCancel" class="chat-btn chat-btn-ghost">취소</button>
+                                </div>
+                            </form>
+
+                            <div id="quoteDetail" class="chat-quote-detail" hidden>
+                                <div class="chat-quote-detail-row">
+                                    <span>수량</span>
+                                    <strong id="quoteDetailQuantity"></strong>
+                                </div>
+                                <div class="chat-quote-detail-row">
+                                    <span>1인 단가</span>
+                                    <strong id="quoteDetailUnitPrice"></strong>
+                                </div>
+                                <div class="chat-quote-detail-row">
+                                    <span>배송비</span>
+                                    <strong id="quoteDetailDeliveryFee"></strong>
+                                </div>
+                                <div class="chat-quote-detail-row chat-quote-detail-total">
+                                    <span>합계</span>
+                                    <strong id="quoteDetailTotal"></strong>
+                                </div>
+
+                                <div class="chat-quote-actions" id="quoteActionArea"></div>
+                            </div>
+                        </section>
+
+                    </aside>
+
+                </div>
+            </div>
+
+        </section>
+
+    </div>
+
+    <div class="chat-toast" id="chatToast" hidden></div>
+
+</main>
+
+<script type="module" th:src="@{/chat/js/chat-room.js}"></script>
+
+</body>
+</html>

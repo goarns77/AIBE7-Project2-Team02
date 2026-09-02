@@ -392,10 +392,20 @@ function renderRecords(records) {
     status.textContent = record.status;
     status.dataset.status = record.statusCode;
     if (record.href) {
+      article.classList.add('is-clickable');
+      article.tabIndex = 0;
+      article.setAttribute('role', 'link');
       const link = article.querySelector('.record-link');
       link.href = record.href;
       link.textContent = record.actionLabel || '상세 보기';
       link.hidden = false;
+      article.addEventListener('click', (event) => {
+        if (event.target.closest('a, button')) return;
+        window.location.assign(record.href);
+      });
+      article.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') window.location.assign(record.href);
+      });
     }
     list.append(article);
   });

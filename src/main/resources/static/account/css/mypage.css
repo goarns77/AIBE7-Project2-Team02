@@ -246,6 +246,10 @@ body {
 .record-summary { min-width: 82px; margin: 0 0 12px; color: #687269; font-size: 0.78rem; text-align: right; }
 .record-list { display: grid; }
 .record-card { padding: 20px 0; border-top: 1px solid var(--line); }
+.record-card.is-clickable { cursor: pointer; }
+.record-card.is-clickable:hover h2,
+.record-card.is-clickable:focus h2 { color: var(--forest); }
+.record-card.is-clickable:focus { outline: 2px solid rgba(36, 83, 58, 0.25); outline-offset: 3px; }
 .record-card h2 { margin: 0 0 7px; font-size: 1.05rem; }
 .record-card p { max-width: 62ch; margin: 0; overflow-wrap: anywhere; color: #727a73; line-height: 1.55; }
 .record-card small { display: block; margin-top: 8px; color: #8a928b; }

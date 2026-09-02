@@ -1,6 +1,7 @@
 package org.example.matcheat.domain.quote.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.matcheat.domain.account.service.TradeAccountValidationService;
 import org.example.matcheat.domain.chat.dto.ChatMessageResponse;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.service.ChatMessageService;
@@ -15,6 +16,7 @@ import org.example.matcheat.domain.quote.repository.QuoteNegotiationRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,12 +30,14 @@ public class QuoteNegotiationService {
 	private final ChatMessageService chatMessageService;
 	private final QuoteAiSummaryClient quoteAiSummaryClient;
 	private final QuoteService quoteService; // [추가] 잠금 시 확정 Quote 발행용
+	private final TradeAccountValidationService accounts;
+	private final TransactionTemplate requiresNewTransactionTemplate; // 추가
 
 	@Transactional
 	public QuoteNegotiationResponse createInitialNegotiation(Long chatRoomId, Long currentUserId,
 	                                                         QuoteNegotiationCreateRequest request) {
 		ChatRoom chatRoom = chatService.getChatRoomEntity(chatRoomId);
-		chatRoom.validateParticipant(currentUserId);
+		chatRoom.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		Optional<QuoteNegotiation> existing = quoteNegotiationRepository.findByChatRoomId(chatRoomId);
 		if (existing.isPresent()) {
@@ -54,15 +58,16 @@ public class QuoteNegotiationService {
 				.build();
 
 		try {
-			// [수정] saveAndFlush로 즉시 DB 유니크 제약(chatRoomId)을 확인한다.
-			// save()만 쓰면 실제 INSERT가 트랜잭션 커밋 시점까지 미뤄질 수 있어서,
-			// "조회했을 때는 없었는데 그 사이 다른 요청이 먼저 만든" 레이스 컨디션을
-			// 여기서 못 잡고 나중에 알 수 없는 시점에 에러가 났다.
-			QuoteNegotiation saved = quoteNegotiationRepository.saveAndFlush(negotiation);
+			// [수정] 별도 물리 트랜잭션(REQUIRES_NEW)에서 INSERT를 시도한다.
+			// 그냥 saveAndFlush만 쓰면, 실패 시 바깥 @Transactional 전체가
+			// Postgres에서 "aborted" 상태가 되어 바로 아래 재조회까지 같이
+			// 실패한다 (Supabase=Postgres 환경에서 실제로 재현되는 문제).
+			QuoteNegotiation saved = requiresNewTransactionTemplate.execute(status ->
+					quoteNegotiationRepository.saveAndFlush(negotiation));
 			return QuoteNegotiationResponse.from(saved);
 		} catch (DataIntegrityViolationException e) {
-			// 동시에 다른 요청이 먼저 만들었다면, 방금 만들어진 걸 다시 조회해서
-			// 멱등하게 반환한다 (예외를 그대로 던지지 않음).
+			// 별도 트랜잭션에서만 실패했으므로, 바깥(현재) 트랜잭션은 멀쩡하다.
+			// 동시에 다른 요청이 먼저 만든 것을 재조회해서 멱등하게 반환한다.
 			return quoteNegotiationRepository.findByChatRoomId(chatRoomId)
 					.map(QuoteNegotiationResponse::from)
 					.orElseThrow(() -> e);
@@ -72,7 +77,7 @@ public class QuoteNegotiationService {
 	@Transactional(readOnly = true)
 	public QuoteNegotiationResponse getNegotiation(Long chatRoomId, Long currentUserId) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-		negotiation.validateParticipant(currentUserId);
+		negotiation.validateParticipant(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		return QuoteNegotiationResponse.from(negotiation);
 	}
 
@@ -80,7 +85,7 @@ public class QuoteNegotiationService {
 	public QuoteNegotiationResponse editDuringNegotiation(Long chatRoomId, Long currentUserId,
 	                                                      Integer quantity, Long unitPrice, Long deliveryFee) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-		negotiation.validateFreeEdit(currentUserId);
+		negotiation.validateFreeEdit(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		negotiation.applyEdit(quantity, unitPrice, deliveryFee);
 		return QuoteNegotiationResponse.from(negotiation);
 	}
@@ -88,11 +93,7 @@ public class QuoteNegotiationService {
 	@Transactional
 	public QuoteNegotiationResponse triggerAiSummary(Long chatRoomId, Long currentUserId) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-
-		// [수정] AI 호출(비용 발생) 이전에 참여자/상태/1회제한을 전부 먼저 검증한다.
-		// 예전에는 이 검증들이 AI 호출 뒤에 있어서, 이미 사용된 협상에 다시
-		// 호출해도 Gemini API가 한 번 더 나간 뒤에야 예외가 났다 (테스트로 확인된 버그).
-		negotiation.validateBeforeAiSummary(currentUserId);
+		negotiation.validateBeforeAiSummary(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 
 		List<ChatMessageResponse> messages = chatMessageService.getChatHistory(chatRoomId, currentUserId);
 		AiQuoteSummaryResult result = quoteAiSummaryClient.summarize(negotiation, messages);
@@ -111,7 +112,7 @@ public class QuoteNegotiationService {
 	public QuoteNegotiationResponse editAfterAiSummary(Long chatRoomId, Long currentUserId,
 	                                                   Integer quantity, Long unitPrice, Long deliveryFee) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-		negotiation.validateFinalEdit(currentUserId);
+		negotiation.validateFinalEdit(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		negotiation.applyEdit(quantity, unitPrice, deliveryFee);
 		return QuoteNegotiationResponse.from(negotiation);
 	}
@@ -119,14 +120,9 @@ public class QuoteNegotiationService {
 	@Transactional
 	public QuoteNegotiationResponse lockNegotiation(Long chatRoomId, Long currentUserId) {
 		QuoteNegotiation negotiation = findByChatRoomIdOrThrow(chatRoomId);
-		negotiation.lock(currentUserId);
-
-		// [추가] 협상 결과를 확정 Quote(status=ACCEPTED)로 발행한다.
-		// 이후 Order 생성/마이페이지 조회는 제안형이든 협상형이든 이 Quote
-		// 하나만 기준으로 삼는다 (합의안 4장: orders.quote_id 필수).
+		negotiation.lock(currentUserId, accounts.sellerIdForUserOrNull(currentUserId));
 		Quote finalizedQuote = quoteService.createFromLockedNegotiation(negotiation);
 		negotiation.markQuoteCreated(finalizedQuote.getId());
-
 		return QuoteNegotiationResponse.from(negotiation);
 	}
 

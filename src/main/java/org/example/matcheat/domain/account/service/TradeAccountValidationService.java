@@ -44,4 +44,16 @@ public class TradeAccountValidationService {
         }
         return seller.sellerId();
     }
+
+    /**
+     * 참여자 검증용. 판매자가 아니거나 승인되지 않았으면 예외 대신 null.
+     * (기존 approvedSellerIdForUser는 "판매자여야만 하는" 생성 경로용으로 계속 유지)
+     */
+    public Long sellerIdForUserOrNull(Long userId) {
+        try {
+            return approvedSellerIdForUser(userId);
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
 }
