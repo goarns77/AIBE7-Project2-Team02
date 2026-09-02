@@ -93,9 +93,39 @@ async function loadRecords(sources) {
                 failuresBySource.set(result.source.key, {...result, error});
             }
         }
+        await markReviewWrittenRecords();
         renderRecordView();
     } finally {
         setRetryButtonsDisabled(false);
+    }
+}
+
+/**
+ * 거래 완료된 구매 내역 중, 이미 리뷰를 작성한 결제 건은 "리뷰 작성" 버튼이
+ * 안 보이도록 표시해 둔다. 결제 건마다 API를 따로 부르지 않고 한 번에 확인한다.
+ */
+async function markReviewWrittenRecords() {
+    const allRecords = [...recordsBySource.values()].flat();
+    const paymentIds = allRecords
+        .filter((record) => record.reviewPaymentId)
+        .map((record) => record.reviewPaymentId);
+
+    if (paymentIds.length === 0) return;
+
+    try {
+        const response = await authFetch(
+            `/api/v1/reviews/existing-payment-ids?paymentIds=${paymentIds.join(',')}`
+        );
+        if (!response.ok) return;
+
+        const existingIds = new Set((await readApiBody(response)).map(Number));
+        allRecords.forEach((record) => {
+            if (record.reviewPaymentId && existingIds.has(Number(record.reviewPaymentId))) {
+                record.reviewWritten = true;
+            }
+        });
+    } catch {
+        // 리뷰 작성 여부 확인 실패는 구매 내역 표시 자체를 막지 않는다.
     }
 }
 
@@ -521,6 +551,7 @@ function renderRecords(records) {
       <div class="record-card-actions">
         <span class="status-chip"></span>
         <a class="record-link" hidden></a>
+        <a class="record-link" data-review-link hidden></a>
       </div>`;
         article.querySelector('.record-source').textContent = record.sourceLabel;
         article.querySelector('h2').textContent = record.title;
@@ -537,7 +568,7 @@ function renderRecords(records) {
             article.classList.add('is-clickable');
             article.tabIndex = 0;
             article.setAttribute('role', 'link');
-            const link = article.querySelector('.record-link');
+            const link = article.querySelector('.record-link:not([data-review-link])');
             link.href = record.href;
             link.textContent = record.actionLabel || '상세 보기';
             link.hidden = false;
@@ -548,6 +579,12 @@ function renderRecords(records) {
             article.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') window.location.assign(record.href);
             });
+        }
+        if (record.reviewPaymentId && !record.reviewWritten) {
+            const reviewLink = article.querySelector('[data-review-link]');
+            reviewLink.href = `/reviews/new?paymentId=${encodeURIComponent(record.reviewPaymentId)}`;
+            reviewLink.textContent = '리뷰 작성';
+            reviewLink.hidden = false;
         }
         list.append(article);
     });
