@@ -14,17 +14,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class ChatServiceTest {
     private final ChatRoomRepository chatRooms = mock(ChatRoomRepository.class);
     private final ChatMessageRepository messages = mock(ChatMessageRepository.class);
     private final TradeAccountValidationService accounts = mock(TradeAccountValidationService.class);
-    private final ProductOwnerLookup productOwners = mock(ProductOwnerLookup.class);
-    private final ChatService service = new ChatService(chatRooms, messages, accounts, productOwners);
+    private final ProductOwnerLookup productOwnerLookup = mock(ProductOwnerLookup.class);
+
+    private final ChatService service =
+            new ChatService(chatRooms, messages, accounts, productOwnerLookup);
 
     @Test
     void returnsParticipantRoomsWithLatestMessageSnippets() {

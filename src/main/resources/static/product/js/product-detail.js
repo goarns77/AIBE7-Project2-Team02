@@ -11,6 +11,7 @@ const imageHolder = document.getElementById('imageHolder');
 const estimateButton = document.getElementById('estimateButton');
 const editButton = document.getElementById('editButton');
 const chatButton = document.getElementById('chatButton'); // [추가]
+const reviewsButton = document.getElementById('reviewsButton');
 const reportButton = document.getElementById('reportButton');
 
 const dayOfWeekMap = {
@@ -149,6 +150,7 @@ async function loadDetail() {
             productId: product.id
         });
         estimateButton.href = `/estimates/new?${params.toString()}`;
+        reviewsButton.href = `/reviews/by-product/${product.id}`;
         reportButton.href = `/mypage/reports?${new URLSearchParams({
             targetType: 'PRODUCT',
             targetId: product.id,
@@ -161,7 +163,6 @@ async function loadDetail() {
             editButton.href = `/product/update?id=${product.id}`;
             editButton.style.display = '';
             chatButton.style.display = 'none'; // [추가] 본인 상품과는 채팅할 수 없음
-            reportButton.style.display = 'none';
         } else {
             chatButton.addEventListener('click', () => startChatWithSeller(product.id)); // [추가]
         }
