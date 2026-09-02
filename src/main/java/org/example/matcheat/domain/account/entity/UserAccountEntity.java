@@ -58,6 +58,9 @@ public class UserAccountEntity {
     @Column(name = "manual_suspension", nullable = false)
     private boolean manualSuspension;
 
+    @Column(name = "manual_suspension_reason", length = 500)
+    private String manualSuspensionReason;
+
     protected UserAccountEntity() {
     }
 
@@ -95,12 +98,17 @@ public class UserAccountEntity {
         tokenVersion++;
     }
 
-    public void changeStatus(UserStatus targetStatus) {
+    public void changeStatus(UserStatus targetStatus, String suspensionReason) {
         if (targetStatus == UserStatus.SUSPENDED && status != UserStatus.SUSPENDED) {
             tokenVersion++;
         }
         status = targetStatus;
         manualSuspension = targetStatus == UserStatus.SUSPENDED;
+        manualSuspensionReason = manualSuspension ? suspensionReason : null;
+    }
+
+    public void changeStatus(UserStatus targetStatus) {
+        changeStatus(targetStatus, targetStatus == UserStatus.SUSPENDED ? "관리자 수동 정지" : null);
     }
 
     public void suspendForPenalty() {
@@ -119,6 +127,8 @@ public class UserAccountEntity {
     public boolean manualSuspension() {
         return manualSuspension;
     }
+
+    public String manualSuspensionReason() { return manualSuspensionReason; }
 
     public void promoteToSeller() {
         if (role == UserRole.SELLER) {

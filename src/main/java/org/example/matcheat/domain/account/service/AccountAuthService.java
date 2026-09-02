@@ -57,7 +57,8 @@ public class AccountAuthService {
         Instant now = clock.instant();
         return penalties.findFirstByUserIdAndReleasedAtIsNullAndExpiresAtAfterOrderByExpiresAtDesc(account.id(), now)
                 .map(penalty -> new SuspensionResult(penalty.getReason(), penalty.getExpiresAt(), false))
-                .orElseGet(() -> new SuspensionResult("Manual administrative suspension", null, true));
+                .orElseGet(() -> new SuspensionResult(
+                        repository.findManualSuspensionReason(account.id()).orElse("관리자 수동 정지"), null, true));
     }
 
     @Transactional

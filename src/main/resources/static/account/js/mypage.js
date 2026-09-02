@@ -14,6 +14,7 @@ const recordsBySource = new Map();
 const failuresBySource = new Map();
 let authorizedSources = [];
 let visibleRecordCount = RECORD_PAGE_SIZE;
+let lastRecordSyncAt = 0;
 
 const currentView = location.pathname.split('/').filter(Boolean).at(-1);
 const viewKey = currentView === 'mypage' ? 'profile' : currentView;
@@ -74,6 +75,19 @@ if (viewKey === 'profile') {
     );
 
     await loadRecords(authorizedSources);
+}
+
+if (authorizedSources.length > 0) {
+    lastRecordSyncAt = Date.now();
+    const refreshIfStale = () => {
+        if (!document.hidden && Date.now() - lastRecordSyncAt >= 15000) {
+            lastRecordSyncAt = Date.now();
+            loadRecords(authorizedSources);
+        }
+    };
+    window.addEventListener('focus', refreshIfStale);
+    document.addEventListener('visibilitychange', refreshIfStale);
+    setInterval(refreshIfStale, 60000);
 }
 
 async function configureReportView() {

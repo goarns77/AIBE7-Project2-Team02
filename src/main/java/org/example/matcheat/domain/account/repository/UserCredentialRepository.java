@@ -15,6 +15,8 @@ public interface UserCredentialRepository {
 
     boolean existsByRole(UserRole role);
 
+    default Optional<String> findManualSuspensionReason(long userId) { return Optional.empty(); }
+
     UserAccount save(UserAccount account);
 
     Optional<UserAccount> updateName(long userId, String name);

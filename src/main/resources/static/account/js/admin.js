@@ -95,12 +95,14 @@ function userRow(user) {
   button.disabled = user.status === 'WITHDRAWN';
   button.addEventListener('click', async () => {
     const target = user.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
+    const reason = target === 'SUSPENDED' ? prompt('정지 사유를 입력하세요. (최대 500자)') : null;
+    if (target === 'SUSPENDED' && (!reason || !reason.trim())) return;
     if (!confirm(`${user.name} 회원을 ${target === 'ACTIVE' ? '활성화' : '정지'}하시겠습니까?`)) return;
     button.disabled = true;
     const changed = await request(`/api/v1/admin/users/${user.userId}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: target }),
+      body: JSON.stringify({ status: target, reason }),
     });
     if (changed) await loadUsers(0);
     else button.disabled = false;

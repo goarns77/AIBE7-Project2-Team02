@@ -78,9 +78,11 @@ class AdminAccountServiceTest {
         AdminAccountRepository.UserSummary active = user(8L, UserStatus.ACTIVE);
         AdminAccountRepository.UserSummary suspended = user(8L, UserStatus.SUSPENDED);
         when(repository.findUser(8L)).thenReturn(Optional.of(active));
-        when(repository.changeUserStatus(8L, UserStatus.SUSPENDED)).thenReturn(Optional.of(suspended));
+        when(repository.changeUserStatus(8L, UserStatus.SUSPENDED, "policy violation"))
+                .thenReturn(Optional.of(suspended));
 
-        assertThat(service.changeUserStatus(7L, 8L, UserStatus.SUSPENDED)).isEqualTo(suspended);
+        assertThat(service.changeUserStatus(7L, 8L, UserStatus.SUSPENDED, "policy violation"))
+                .isEqualTo(suspended);
     }
 
     @Test

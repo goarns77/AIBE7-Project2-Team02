@@ -37,7 +37,7 @@ public class AdminAccountService {
 
     @Transactional
     public AdminAccountRepository.UserSummary changeUserStatus(
-            long adminId, long userId, UserStatus targetStatus) {
+            long adminId, long userId, UserStatus targetStatus, String reason) {
         if (targetStatus == null || targetStatus == UserStatus.WITHDRAWN) {
             throw validation("회원 상태는 ACTIVE 또는 SUSPENDED만 지정할 수 있습니다.");
         }
@@ -56,8 +56,20 @@ public class AdminAccountService {
                 && penalties.existsByUserIdAndReleasedAtIsNullAndExpiresAtAfter(userId, clock.instant())) {
             throw validation("기간 제재가 남아 있는 계정은 활성화할 수 없습니다.");
         }
-        return repository.changeUserStatus(userId, targetStatus)
+        String normalizedReason = null;
+        if (targetStatus == UserStatus.SUSPENDED) {
+            normalizedReason = reason == null ? "" : reason.trim();
+            if (normalizedReason.isEmpty() || normalizedReason.length() > 500) {
+                throw validation("정지 사유는 1~500자로 입력해야 합니다.");
+            }
+        }
+        return repository.changeUserStatus(userId, targetStatus, normalizedReason)
                 .orElseThrow(AdminAccountService::userNotFound);
+    }
+
+    public AdminAccountRepository.UserSummary changeUserStatus(long adminId, long userId, UserStatus targetStatus) {
+        return changeUserStatus(adminId, userId, targetStatus,
+                targetStatus == UserStatus.SUSPENDED ? "관리자 수동 정지" : null);
     }
 
     @Transactional(readOnly = true)

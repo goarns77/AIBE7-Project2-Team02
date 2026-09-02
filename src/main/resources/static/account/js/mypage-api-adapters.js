@@ -115,7 +115,7 @@ export const mypageViews = Object.freeze({
             {
                 key: 'purchases',
                 label: '구매 거래',
-                endpoint: '/api/v1/orders/purchases',
+                endpoint: '/api/v1/orders/purchases?page=0&size=100',
             },
         ],
     },
@@ -149,7 +149,7 @@ export const mypageViews = Object.freeze({
             {
                 key: 'sales',
                 label: '판매 거래',
-                endpoint: '/api/v1/orders/sales',
+                endpoint: '/api/v1/orders/sales?page=0&size=100',
                 sellerOnly: true,
             },
         ],
@@ -159,8 +159,8 @@ export const mypageViews = Object.freeze({
         kicker: 'PROPOSALS',
         empty: ['주고받은 제안이 없습니다.', '제안이나 견적 요청이 생성되면 이곳에 표시됩니다.'],
         sources: [
-            {key: 'receivedOffers', label: '받은 제안', endpoint: '/api/v1/proposals/received'},
-            {key: 'sentOffers', label: '보낸 제안', endpoint: '/api/v1/proposals/sent', sellerOnly: true},
+            {key: 'receivedOffers', label: '받은 제안', endpoint: '/api/v1/proposals/received?page=0&size=100'},
+            {key: 'sentOffers', label: '보낸 제안', endpoint: '/api/v1/proposals/sent?page=0&size=100', sellerOnly: true},
             {key: 'receivedEstimates', label: '받은 견적', endpoint: '/api/v1/estimates/received', sellerOnly: true},
             {key: 'sentEstimates', label: '보낸 견적', endpoint: '/api/v1/estimates/sent'},
         ],
@@ -169,7 +169,7 @@ export const mypageViews = Object.freeze({
         title: '채팅',
         kicker: 'CHATS',
         empty: ['참여 중인 채팅방이 없습니다.', '거래 대화가 시작되면 채팅방 요약이 이곳에 표시됩니다.'],
-        sources: [{key: 'chats', label: '채팅', endpoint: '/api/v1/chat-rooms'}],
+        sources: [{key: 'chats', label: '채팅', endpoint: '/api/v1/chat-rooms?page=0&size=100'}],
     },
 });
 
