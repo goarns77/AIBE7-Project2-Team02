@@ -32,7 +32,7 @@ import java.util.List;
  * 실제 Review 저장과 조회는 {@link ReviewService}가 담당하고, 이 서비스는
  * - 결제(Payment)가 완료(COMPLETED) 상태이고 요청자가 그 결제의 구매자 본인인지
  * - 이미 리뷰를 작성한 결제 건은 아닌지
- * - 이 거래가 등록 상품에서 시작됐다면(Payment → Quote → ChatRoom → Proposal.productId)
+ * - 이 거래가 등록 상품에서 시작됐다면(Payment → Quote → ChatRoom.originType == PROPOSAL → Proposal.productId)
  *   상품명을 찾아서 화면에 보여주고, 그 상품의 평점(ProductEntity.ratingAvg)을 재계산한다.
  * 를 검증·조립한 뒤 ReviewService에 위임한다.
  * <p>
@@ -135,8 +135,15 @@ public class ReviewAccessService {
     }
 
     /**
-     * Payment → Quote → ChatRoom → Proposal 순서로 이어가며 상품명과 상품 ID를 찾는다.
-     * 중간에 하나라도 끊기면(채팅 없이 성사된 견적, 문의로 시작한 채팅 등) 대체 문구를 반환한다.
+     * Payment → Quote → ChatRoom까지 이어간 뒤, ChatRoom의 originType에 따라 분기해서
+     * 상품명과 상품 ID를 찾는다. 지금은 PROPOSAL만 실제로 연결되고, INQUIRY(문의로 시작한 채팅)와
+     * 연결이 끊기는 경우(채팅 없는 견적 등)는 전부 대체 문구를 쓴다.
+     * <p>
+     * [확장 지점] ChatRoom.OriginType에 ESTIMATE가 추가되면, 아래 switch에 case ESTIMATE ->
+     * resolveFromEstimate(chatRoom.getEstimateId())를 추가하면 된다. originType이 enum이라
+     * 새 값이 생기면 이 switch가 컴파일 에러를 내서, 여기 고치는 걸 깜빡할 수가 없다.
+     * Estimate도 Proposal과 마찬가지로 itemName/productId를 그대로 갖고 있으니
+     * resolveFromProposal()과 같은 패턴을 그대로 재사용하면 된다.
      */
     private ResolvedItem resolveItem(Payment payment) {
         Quote quote = quoteRepository.findById(payment.getQuoteId()).orElse(null);
@@ -151,11 +158,21 @@ public class ReviewAccessService {
             return ResolvedItem.fallback();
         }
 
-        if (chatRoom.getProposalId() == null) {
+        return switch (chatRoom.getOriginType()) {
+            case PROPOSAL -> resolveFromProposal(chatRoom.getProposalId());
+            case INQUIRY -> ResolvedItem.fallback();
+        };
+    }
+
+    /**
+     * Proposal ID로 상품명과 상품 ID를 찾는다. Proposal이 없거나 ID 자체가 없으면 대체 문구를 반환한다.
+     */
+    private ResolvedItem resolveFromProposal(Long proposalId) {
+        if (proposalId == null) {
             return ResolvedItem.fallback();
         }
 
-        return proposalRepository.findById(chatRoom.getProposalId())
+        return proposalRepository.findById(proposalId)
                 .map(proposal -> new ResolvedItem(proposal.getItemName(), proposal.getProductId()))
                 .orElseGet(ResolvedItem::fallback);
     }
