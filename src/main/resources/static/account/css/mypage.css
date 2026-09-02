@@ -179,6 +179,33 @@ body {
 .withdraw-confirm { display: flex; gap: 8px; align-items: start; line-height: 1.55; }
 .withdraw-confirm input { margin-top: 3px; }
 
+.report-workspace { display: grid; gap: 28px; }
+.report-workspace[hidden] { display: none; }
+.report-compose { display: grid; grid-template-columns: minmax(180px, .8fr) minmax(280px, 1.2fr); gap: 36px; padding: 28px; border: 1px solid var(--line); background: rgba(255, 253, 247, .78); }
+.report-compose h2, .report-history h2 { margin: 0 0 8px; }
+.report-compose > div > p:not(.action-index) { color: #727a73; line-height: 1.65; }
+.report-compose form { display: grid; gap: 8px; }
+.report-compose label { color: #5f6a62; font-size: .78rem; font-weight: 700; }
+.report-compose input, .report-compose textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 4px; background: white; color: var(--ink); font: inherit; }
+.report-compose textarea { min-height: 170px; resize: vertical; }
+.report-compose small { min-height: 16px; color: #a43d2d; }
+.report-compose button, .report-section-heading button, .pagination button { width: fit-content; padding: 10px 14px; border: 0; border-radius: 3px; background: var(--forest); color: white; font: inherit; font-weight: 800; cursor: pointer; }
+.report-compose button:disabled { opacity: .55; cursor: wait; }
+.report-history { padding-top: 26px; border-top: 2px solid var(--ink); }
+.report-section-heading, .report-card > div { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.report-list { display: grid; }
+.report-card { padding: 20px 0; border-bottom: 1px solid var(--line); }
+.report-card h3 { margin: 0; font-size: 1rem; }
+.report-card p { margin: 10px 0; white-space: pre-wrap; color: #687269; line-height: 1.65; }
+.report-card small { color: #8a928b; }
+.report-card blockquote { margin: 16px 0 0; padding: 14px 16px; border-left: 3px solid var(--orange); background: var(--cream); white-space: pre-wrap; color: #4f5e54; }
+.report-empty { padding: 38px 0; text-align: center; color: #7a837c; }
+.pagination { display: flex; justify-content: center; gap: 6px; margin-top: 20px; }
+.pagination button[aria-current='page'] { background: var(--orange); }
+.status-chip[data-status='PENDING'] { background: #f1e5c8; color: #795f1f; }
+.status-chip[data-status='IN_REVIEW'] { background: #dce9ed; color: #285b6b; }
+.status-chip[data-status='RESOLVED'] { background: #d9e9d6; color: #1d6035; }
+
 .data-state {
     display: grid;
     place-items: center;
@@ -324,6 +351,7 @@ body {
     .partial-state { align-items: flex-start; flex-direction: column; }
     .profile-grid { grid-template-columns: 1fr; }
     .account-action-card { grid-template-columns: 1fr; padding: 22px 18px; }
+    .report-compose { grid-template-columns: 1fr; padding: 22px 18px; }
     .coordinate-grid { grid-template-columns: 1fr; }
     .content-heading { align-items: end; }
 }

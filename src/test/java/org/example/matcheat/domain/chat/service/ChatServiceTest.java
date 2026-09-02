@@ -6,6 +6,7 @@ import org.example.matcheat.domain.chat.entity.ChatMessage;
 import org.example.matcheat.domain.chat.entity.ChatRoom;
 import org.example.matcheat.domain.chat.repository.ChatMessageRepository;
 import org.example.matcheat.domain.chat.repository.ChatRoomRepository;
+import org.example.matcheat.domain.chat.support.ProductOwnerLookup;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -22,7 +23,8 @@ class ChatServiceTest {
     private final ChatRoomRepository chatRooms = mock(ChatRoomRepository.class);
     private final ChatMessageRepository messages = mock(ChatMessageRepository.class);
     private final TradeAccountValidationService accounts = mock(TradeAccountValidationService.class);
-    private final ChatService service = new ChatService(chatRooms, messages, accounts);
+    private final ProductOwnerLookup productOwners = mock(ProductOwnerLookup.class);
+    private final ChatService service = new ChatService(chatRooms, messages, accounts, productOwners);
 
     @Test
     void returnsParticipantRoomsWithLatestMessageSnippets() {

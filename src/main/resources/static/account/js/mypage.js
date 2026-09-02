@@ -48,9 +48,87 @@ if (viewKey === 'profile') {
   document.querySelector('[data-account-actions]').hidden = false;
   document.querySelector('[data-loading-state]').hidden = true;
   configureAccountActions(profile);
+} else if (viewKey === 'reports') {
+  await configureReportView();
 } else {
   authorizedSources = view.sources.filter((source) => !source.sellerOnly || profile.role === 'SELLER');
   await loadRecords(authorizedSources);
+}
+
+async function configureReportView() {
+  document.querySelector('[data-loading-state]').hidden = true;
+  document.querySelector('[data-report-panel]').hidden = false;
+  const form = document.querySelector('[data-report-form]');
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const created = await submitJsonForm(form, '/api/v1/reports', 'POST', {
+      title: form.elements.title.value,
+      message: form.elements.message.value,
+    });
+    if (!created) return;
+    form.reset();
+    showFormMessage(form, '관리자에게 신고 내용을 전달했습니다.', true);
+    await loadReports(0);
+  });
+  document.querySelector('[data-report-refresh]').addEventListener('click', () => loadReports(0));
+  await loadReports(0);
+}
+
+async function loadReports(page) {
+  const response = await authFetch(`/api/v1/reports/mine?page=${page}&size=10`);
+  if (response.status === 401) redirectToLogin();
+  const body = await readApiBody(response);
+  if (!response.ok) {
+    document.querySelector('[data-report-list]').replaceChildren();
+    document.querySelector('[data-report-empty]').hidden = false;
+    return;
+  }
+  const list = document.querySelector('[data-report-list]');
+  list.replaceChildren(...body.content.map(reportCard));
+  document.querySelector('[data-report-empty]').hidden = body.content.length !== 0;
+  renderReportPagination(body);
+}
+
+function reportCard(report) {
+  const card = document.createElement('article');
+  card.className = 'report-card';
+  const heading = document.createElement('div');
+  const title = document.createElement('h3');
+  title.textContent = report.title;
+  const status = document.createElement('span');
+  status.className = 'status-chip';
+  status.dataset.status = report.status;
+  status.textContent = reportStatusLabel(report.status);
+  heading.append(title, status);
+  const message = document.createElement('p');
+  message.textContent = report.message;
+  const date = document.createElement('small');
+  date.textContent = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })
+    .format(new Date(report.createdAt));
+  card.append(heading, message, date);
+  if (report.adminResponse) {
+    const response = document.createElement('blockquote');
+    response.textContent = `관리자 답변: ${report.adminResponse}`;
+    card.append(response);
+  }
+  return card;
+}
+
+function renderReportPagination(page) {
+  const container = document.querySelector('[data-report-pagination]');
+  container.replaceChildren();
+  for (let index = 0; index < page.totalPages; index += 1) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = index + 1;
+    if (index === page.page) button.setAttribute('aria-current', 'page');
+    button.addEventListener('click', () => loadReports(index));
+    container.append(button);
+  }
+}
+
+function reportStatusLabel(status) {
+  return { PENDING: '접수', IN_REVIEW: '검토 중', RESOLVED: '처리 완료', REJECTED: '반려' }[status] || status;
 }
 
 async function loadRecords(sources) {

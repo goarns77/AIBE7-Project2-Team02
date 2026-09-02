@@ -22,6 +22,7 @@ const sourceLabels = {
 
 export const mypageViews = Object.freeze({
   profile: { title: '계정 개요', kicker: 'ACCOUNT', sources: [] },
+  reports: { title: '신고 및 문의', kicker: 'REPORTS', sources: [] },
   requests: {
     title: '내 구매 요청',
     kicker: 'REQUESTS',

@@ -21,7 +21,8 @@ public class AccountPageController {
             "/mypage/purchases",
             "/mypage/sales",
             "/mypage/offers",
-            "/mypage/chats"
+            "/mypage/chats",
+            "/mypage/reports"
     })
     public String mypage() {
         return "account/mypage";
