@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>리뷰 작성</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; background: #fafafa; color: #1f2937; }
+        .page { max-width: 720px; margin: 0 auto; }
+        .nav a { margin-right: 14px; text-decoration: none; color: #2563eb; font-weight: 700; }
+        .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px; box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05); }
+        .field { margin-bottom: 16px; }
+        label { display: block; font-weight: 700; margin-bottom: 6px; }
+        textarea, input[type="file"] { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font: inherit; }
+        textarea { min-height: 120px; resize: vertical; }
+        .stars { display: flex; gap: 4px; }
+        .stars input { display: none; }
+        .stars label { margin: 0; font-size: 30px; color: #d1d5db; cursor: pointer; user-select: none; }
+        .stars input:checked ~ label,
+        .stars label:hover,
+        .stars label:hover ~ label { color: #f59e0b; }
+        .stars { flex-direction: row-reverse; justify-content: flex-end; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+        .btn { padding: 10px 14px; border-radius: 10px; border: 0; cursor: pointer; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-secondary { background: #e2e8f0; color: #0f172a; }
+        pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 12px; overflow: auto; }
+        .notice { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; display: none; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="nav">
+        <a href="/">홈</a>
+    </div>
+
+    <div class="card">
+        <h1 style="margin-top:0;">리뷰 작성</h1>
+        <p style="color:#64748b;">거래가 완료된 판매자에게 별점과 리뷰를 남겨주세요.</p>
+
+        <div id="notEligibleNotice" class="notice">
+            이 결제 건은 지금 리뷰를 작성할 수 없습니다. (결제 완료 전이거나, 이미 작성한 리뷰가 있어요)
+        </div>
+
+        <form id="reviewForm">
+            <div class="field">
+                <label>별점</label>
+                <div class="stars">
+                    <input type="radio" name="rating" id="star5" value="5"><label for="star5">★</label>
+                    <input type="radio" name="rating" id="star4" value="4"><label for="star4">★</label>
+                    <input type="radio" name="rating" id="star3" value="3" checked><label for="star3">★</label>
+                    <input type="radio" name="rating" id="star2" value="2"><label for="star2">★</label>
+                    <input type="radio" name="rating" id="star1" value="1"><label for="star1">★</label>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="content">리뷰 내용</label>
+                <textarea id="content" placeholder="거래는 어떠셨나요? 판매자에게 도움이 될 후기를 남겨주세요." required></textarea>
+            </div>
+
+            <div class="field">
+                <label for="imageFile">사진 첨부(선택)</label>
+                <input type="file" id="imageFile" accept="image/*">
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="btn btn-primary" id="submitBtn">리뷰 등록</button>
+                <a class="btn btn-secondary" href="/">취소</a>
+            </div>
+        </form>
+    </div>
+
+    <h2 style="margin-top:24px;">응답 결과</h2>
+    <pre id="result">아직 등록하지 않았습니다.</pre>
+</div>
+
+<script type="module">
+    import { authFetch, readApiBody, readCurrentUserId } from "/account/js/auth-client.js";
+
+    const reviewForm = document.getElementById("reviewForm");
+    const result = document.getElementById("result");
+    const submitBtn = document.getElementById("submitBtn");
+    const notEligibleNotice = document.getElementById("notEligibleNotice");
+
+    if (readCurrentUserId() === null) {
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login?redirect=${redirect}`;
+    }
+
+    const paymentId = new URLSearchParams(window.location.search).get("paymentId");
+
+    if (!paymentId) {
+        notEligibleNotice.textContent = "결제 정보가 없습니다. 결제 내역 화면에서 다시 시도해주세요.";
+        notEligibleNotice.style.display = "block";
+        submitBtn.disabled = true;
+    } else {
+        checkEligibility(paymentId);
+    }
+
+    async function checkEligibility(id) {
+        try {
+            const response = await authFetch(`/api/v1/reviews/eligibility?paymentId=${id}`);
+            const eligibility = await readApiBody(response);
+
+            if (!response.ok) {
+                throw new Error(eligibility?.message ?? "리뷰 작성 가능 여부를 확인하지 못했습니다.");
+            }
+
+            if (!eligibility.eligible) {
+                notEligibleNotice.style.display = "block";
+                submitBtn.disabled = true;
+            }
+        } catch (error) {
+            notEligibleNotice.textContent = error.message;
+            notEligibleNotice.style.display = "block";
+            submitBtn.disabled = true;
+        }
+    }
+
+    reviewForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const rating = Number(reviewForm.querySelector('input[name="rating"]:checked').value);
+        const requestData = {
+            paymentId: Number(paymentId),
+            rating: rating,
+            content: document.getElementById("content").value
+        };
+
+        const formData = new FormData();
+        formData.append("review", new Blob([JSON.stringify(requestData)], { type: "application/json" }));
+
+        const imageFile = document.getElementById("imageFile").files?.[0];
+        if (imageFile) {
+            formData.append("imageFile", imageFile);
+        }
+
+        try {
+            result.textContent = "전송 중...";
+
+            const response = await authFetch("/api/v1/reviews", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await readApiBody(response);
+
+            if (!response.ok) {
+                throw new Error(data?.message ?? "리뷰 등록에 실패했습니다.");
+            }
+
+            result.textContent = JSON.stringify(data, null, 2);
+            alert("리뷰가 정상적으로 등록되었습니다.");
+            window.location.href = "/";
+        } catch (error) {
+            result.textContent = error.message;
+        }
+    });
+</script>
+</body>
+</html>
